@@ -1,6 +1,7 @@
 <h1 align="center">
 K4RTO
-<img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_hello.gif" width="20px">
+<img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_hello.gif" width="50px">
+<img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/black_cat.gif" width="50px">
 <br>
 
 [//]: # (<a href="">)
