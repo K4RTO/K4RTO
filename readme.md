@@ -10,11 +10,11 @@
 [//]: # (</a>)
 
 <a href="mailto:k4rtol@163.com">
-<img align="center" alt="K4RTO @Mail" width="22px" src="https://cdn.jsdelivr.net/npm/simple-icons@v3/icons/gmail.svg" />
+  <img src="https://img.shields.io/badge/Mail-k4rtol@163.com-white?style=flat&logoColor=red" />
 </a>
 
 <a href="https://github.com/K4RTO">
-<img align="center" alt="K4RTO @github" width="22px" src="https://cdn.jsdelivr.net/npm/simple-icons@3.13.0/icons/github.svg" />
+  <img src="https://img.shields.io/badge/-GitHub-white?style=for-the-badge&logo=github&logoColor=181717" />
 </a>
 </h1>
 
