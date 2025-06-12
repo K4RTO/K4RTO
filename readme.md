@@ -34,7 +34,7 @@
 
 <hr>
 <p align="center">
-<img src="https://github-readme-stats.vercel.app/api?username=K4RTO&count_private=true&show_icons=true&title_color=ff64da&icon_color=a960ff&text_color=ffffff&bg_color=291B3E&hide_border=true" alt="GitHub Status"/>
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=K4RTO&show_icons=true&layout=compact&title_color=ff64da&icon_color=a960ff&text_color=ffffff&bg_color=291B3E&hide_border=true" alt="Most Used Languages"/>
+<img src="https://github-readme-stats.vercel.app/api?username=K4RTO&count_private=true&show_icons=true&title_color=ff64da&icon_color=a960ff&text_color=ffffff&bg_color=291B3E&hide_border=true" width="420px" alt="GitHub Status"/>
+<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=K4RTO&show_icons=true&layout=compact&title_color=ff64da&icon_color=a960ff&text_color=ffffff&bg_color=291B3E&hide_border=true" width="320px" alt="Most Used Languages"/>
 </p>
 
