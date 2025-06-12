@@ -3,18 +3,8 @@
   <img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_meow.gif" width="100px" style="margin-right: 20px;">
 <br>
 
-[//]: # (<a href="">)
-
-[//]: # (  <img align="center" alt="K4RTO @LinkedIN" width="22px" src="https://cdn.jsdelivr.net/npm/simple-icons@v3/icons/linkedin.svg" />)
-
-[//]: # (</a>)
-
 <a href="mailto:k4rtol@163.com">
   <img src="https://img.shields.io/badge/Mail-k4rtol@163.com-white?style=flat&logoColor=red" />
-</a>
-
-<a href="https://github.com/K4RTO">
-  <img src="https://img.shields.io/badge/-GitHub-white?style=for-the-badge&logo=github&logoColor=181717" />
 </a>
 </h1>
 
