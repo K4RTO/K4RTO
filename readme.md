@@ -1,16 +1,15 @@
-<h1 align="center">
-K4RTO
-<img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_hello.gif" width="80px">
-<br>
-<img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/black_cat.gif" width="100px">
-<br>
+<h1 align="center">K4RTO <img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_hello.gif" width="200px"></h1>
+
+<div align="center" style="margin-bottom: 20px;">
+  <img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/black_cat.gif" width="400px">
+</div>
 
 [//]: # (<a href="">)
 
 [//]: # (  <img align="center" alt="K4RTO @LinkedIN" width="22px" src="https://cdn.jsdelivr.net/npm/simple-icons@v3/icons/linkedin.svg" />)
 
 [//]: # (</a>)
-
+<h1 align="center">
 <a href="mailto:k4rtol@163.com">
 <img align="center" alt="K4RTO @Mail" width="22px" src="https://cdn.jsdelivr.net/npm/simple-icons@v3/icons/gmail.svg" />
 </a>
