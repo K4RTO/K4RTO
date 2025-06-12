@@ -1,7 +1,7 @@
 <h1 align="center">
-<img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_meow.gif" width="60px">
-K4RTO 
-<img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_hello.gif" width="60px">
+  <img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_meow.gif" width="60px" style="margin-right: 20px;">
+  K4RTO 
+  <img src="https://github.com/K4RTO/K4RTO/blob/main/src/Assets/ReadmeAssets/cat_hello.gif" width="60px" style="margin-left: 20px;">
 
 <br>
 
