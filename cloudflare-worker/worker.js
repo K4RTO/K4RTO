@@ -128,6 +128,12 @@ function isOriginAllowed(origin, allowedList) {
   return allowed.includes(origin);
 }
 
+/** Extract the origin from a Referer header (e.g. "https://k4rto.com/foo" → "https://k4rto.com"). */
+function originFromReferer(referer) {
+  if (!referer) return "";
+  try { return new URL(referer).origin; } catch { return ""; }
+}
+
 /** Inject a <base> tag so relative URLs in HTML resolve to the target's origin,
  *  not to our worker domain. */
 function injectBaseTag(html, targetUrl) {
@@ -147,16 +153,21 @@ export default {
    * @param {{ ALLOWED_ORIGINS?: string }} env
    */
   async fetch(request, env) {
-    const requestOrigin = request.headers.get("origin") || "";
+    // Browsers omit the `Origin` header for plain navigation requests (including
+    // iframe `src=` navigations). They DO send `Referer` though. For navigation
+    // contexts, fall back to the Referer's origin so the allowlist still works.
+    const headerOrigin = request.headers.get("origin") || "";
+    const refererOrigin = originFromReferer(request.headers.get("referer"));
+    const requestOrigin = headerOrigin || refererOrigin;
 
     // CORS preflight
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders(requestOrigin) });
+      return new Response(null, { status: 204, headers: corsHeaders(headerOrigin) });
     }
 
-    // Optional caller allowlist
+    // Optional caller allowlist — try Origin header first, fall back to Referer.
     if (!isOriginAllowed(requestOrigin, env.ALLOWED_ORIGINS)) {
-      return jsonError(403, "Origin not allowed", requestOrigin);
+      return jsonError(403, "Origin not allowed", headerOrigin);
     }
 
     // Only GET / HEAD are supported (no body smuggling)
