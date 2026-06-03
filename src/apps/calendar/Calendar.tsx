@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useT } from "@/contexts/SystemContext";
+import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
 function daysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 function firstDay(y: number, m: number) { return new Date(y, m, 1).getDay(); }
@@ -47,6 +48,11 @@ export default function Calendar(_props: AppComponentProps) {
   function prevMini() { if (mm === 0) { setMm(11); setMy(my-1); } else setMm(mm-1); }
   function nextMini() { if (mm === 11) { setMm(0); setMy(my+1); } else setMm(mm+1); }
   function goToday() { setVm(tm); setVy(ty); setMm(tm); setMy(ty); setSel(null); }
+
+  useAppMenuListener("calendar", (detail) => {
+    if (detail.type === "go-today") goToday();
+    // view-month is the only mode anyway — no-op
+  });
 
   const isToday = (c: Cell) => c.day === td && c.month === tm && c.year === ty;
   const isSel = (c: Cell) => sel ? c.day === sel.day && c.month === sel.month && c.year === sel.year : false;

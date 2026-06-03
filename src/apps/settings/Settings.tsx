@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { AppComponentProps } from "@/apps/registry";
-import { useT } from "@/contexts/SystemContext";
+import { useSystem, useT } from "@/contexts/SystemContext";
+import { WALLPAPER_PRESETS } from "@/components/desktop/Wallpaper";
 
 const ACCENT_COLOR_KEYS = [
   { color: "#0058d0", labelKey: "color.blue" },
@@ -39,11 +40,10 @@ function Row({ label, desc, children }: { label: string; desc?: string; children
 
 function AppearancePane() {
   const t = useT();
-  const [mode, setMode] = useState<"light" | "dark" | "auto">("dark");
-  const [accent, setAccent] = useState("#0058d0");
+  const sys = useSystem();
+  // Local-only cosmetic options (no global side-effect — kept as local state)
   const [wallpaperTint, setWallpaperTint] = useState(true);
   const [scrollBars, setScrollBars] = useState<"auto" | "scrolling" | "always">("auto");
-  const [sidebarSize, setSidebarSize] = useState<"small" | "medium" | "large">("medium");
   const dim = { color: "rgba(255,255,255,0.4)" };
   const section = (key: string) => (
     <div className="px-4 pt-4 pb-1" style={{ ...dim, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{t(key)}</div>
@@ -67,8 +67,8 @@ function AppearancePane() {
       <div className="mx-4 rounded-xl overflow-hidden mb-2" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
           {modeKeys.map((m, i) => (
-            <button key={m.id} onClick={() => setMode(m.id)} className="flex-1 flex flex-col items-center gap-2 py-4"
-              style={{ borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", outline: mode === m.id ? "2px solid #0058d0" : "2px solid transparent", outlineOffset: -2, borderRadius: m.id === "light" ? "10px 0 0 10px" : m.id === "auto" ? "0 10px 10px 0" : undefined }}>
+            <button key={m.id} onClick={() => sys.setTheme(m.id)} className="flex-1 flex flex-col items-center gap-2 py-4"
+              style={{ borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", outline: sys.theme === m.id ? "2px solid #0058d0" : "2px solid transparent", outlineOffset: -2, borderRadius: m.id === "light" ? "10px 0 0 10px" : m.id === "auto" ? "0 10px 10px 0" : undefined }}>
               <div className="rounded-lg overflow-hidden" style={{ width: 52, height: 36, background: m.id === "light" ? "#f5f5f5" : m.id === "dark" ? "#1c1c1e" : "linear-gradient(135deg, #f5f5f5 50%, #1c1c1e 50%)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <div style={{ height: 10, backgroundColor: m.id === "light" ? "#e8e8e8" : m.id === "dark" ? "#2c2c2e" : undefined }} />
               </div>
@@ -81,8 +81,8 @@ function AppearancePane() {
       {section("appearance.section.accentColor")}
       <div className="mx-4 rounded-xl px-4 py-3 mb-2 flex items-center gap-2 flex-wrap" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
         {ACCENT_COLOR_KEYS.map(a => (
-          <button key={a.color} onClick={() => setAccent(a.color)} title={t(a.labelKey)}
-            style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: a.color, border: accent === a.color ? "3px solid white" : "3px solid transparent", outline: accent === a.color ? "2px solid " + a.color : "none", transition: "border 0.1s" }} />
+          <button key={a.color} onClick={() => sys.setAccent(a.color)} title={t(a.labelKey)}
+            style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: a.color, border: sys.accent === a.color ? "3px solid white" : "3px solid transparent", outline: sys.accent === a.color ? "2px solid " + a.color : "none", transition: "border 0.1s" }} />
         ))}
       </div>
 
@@ -90,8 +90,8 @@ function AppearancePane() {
       <div className="mx-4 rounded-xl overflow-hidden mb-2" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
           {sizeKeys.map((s, i) => (
-            <button key={s.id} onClick={() => setSidebarSize(s.id)} className="flex-1 py-2 text-sm"
-              style={{ color: sidebarSize === s.id ? "white" : "rgba(255,255,255,0.4)", backgroundColor: sidebarSize === s.id ? "rgba(255,255,255,0.12)" : "transparent", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", fontSize: 13 }}>
+            <button key={s.id} onClick={() => sys.setSidebarSize(s.id)} className="flex-1 py-2 text-sm"
+              style={{ color: sys.sidebarSize === s.id ? "white" : "rgba(255,255,255,0.4)", backgroundColor: sys.sidebarSize === s.id ? "rgba(255,255,255,0.12)" : "transparent", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", fontSize: 13 }}>
               {t(s.labelKey)}
             </button>
           ))}
@@ -116,6 +116,57 @@ function AppearancePane() {
   );
 }
 
+// ── Wallpaper pane ──────────────────────────────────────────────────────
+
+function WallpaperPane() {
+  const t = useT();
+  const sys = useSystem();
+  const dim = { color: "rgba(255,255,255,0.4)" };
+  const section = (key: string) => (
+    <div className="px-4 pt-4 pb-1" style={{ ...dim, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{t(key)}</div>
+  );
+
+  return (
+    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#1c1c1e" }}>
+      {section("wallpaper.section.preset")}
+      <div className="px-4 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", marginBottom: 16 }}>
+        {WALLPAPER_PRESETS.map(p => {
+          const isActive = sys.wallpaper === p.id;
+          return (
+            <button
+              key={p.id}
+              onClick={() => sys.setWallpaper(p.id)}
+              className="flex flex-col items-stretch gap-2 p-2 rounded-xl"
+              style={{
+                backgroundColor: isActive ? "var(--accent-soft)" : "rgba(255,255,255,0.04)",
+                border: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+                transition: "background-color 0.15s ease, border-color 0.15s ease",
+              }}
+              aria-pressed={isActive}
+              aria-label={t(p.labelKey)}
+            >
+              <div
+                style={{
+                  height: 88,
+                  borderRadius: 8,
+                  background: p.swatch,
+                  boxShadow: "inset 0 0.5px 0 rgba(255,255,255,0.18), inset 0 -0.5px 0 rgba(0,0,0,0.20)",
+                }}
+              />
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 500, textAlign: "center" }}>
+                {t(p.labelKey)}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="px-4 pb-4" style={{ ...dim, fontSize: 11, lineHeight: 1.5 }}>
+        {t("wallpaper.note")}
+      </div>
+    </div>
+  );
+}
+
 const W = { stroke: "white", fill: "none", strokeWidth: "1.8", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
 const PANE_ICONS: Record<string, React.ReactNode> = {
@@ -131,6 +182,7 @@ const PANE_ICONS: Record<string, React.ReactNode> = {
   privacy:    <svg width="14" height="14" viewBox="0 0 24 24" {...W}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
   desktop:    <svg width="14" height="14" viewBox="0 0 24 24" {...W}><rect x="2" y="3" width="20" height="13" rx="2"/><path d="M2 19h20"/><circle cx="8" cy="19" r="1" fill="white" stroke="none"/><circle cx="12" cy="19" r="1" fill="white" stroke="none"/><circle cx="16" cy="19" r="1" fill="white" stroke="none"/></svg>,
   general:    <svg width="14" height="14" viewBox="0 0 24 24" {...W}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  wallpaper:  <svg width="14" height="14" viewBox="0 0 24 24" {...W}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="9" r="1.5" fill="white" stroke="none"/><path d="M21 16l-5-5L8 19"/></svg>,
 };
 
 export default function Settings(_props: AppComponentProps) {
@@ -140,6 +192,7 @@ export default function Settings(_props: AppComponentProps) {
 
   const PANES = [
     { id: "appearance", labelKey: "settings.appearance", color: "#5856D6" },
+    { id: "wallpaper",  labelKey: "settings.wallpaper",  color: "#34C759" },
     { id: "wifi",       labelKey: "settings.wifi",       color: "#007AFF" },
     { id: "bluetooth",  labelKey: "settings.bluetooth",  color: "#5856D6" },
     { id: "notif",      labelKey: "settings.notif",      color: "#FF3B30" },
@@ -201,6 +254,8 @@ export default function Settings(_props: AppComponentProps) {
         </div>
         {sel === "appearance" ? (
           <AppearancePane />
+        ) : sel === "wallpaper" ? (
+          <WallpaperPane />
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <span style={{ ...dim, fontSize: 14 }}>

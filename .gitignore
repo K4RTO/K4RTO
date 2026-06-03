@@ -32,12 +32,3 @@ next-env.d.ts
 # claude code (project-only notes)
 CLAUDE.md
 agents_processing.md
-.claude/
-
-# IDE / OS noise
-.idea/
-.playwright-mcp/
-**/.DS_Store
-
-# build artifacts inside dependency directories
-cloudflare-worker/node_modules/

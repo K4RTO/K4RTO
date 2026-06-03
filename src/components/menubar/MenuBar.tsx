@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT, useSystem } from "@/contexts/SystemContext";
+import { dispatchAppMenuAction } from "@/lib/menubar/appMenu";
 
 // --- App ID → translation key map ---
 const APP_NAME_KEYS: Record<string, string> = {
@@ -12,6 +13,7 @@ const APP_NAME_KEYS: Record<string, string> = {
   terminal: "dock.terminal",
   calculator: "dock.calculator",
   calendar: "dock.calendar",
+  clock: "dock.clock",
   settings: "dock.settings",
   preview: "dock.preview",
   vscode: "dock.vscode",
@@ -19,9 +21,178 @@ const APP_NAME_KEYS: Record<string, string> = {
   music: "dock.music",
 };
 
-// --- Dispatch a custom event to communicate with Finder ---
+// --- Dispatch a custom event to communicate with Finder (legacy bus) ---
+// Newer apps should use dispatchAppMenuAction from @/lib/menubar/appMenu instead.
 function dispatchFinderAction(type: string, payload?: Record<string, string>) {
   window.dispatchEvent(new CustomEvent("finderMenuAction", { detail: { type, ...payload } }));
+}
+
+// ── Per-app menu specs ───────────────────────────────────────────────────
+// Each entry describes the items that appear in File / Edit / View / Window
+// menus when that app is focused. Clicking an item fires:
+//   dispatchAppMenuAction(activeAppId, item.type, item.payload)
+// The app's own useAppMenuListener handler decides what each `type` does.
+// Items not listed here fall back to the disabled-stub fallback.
+
+type MenuSpecItem =
+  | { kind: "sep" }
+  | {
+      kind: "item";
+      /** i18n label key (e.g. "menu.file.newTab") */
+      labelKey: string;
+      /** action type fed into dispatchAppMenuAction */
+      actionType: string;
+      shortcut?: string;
+      /** Optional payload sent with the action */
+      payload?: Record<string, unknown>;
+      /** If true, show the item but don't fire (placeholder) */
+      disabled?: boolean;
+    };
+
+interface AppMenuSpec {
+  file?: MenuSpecItem[];
+  edit?: MenuSpecItem[];
+  view?: MenuSpecItem[];
+  window?: MenuSpecItem[];
+}
+
+const APP_MENU_SPECS: Record<string, AppMenuSpec> = {
+  safari: {
+    file: [
+      { kind: "item", labelKey: "menu.file.newWindow",       shortcut: "⌘N",   actionType: "new-window" },
+      { kind: "item", labelKey: "menu.file.newTab",          shortcut: "⌘T",   actionType: "new-tab" },
+      { kind: "item", labelKey: "menu.file.openLocation",    shortcut: "⌘L",   actionType: "focus-address" },
+      { kind: "sep" },
+      { kind: "item", labelKey: "menu.file.closeTab",        shortcut: "⌘W",   actionType: "close-tab" },
+    ],
+    edit: [
+      { kind: "item", labelKey: "menu.edit.find",            shortcut: "⌘F",   actionType: "find" },
+    ],
+    view: [
+      { kind: "item", labelKey: "menu.view.reload",          shortcut: "⌘R",   actionType: "reload" },
+      { kind: "sep" },
+      { kind: "item", labelKey: "menu.view.goHome",          shortcut: "⇧⌘H",  actionType: "go-home" },
+    ],
+  },
+  notes: {
+    file: [
+      { kind: "item", labelKey: "menu.notes.newNote",        shortcut: "⌘N",   actionType: "new-note" },
+      { kind: "item", labelKey: "menu.notes.deleteNote",     shortcut: "⌘⌫",   actionType: "delete-note" },
+    ],
+    edit: [
+      { kind: "item", labelKey: "menu.edit.find",            shortcut: "⌘F",   actionType: "find" },
+    ],
+  },
+  textedit: {
+    file: [
+      { kind: "item", labelKey: "menu.file.new",             shortcut: "⌘N",   actionType: "new", disabled: true },
+      { kind: "item", labelKey: "menu.file.save",            shortcut: "⌘S",   actionType: "save" },
+    ],
+    edit: [
+      { kind: "item", labelKey: "menu.edit.find",            shortcut: "⌘F",   actionType: "find", disabled: true },
+    ],
+  },
+  terminal: {
+    file: [
+      { kind: "item", labelKey: "menu.terminal.clearBuffer", shortcut: "⌘K",   actionType: "clear" },
+      { kind: "sep" },
+      { kind: "item", labelKey: "menu.file.closeWindow",     shortcut: "⌘W",   actionType: "exit" },
+    ],
+    edit: [
+      { kind: "item", labelKey: "menu.edit.copy",            shortcut: "⌘C",   actionType: "copy", disabled: true },
+      { kind: "item", labelKey: "menu.edit.paste",           shortcut: "⌘V",   actionType: "paste", disabled: true },
+    ],
+  },
+  calculator: {
+    view: [
+      { kind: "item", labelKey: "menu.calc.basic",           shortcut: "⌘1",   actionType: "view-basic", disabled: true },
+      { kind: "item", labelKey: "menu.calc.scientific",      shortcut: "⌘2",   actionType: "view-scientific", disabled: true },
+    ],
+  },
+  calendar: {
+    file: [
+      { kind: "item", labelKey: "menu.calendar.newEvent",    shortcut: "⌘N",   actionType: "new-event", disabled: true },
+    ],
+    view: [
+      { kind: "item", labelKey: "menu.calendar.day",         shortcut: "⌘1",   actionType: "view-day", disabled: true },
+      { kind: "item", labelKey: "menu.calendar.week",        shortcut: "⌘2",   actionType: "view-week", disabled: true },
+      { kind: "item", labelKey: "menu.calendar.month",       shortcut: "⌘3",   actionType: "view-month" },
+      { kind: "item", labelKey: "menu.calendar.year",        shortcut: "⌘4",   actionType: "view-year", disabled: true },
+      { kind: "sep" },
+      { kind: "item", labelKey: "menu.calendar.goToToday",   shortcut: "⌘T",   actionType: "go-today" },
+    ],
+  },
+  clock: {
+    view: [
+      { kind: "item", labelKey: "menu.clock.worldClock",     shortcut: "⌘1",   actionType: "view-world", disabled: true },
+      { kind: "item", labelKey: "menu.clock.alarm",          shortcut: "⌘2",   actionType: "view-alarm", disabled: true },
+      { kind: "item", labelKey: "menu.clock.stopwatch",      shortcut: "⌘3",   actionType: "view-stopwatch", disabled: true },
+      { kind: "item", labelKey: "menu.clock.timer",          shortcut: "⌘4",   actionType: "view-timer", disabled: true },
+    ],
+  },
+  preview: {
+    file: [
+      { kind: "item", labelKey: "menu.file.print",           shortcut: "⌘P",   actionType: "print" },
+      { kind: "item", labelKey: "menu.preview.download",     shortcut: "⌘S",   actionType: "download" },
+    ],
+    view: [
+      { kind: "item", labelKey: "menu.preview.zoomIn",       shortcut: "⌘+",   actionType: "zoom-in" },
+      { kind: "item", labelKey: "menu.preview.zoomOut",      shortcut: "⌘−",   actionType: "zoom-out" },
+      { kind: "item", labelKey: "menu.preview.actualSize",   shortcut: "⌘0",   actionType: "zoom-reset" },
+      { kind: "sep" },
+      { kind: "item", labelKey: "menu.preview.nextPage",     shortcut: "→",    actionType: "next-page" },
+      { kind: "item", labelKey: "menu.preview.previousPage", shortcut: "←",    actionType: "prev-page" },
+    ],
+  },
+  vscode: {
+    file: [
+      { kind: "item", labelKey: "menu.file.save",            shortcut: "⌘S",   actionType: "save", disabled: true },
+    ],
+    edit: [
+      { kind: "item", labelKey: "menu.edit.find",            shortcut: "⌘F",   actionType: "find", disabled: true },
+    ],
+    view: [
+      { kind: "item", labelKey: "menu.vscode.commandPalette",shortcut: "⌘⇧P",  actionType: "command-palette", disabled: true },
+      { kind: "item", labelKey: "menu.vscode.toggleSidebar", shortcut: "⌘B",   actionType: "toggle-sidebar", disabled: true },
+    ],
+  },
+  word: {
+    file: [
+      { kind: "item", labelKey: "menu.file.save",            shortcut: "⌘S",   actionType: "save", disabled: true },
+      { kind: "item", labelKey: "menu.file.print",           shortcut: "⌘P",   actionType: "print", disabled: true },
+    ],
+    edit: [
+      { kind: "item", labelKey: "menu.edit.find",            shortcut: "⌘F",   actionType: "find", disabled: true },
+    ],
+  },
+  music: {
+    view: [
+      { kind: "item", labelKey: "menu.music.showLibrary",    actionType: "toggle-library", disabled: true },
+    ],
+  },
+  settings: {
+    view: [
+      { kind: "item", labelKey: "menu.view.showSidebar",     shortcut: "⌥⌘S",  actionType: "toggle-sidebar", disabled: true },
+    ],
+  },
+};
+
+/** Convert a per-app menu spec into rendered MenuItem[] for DropdownMenu. */
+function specToItems(
+  spec: MenuSpecItem[] | undefined,
+  appId: string,
+  t: (key: string) => string,
+): MenuItem[] | null {
+  if (!spec) return null;
+  return spec.map<MenuItem>(it => {
+    if (it.kind === "sep") return { label: "", separator: true };
+    return {
+      label: t(it.labelKey),
+      shortcut: it.shortcut,
+      disabled: it.disabled,
+      action: it.disabled ? undefined : () => dispatchAppMenuAction(appId, it.actionType, it.payload),
+    };
+  });
 }
 
 // --- Apple Logo ---
@@ -214,8 +385,10 @@ export function MenuBar({
   ];
 
   const isFinder = activeAppId === "finder";
+  const appSpec: AppMenuSpec | undefined = activeAppId ? APP_MENU_SPECS[activeAppId] : undefined;
 
-  const fileMenuItems: MenuItem[] = isFinder ? [
+  // ── File menu ──────────────────────────────────────────────────────────
+  const finderFileMenu: MenuItem[] = [
     { label: t("menu.file.newFinderWindow"), shortcut: "⌘N", action: onNewFinderWindow },
     { label: t("menu.file.newFolder"), shortcut: "⇧⌘N", disabled: true },
     { label: t("menu.file.newTab"), shortcut: "⌘T", disabled: true },
@@ -226,32 +399,33 @@ export function MenuBar({
     { label: t("menu.file.getInfo"), shortcut: "⌘I", disabled: true },
     { label: "", separator: true },
     { label: t("menu.file.moveToTrash"), shortcut: "⌘⌫", disabled: true },
-  ] : [
-    { label: t("menu.file.newFinderWindow"), shortcut: "⌘N" },
-    { label: t("menu.file.newFolder"), shortcut: "⇧⌘N" },
-    { label: t("menu.file.newTab"), shortcut: "⌘T" },
-    { label: "", separator: true },
-    { label: t("menu.file.open"), shortcut: "⌘O" },
-    { label: t("menu.file.closeWindow"), shortcut: "⌘W" },
-    { label: "", separator: true },
-    { label: t("menu.file.getInfo"), shortcut: "⌘I" },
-    { label: "", separator: true },
-    { label: t("menu.file.moveToTrash"), shortcut: "⌘⌫" },
   ];
-
-  const editMenuItems: MenuItem[] = [
-    { label: t("menu.edit.undo"), shortcut: "⌘Z", disabled: isFinder },
-    { label: t("menu.edit.redo"), shortcut: "⇧⌘Z", disabled: isFinder },
-    { label: "", separator: true },
-    { label: t("menu.edit.cut"), shortcut: "⌘X", disabled: isFinder },
-    { label: t("menu.edit.copy"), shortcut: "⌘C", disabled: isFinder },
-    { label: t("menu.edit.paste"), shortcut: "⌘V", disabled: isFinder },
-    { label: t("menu.edit.selectAll"), shortcut: "⌘A", disabled: isFinder },
-    { label: "", separator: true },
-    { label: t("menu.edit.find"), shortcut: "⌘F", disabled: isFinder },
+  const fallbackFileMenu: MenuItem[] = [
+    { label: t("menu.file.newFinderWindow"), shortcut: "⌘N", disabled: true },
+    { label: t("menu.file.closeWindow"), shortcut: "⌘W", action: onCloseWindow },
   ];
+  const fileMenuItems: MenuItem[] = isFinder
+    ? finderFileMenu
+    : ((activeAppId ? specToItems(appSpec?.file, activeAppId, t) : null)) ?? fallbackFileMenu;
 
-  const viewMenuItems: MenuItem[] = isFinder ? [
+  // ── Edit menu ──────────────────────────────────────────────────────────
+  const fallbackEditMenu: MenuItem[] = [
+    { label: t("menu.edit.undo"), shortcut: "⌘Z", disabled: true },
+    { label: t("menu.edit.redo"), shortcut: "⇧⌘Z", disabled: true },
+    { label: "", separator: true },
+    { label: t("menu.edit.cut"), shortcut: "⌘X", disabled: true },
+    { label: t("menu.edit.copy"), shortcut: "⌘C", disabled: true },
+    { label: t("menu.edit.paste"), shortcut: "⌘V", disabled: true },
+    { label: t("menu.edit.selectAll"), shortcut: "⌘A", disabled: true },
+    { label: "", separator: true },
+    { label: t("menu.edit.find"), shortcut: "⌘F", disabled: true },
+  ];
+  const editMenuItems: MenuItem[] = isFinder
+    ? fallbackEditMenu
+    : ((activeAppId ? specToItems(appSpec?.edit, activeAppId, t) : null)) ?? fallbackEditMenu;
+
+  // ── View menu ──────────────────────────────────────────────────────────
+  const finderViewMenu: MenuItem[] = [
     { label: t("menu.view.asIcons"), shortcut: "⌘1", action: () => dispatchFinderAction("setView", { view: "icons" }) },
     { label: t("menu.view.asList"), shortcut: "⌘2", action: () => dispatchFinderAction("setView", { view: "list" }) },
     { label: t("menu.view.asColumns"), shortcut: "⌘3", disabled: true },
@@ -262,18 +436,13 @@ export function MenuBar({
     { label: "", separator: true },
     { label: t("menu.view.showPathBar"), shortcut: "⌥⌘P", disabled: true },
     { label: t("menu.view.showStatusBar"), disabled: true },
-  ] : [
-    { label: t("menu.view.asIcons"), shortcut: "⌘1" },
-    { label: t("menu.view.asList"), shortcut: "⌘2" },
-    { label: t("menu.view.asColumns"), shortcut: "⌘3" },
-    { label: t("menu.view.asGallery"), shortcut: "⌘4" },
-    { label: "", separator: true },
-    { label: t("menu.view.showSidebar"), shortcut: "⌥⌘S" },
-    { label: t("menu.view.showPreview"), shortcut: "⇧⌘P" },
-    { label: "", separator: true },
-    { label: t("menu.view.showPathBar"), shortcut: "⌥⌘P" },
-    { label: t("menu.view.showStatusBar") },
   ];
+  const fallbackViewMenu: MenuItem[] = [
+    { label: t("menu.view.showSidebar"), shortcut: "⌥⌘S", disabled: true },
+  ];
+  const viewMenuItems: MenuItem[] = isFinder
+    ? finderViewMenu
+    : ((activeAppId ? specToItems(appSpec?.view, activeAppId, t) : null)) ?? fallbackViewMenu;
 
   const goMenuItems: MenuItem[] = isFinder ? [
     { label: t("menu.go.back"), shortcut: "⌘[", action: () => dispatchFinderAction("goBack") },

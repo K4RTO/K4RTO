@@ -72,6 +72,49 @@ const translations: Record<string, TranslationEntry> = {
   "menu.app.showAll":          { en: "Show All",                  zh: "全部显示" },
   "menu.app.quit":             { en: "Quit {name}",               zh: "退出{name}" },
 
+  // ── Per-app File / Edit / View menu items ────────────────────────────────
+  // Generic
+  "menu.file.new":             { en: "New",                       zh: "新建" },
+  "menu.file.newWindow":       { en: "New Window",                zh: "新建窗口" },
+  "menu.file.openLocation":    { en: "Open Location...",          zh: "打开位置..." },
+  "menu.file.closeTab":        { en: "Close Tab",                 zh: "关闭标签页" },
+  "menu.file.save":            { en: "Save",                      zh: "保存" },
+  "menu.file.print":           { en: "Print...",                  zh: "打印..." },
+  "menu.view.reload":          { en: "Reload",                    zh: "重新载入" },
+  "menu.view.goHome":          { en: "Go Home",                   zh: "返回首页" },
+  // Notes
+  "menu.notes.newNote":        { en: "New Note",                  zh: "新建备忘录" },
+  "menu.notes.deleteNote":     { en: "Delete Note",               zh: "删除备忘录" },
+  // Terminal
+  "menu.terminal.clearBuffer": { en: "Clear Buffer",              zh: "清屏" },
+  // Calculator
+  "menu.calc.basic":           { en: "Basic",                     zh: "基本型" },
+  "menu.calc.scientific":      { en: "Scientific",                zh: "科学型" },
+  // Calendar
+  "menu.calendar.newEvent":    { en: "New Event",                 zh: "新建活动" },
+  "menu.calendar.day":         { en: "by Day",                    zh: "按日" },
+  "menu.calendar.week":        { en: "by Week",                   zh: "按周" },
+  "menu.calendar.month":       { en: "by Month",                  zh: "按月" },
+  "menu.calendar.year":        { en: "by Year",                   zh: "按年" },
+  "menu.calendar.goToToday":   { en: "Go to Today",               zh: "前往今天" },
+  // Clock
+  "menu.clock.worldClock":     { en: "World Clock",               zh: "世界时钟" },
+  "menu.clock.alarm":          { en: "Alarm",                     zh: "闹钟" },
+  "menu.clock.stopwatch":      { en: "Stopwatch",                 zh: "秒表" },
+  "menu.clock.timer":          { en: "Timer",                     zh: "计时器" },
+  // Preview
+  "menu.preview.zoomIn":       { en: "Zoom In",                   zh: "放大" },
+  "menu.preview.zoomOut":      { en: "Zoom Out",                  zh: "缩小" },
+  "menu.preview.actualSize":   { en: "Actual Size",               zh: "实际大小" },
+  "menu.preview.nextPage":     { en: "Next Page",                 zh: "下一页" },
+  "menu.preview.previousPage": { en: "Previous Page",             zh: "上一页" },
+  "menu.preview.download":     { en: "Download",                  zh: "下载" },
+  // VSCode
+  "menu.vscode.commandPalette":{ en: "Command Palette...",        zh: "命令面板..." },
+  "menu.vscode.toggleSidebar": { en: "Toggle Sidebar",            zh: "切换侧栏" },
+  // Music
+  "menu.music.showLibrary":    { en: "Show Library Sidebar",      zh: "显示资料库侧栏" },
+
   // ── Menu bar labels ──────────────────────────────────────────────────────
   "menubar.file":              { en: "File",                      zh: "文件" },
   "menubar.edit":              { en: "Edit",                      zh: "编辑" },
@@ -267,7 +310,16 @@ const translations: Record<string, TranslationEntry> = {
   "settings.privacy":          { en: "Privacy & Security",        zh: "隐私与安全性" },
   "settings.desktop":          { en: "Desktop & Dock",            zh: "桌面与程序坞" },
   "settings.general":          { en: "General",                   zh: "通用" },
+  "settings.wallpaper":        { en: "Wallpaper",                 zh: "墙纸" },
   "settings.search":           { en: "Search",                    zh: "搜索" },
+
+  // Wallpaper pane
+  "wallpaper.section.preset":     { en: "Choose a preset",            zh: "选择一个壁纸" },
+  "wallpaper.montereyDark":       { en: "Monterey Dark",              zh: "Monterey 暗色" },
+  "wallpaper.sequoiaTeal":        { en: "Sequoia Teal",               zh: "Sequoia 青色" },
+  "wallpaper.venturaWarm":        { en: "Ventura Sunset",             zh: "Ventura 日落" },
+  "wallpaper.sonomaLight":        { en: "Sonoma Light",               zh: "Sonoma 浅色" },
+  "wallpaper.note":               { en: "Wallpapers are procedurally animated — switching is instant.", zh: "壁纸由程序生成动画，切换立即生效。" },
   "settings.appleId":          { en: "Apple ID",                  zh: "Apple ID" },
   "settings.comingSoon":       { en: "Settings for {name} coming soon", zh: "{name} 即将推出" },
 

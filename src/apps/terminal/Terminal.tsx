@@ -6,6 +6,7 @@ import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useSystem } from "@/contexts/SystemContext";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useProcesses } from "@/contexts/ProcessContext";
+import { useAppMenuListener } from "@/lib/menubar/appMenu";
 import { findCommand, completeCommandName } from "./commands/registry";
 import type { Line, Seg, CommandContext, TerminalFsCtx, TerminalFsEntry } from "./commands/types";
 import { COLORS, plain } from "./commands/types";
@@ -313,6 +314,15 @@ export default function Terminal({ windowId, processId: _pid }: AppComponentProp
       setLines([]);
     }
   }, [hist, input, handleTabComplete, appendLines]);
+
+  // ── MenuBar integration ───────────────────────────────────────────────
+
+  useAppMenuListener("terminal", (detail) => {
+    switch (detail.type) {
+      case "clear": setLines([]); break;
+      case "exit":  wm.closeWindow(windowId); break;
+    }
+  });
 
   return (
     <div

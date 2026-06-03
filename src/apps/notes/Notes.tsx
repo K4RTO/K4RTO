@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useT } from "@/contexts/SystemContext";
+import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
 interface Note { id: string; title: string; content: string; modifiedAt: number; }
 
@@ -70,6 +71,27 @@ export default function Notes(_props: AppComponentProps) {
     setSelId(n.id);
     persist(n);
   }, [persist, t]);
+
+  const deleteCurrentNote = useCallback(() => {
+    // Snapshot selId at call time so the fs.remove path and the setNotes
+    // callback both operate on the same id, even if selId changes mid-update.
+    const id = selId;
+    if (!id) return;
+    if (fs) fs.remove(`${VFS_BASE}/${id}.json`);
+    setNotes(prev => {
+      const next = prev.filter(n => n.id !== id);
+      setSelId(next[0]?.id ?? null);
+      return next;
+    });
+  }, [selId, fs]);
+
+  useAppMenuListener("notes", (detail) => {
+    switch (detail.type) {
+      case "new-note":    createNote(); break;
+      case "delete-note": deleteCurrentNote(); break;
+      case "find":        /* TODO: open search */ break;
+    }
+  });
 
   const sorted = [...notes].sort((a, b) => b.modifiedAt - a.modifiedAt);
   const sel = notes.find(n => n.id === selId) ?? null;

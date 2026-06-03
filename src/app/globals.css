@@ -54,6 +54,14 @@
   /* Wallpaper tint — populated at runtime by Wallpaper.tsx (Sprint D3) */
   --wallpaper-tint: rgb(60, 60, 80);
 
+  /* User-selected accent — overridden at runtime by SystemContext / layout
+     anti-flash script. Default macOS blue. Translucent variants auto-derive
+     via color-mix so users only need to change one variable. */
+  --accent: #0058d0;
+  --accent-translucent: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-soft: color-mix(in srgb, var(--accent) 8%, transparent);
+  --accent-contrast: white;  /* foreground color over accent backgrounds */
+
   /* ── Spring Animation Curves (Sprint A3) ────────────────────────────── */
 
   /* soft   — default, no overshoot, smooth ease-out */

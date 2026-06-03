@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useT } from "@/contexts/SystemContext";
+import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
 const DOCS = "/Users/guest/Documents";
 
@@ -42,6 +43,10 @@ export default function TextEdit(_props: AppComponentProps) {
     fs.writeFile(`${DOCS}/${name}`, content);
     setModified(false);
   }, [fs, filename, content]);
+
+  useAppMenuListener("textedit", (detail) => {
+    if (detail.type === "save") handleSave();
+  });
 
   const handleOpen = useCallback(() => {
     if (fs && fs.exists(DOCS)) {

@@ -7,7 +7,7 @@ workers_dev = true
 # gets 403. Add your future GH Pages URL when you deploy. To temporarily allow
 # any origin, set "*" or "" (NOT recommended in production).
 [vars]
-ALLOWED_ORIGINS = "http://localhost:3060,http://127.0.0.1:3060"
+ALLOWED_ORIGINS = "http://localhost:3060,http://127.0.0.1:3060,https://k4rto.com,https://www.k4rto.com,https://K4RTO.github.io"
 
 # Optional: route this Worker to a custom domain (instead of *.workers.dev).
 # Requires the domain to be on Cloudflare DNS.

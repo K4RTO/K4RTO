@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useT } from "@/contexts/SystemContext";
+import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -659,6 +660,25 @@ export default function Browser(_props: AppComponentProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [addTab, closeTab, refresh, activeTabId]);
+
+  // ── MenuBar integration ───────────────────────────────────────────────
+
+  useAppMenuListener("safari", (detail) => {
+    switch (detail.type) {
+      case "new-window":
+      case "new-tab":           addTab(); break;
+      case "close-tab":         closeTab(activeTabId); break;
+      case "reload":            refresh(); break;
+      case "go-home":           goHome(); break;
+      case "focus-address":
+        (document.querySelector('[aria-label="Address bar"]') as HTMLInputElement | null)?.focus();
+        break;
+      case "find":
+        // Browser has no in-page search; focus address bar as the closest analog
+        (document.querySelector('[aria-label="Address bar"]') as HTMLInputElement | null)?.focus();
+        break;
+    }
+  });
 
   // ── Recents derived from global history ────────────────────────────────
 

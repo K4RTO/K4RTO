@@ -8,6 +8,7 @@ import type { AppComponentProps } from "@/apps/registry";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useSystem } from "@/contexts/SystemContext";
 import { withBase } from "@/lib/paths";
+import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
 // Load pdf.js worker from CDN — works for static export (GH Pages) without copying worker file.
 // Version is matched to the installed pdfjs-dist via pdfjs.version.
@@ -177,6 +178,20 @@ export default function Preview({ windowId }: AppComponentProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isPdf, prevPage, nextPage, zoomIn, zoomOut, resetZoom, handleDownload, handlePrint]);
+
+  // ── MenuBar integration ───────────────────────────────────────────────
+
+  useAppMenuListener("preview", (detail) => {
+    switch (detail.type) {
+      case "print":      handlePrint(); break;
+      case "download":   handleDownload(); break;
+      case "zoom-in":    zoomIn(); break;
+      case "zoom-out":   zoomOut(); break;
+      case "zoom-reset": resetZoom(); break;
+      case "next-page":  nextPage(); break;
+      case "prev-page":  prevPage(); break;
+    }
+  });
 
   return (
     <div
