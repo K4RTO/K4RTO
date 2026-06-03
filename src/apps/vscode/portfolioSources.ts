@@ -69,6 +69,46 @@ weaponized as an open proxy.
   },
 
   {
+    name: "README.zh.md",
+    annotation: "项目入口 —— 做了什么、怎么搭的，以及背后的权衡。",
+    code: `# K4RTO Portfolio
+
+浏览器里跑的 macOS 桌面环境，当作求职用的作品集，部署在 k4rto.com。
+
+## 技术栈
+
+- **Next.js 15** + \`output: "export"\` → 静态导出，跑在 GitHub Pages 上
+- **React 19 + TypeScript 5** → strict 模式，除窄边 shim 外不出现 \`any\`
+- **Tailwind CSS 4** 作工具类；Glass 系统封装在 \`@layer components\`
+- **Cloudflare Workers** 当一层薄代理，让浏览器里的 Safari 能 iframe 那些
+  设置了 \`X-Frame-Options\` / \`frame-ancestors\` 的第三方站点
+
+## 为什么静态导出？
+
+整站无后端。所有状态进 \`localStorage\` 或 \`IndexedDB\`。这样做：
+托管免费、CDN 全量缓存极快，并强制把 *行为* 和 *持久化* 干净拆分 ——
+对一个没有后端但又要"活起来"的作品集，这层纪律很有用。
+
+## 为什么浏览器要走 CF Worker？
+
+直接 \`<iframe src="github.com">\` 不行 —— GitHub 设了
+\`Content-Security-Policy: frame-ancestors 'self'\`。一段 30 行的 Worker
+把这个 header 连同几个兄弟 header 一起剥掉。同时加了 SSRF 防护
+（私网 IP 黑名单、手工重定向逐跳重校验、scheme 白名单），避免被当成
+公开代理滥用。
+
+## 现在回头看会重做的决定
+
+- **localStorage 作 VFS。** 当 portfolio 够用，但每次渲染都读放大很严重，
+  以致于做不到流畅展示 1k+ 文件。下一版改成：内存里建索引，
+  写操作 debounce 后再快照到 localStorage。
+- **Shiki 做高亮。** Bundle 体积成本是真的（裁完 lang 之后约 80kb gzipped）。
+  到这个阶段，宁可吃下这个体积也不要自己手搓 highlighter ——
+  Shiki 的 grammar 覆盖深度不是低成本能复刻的。
+`,
+  },
+
+  {
     name: "WindowManagerContext.tsx",
     annotation:
       "Window state lives in a single reducer. Every drag, resize, focus, minimize goes through one action set. Makes debugging predictable and lets Spotlight / Mission Control plug in without touching component internals.",

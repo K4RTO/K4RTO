@@ -322,9 +322,12 @@ export default function VSCode({ windowId }: AppComponentProps) {
 
       {/* Editor + Status Bar */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Tab bar */}
+        {/* Tab bar — w-full guarantees the bar fills the editor area's width so
+            the Edit/Preview button's `ml-auto` actually has room to push against
+            (without w-full, the bar collapses to content width and the button
+            ends up flush against the file tab). */}
         <div
-          className="flex items-center flex-shrink-0 select-none"
+          className="flex items-center flex-shrink-0 w-full select-none"
           style={{ height: 35, backgroundColor: "#2d2d2d", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
         >
           <div

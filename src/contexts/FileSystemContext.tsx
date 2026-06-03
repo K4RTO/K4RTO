@@ -18,7 +18,8 @@ const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 
 // v2: added /Users/guest/.Trash, /Applications populated with virtual .app files, removed "files" sidebar item
 // v3: seeded /Users/guest/K4RTO/Source/ with VSCode portfolio source samples
-const LS_KEY = "vfs_state_v3";
+// v4: added README.zh.md (Chinese version) to K4RTO/Source/
+const LS_KEY = "vfs_state_v4";
 
 function loadOrInit(): FsState {
   if (typeof window === "undefined") return buildDefaults();
