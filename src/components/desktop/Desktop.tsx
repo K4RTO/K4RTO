@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { MenuBar } from "@/components/menubar/MenuBar";
 import { Dock } from "@/components/dock/Dock";
 import { Window } from "@/components/window/Window";
@@ -16,6 +16,9 @@ import { FileSystemProvider } from "@/contexts/FileSystemContext";
 import { SystemProvider, useSystem } from "@/contexts/SystemContext";
 import { getApp } from "@/apps/registry";
 import { AboutThisMac } from "@/components/desktop/AboutThisMac";
+import { LoginScreen } from "@/components/desktop/LoginScreen";
+
+const LOGIN_SESSION_KEY = "k4rto_unlocked";
 
 function LoadingSpinner() {
   return (
@@ -34,6 +37,28 @@ function DesktopContent() {
   const { lang, setLang } = useSystem();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [showAboutThisMac, setShowAboutThisMac] = useState(false);
+
+  // Lock screen — shown once per browser session. We start `locked = false` to
+  // avoid an SSR/CSR mismatch (sessionStorage doesn't exist on the server) and
+  // flip to `true` in an effect after mount. This means the desktop is briefly
+  // visible for one paint cycle (~50-100ms on cold loads) before the lock takes
+  // over; acceptable trade-off vs hydration warnings. Cannot use useLayoutEffect
+  // either — Next.js logs a warning when those run during SSR-marker rehydration.
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(LOGIN_SESSION_KEY) !== "1") setLocked(true);
+    } catch {
+      // sessionStorage unavailable (private mode / sandboxed iframe) — skip lock.
+    }
+  }, []);
+  // useCallback so the ESC effect inside LoginScreen doesn't tear down/rebuild
+  // its listener on every Desktop re-render (also prevents the stale-closure
+  // maintenance trap if `unlock` ever grows to capture changing state).
+  const unlock = useCallback(() => {
+    try { sessionStorage.setItem(LOGIN_SESSION_KEY, "1"); } catch {}
+    setLocked(false);
+  }, []);
 
   // Focused window = last in windowOrder
   const focusedWindowId =
@@ -133,6 +158,9 @@ function DesktopContent() {
       {spotlightOpen && (
         <Spotlight onClose={() => setSpotlightOpen(false)} onLaunchApp={launch} />
       )}
+
+      {/* Lock screen — sits above everything until unlocked */}
+      {locked && <LoginScreen onUnlock={unlock} />}
     </div>
   );
 }

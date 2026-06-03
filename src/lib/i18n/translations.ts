@@ -192,6 +192,12 @@ const translations: Record<string, TranslationEntry> = {
   "spotlight.web":             { en: "Bing",                      zh: "Bing" },
   "spotlight.clearQuery":      { en: "Clear search",              zh: "清除搜索" },
 
+  // ── Login Screen ─────────────────────────────────────────────────────────
+  "login.passwordPlaceholder": { en: "Enter Password",            zh: "输入密码" },
+  "login.unlock":              { en: "Unlock",                    zh: "解锁" },
+  "login.hint":                { en: "Touch ID or Enter Password — press Esc to skip",
+                                 zh: "触控 ID 或输入密码 — 按 Esc 跳过" },
+
   // ── Finder sidebar ───────────────────────────────────────────────────────
   "finder.sidebar.recents":    { en: "Recents",                   zh: "最近使用" },
   "finder.sidebar.shared":     { en: "Shared",                    zh: "共享" },
