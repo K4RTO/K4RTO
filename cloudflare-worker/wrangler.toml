@@ -1,0 +1,16 @@
+name = "k4rto-browser-proxy"
+main = "worker.js"
+compatibility_date = "2026-06-01"
+workers_dev = true
+
+# Restricts who can call this Worker. Anything not in this comma-separated list
+# gets 403. Add your future GH Pages URL when you deploy. To temporarily allow
+# any origin, set "*" or "" (NOT recommended in production).
+[vars]
+ALLOWED_ORIGINS = "http://localhost:3060,http://127.0.0.1:3060"
+
+# Optional: route this Worker to a custom domain (instead of *.workers.dev).
+# Requires the domain to be on Cloudflare DNS.
+# [[routes]]
+# pattern = "proxy.k4rto.dev/*"
+# zone_name = "k4rto.dev"

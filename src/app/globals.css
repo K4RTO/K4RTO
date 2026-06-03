@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+@theme {
+  --color-macos-bg: rgba(246, 246, 246, 0.72);
+  --color-macos-titlebar: rgba(236, 236, 236, 0.80);
+  --color-macos-sidebar: rgba(244, 244, 244, 0.92);
+  --color-macos-dock: rgba(255, 255, 255, 0.25);
+  --color-macos-dock-border: rgba(255, 255, 255, 0.3);
+  --color-macos-menubar: rgba(255, 255, 255, 0.72);
+  --color-traffic-red: #FF5F57;
+  --color-traffic-yellow: #FFBD2E;
+  --color-traffic-green: #28C840;
+  --color-accent-blue: #007AFF;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Tahoe Liquid Glass — Design Tokens (Sprint A1)
+   Reference: K4RTO-Portfolio-Tahoe化技术方案.md §4
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Glass Material Tokens (Dark Mode default) ──────────────────────── */
+
+  /* Material thickness — choose by layer hierarchy
+     thin    = top-most popovers / tooltips / menubar */
+  --glass-thin-bg:    rgba(28, 28, 30, 0.30);
+  --glass-regular-bg: rgba(28, 28, 30, 0.45);
+  --glass-thick-bg:   rgba(28, 28, 30, 0.65);
+
+  --glass-thin-blur:    40px;
+  --glass-regular-blur: 60px;
+  --glass-thick-blur:   80px;
+
+  --glass-saturate: 180%;
+
+  /* Inner highlights — top edge catches light, bottom edge has depth */
+  --glass-highlight-top:    rgba(255, 255, 255, 0.18);
+  --glass-highlight-bottom: rgba(0, 0, 0, 0.10);
+
+  /* Outer border + drop shadows */
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.20);
+  --glass-shadow-md: 0 12px 40px rgba(0, 0, 0, 0.35);
+  --glass-shadow-lg: 0 28px 80px rgba(0, 0, 0, 0.45);
+
+  /* Gloss gradient — top highlight arc (Liquid Glass signature) */
+  --glass-gloss: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 28%,
+    transparent 50%
+  );
+
+  /* Wallpaper tint — populated at runtime by Wallpaper.tsx (Sprint D3) */
+  --wallpaper-tint: rgb(60, 60, 80);
+
+  /* ── Spring Animation Curves (Sprint A3) ────────────────────────────── */
+
+  /* soft   — default, no overshoot, smooth ease-out */
+  --spring-soft:   cubic-bezier(0.32, 0.72, 0.0, 1.0);
+  /* snappy — fast, firm, no overshoot — Dock magnification, button hover */
+  --spring-snappy: cubic-bezier(0.22, 1.00, 0.36, 1.0);
+  /* bouncy — overshoot, playful — icon press rebound, window open */
+  --spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1.0);
+
+  --spring-duration-fast:   0.20s;
+  --spring-duration-medium: 0.32s;
+  --spring-duration-slow:   0.45s;
+
+  /* ── Radius Tokens ──────────────────────────────────────────────────── */
+
+  --radius-window:  10px;
+  --radius-card:    12px;
+  --radius-panel:   16px;
+  --radius-popover: 14px;
+  --radius-tooltip: 8px;
+}
+
+/* ── Light Mode Override (activated by P1-8) ──────────────────────────── */
+
+[data-theme="light"] {
+  --glass-thin-bg:    rgba(255, 255, 255, 0.55);
+  --glass-regular-bg: rgba(255, 255, 255, 0.65);
+  --glass-thick-bg:   rgba(244, 244, 246, 0.85);
+  --glass-highlight-top:    rgba(255, 255, 255, 0.85);
+  --glass-highlight-bottom: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-gloss: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.40) 0%,
+    rgba(255, 255, 255, 0.10) 28%,
+    transparent 50%
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Glass Surface Classes (Sprint A2)
+   Wrapped in @layer components so Tailwind utilities (e.g., .absolute,
+   .fixed, .rounded-*) can override these defaults via the cascade.
+   Usage:
+     <div class="glass-surface glass-radius-panel">...</div>
+     <div class="glass-surface glass-thin glass-radius-tooltip absolute">...</div>
+   ════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  .glass-surface {
+    position: relative;
+    background: var(--glass-regular-bg);
+    backdrop-filter: blur(var(--glass-regular-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-regular-blur)) saturate(var(--glass-saturate));
+    border: 0.5px solid var(--glass-border);
+    box-shadow:
+      inset 0 0.5px 0 var(--glass-highlight-top),
+      inset 0 -0.5px 0 var(--glass-highlight-bottom),
+      var(--glass-shadow-md);
+    border-radius: var(--radius-window);
+    isolation: isolate; /* contain ::before stacking */
+  }
+
+  .glass-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--glass-gloss);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Children must lift above the gloss layer */
+  .glass-surface > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Thickness Variants ─────────────────────────────────────────────── */
+
+  .glass-surface.glass-thin {
+    background: var(--glass-thin-bg);
+    backdrop-filter: blur(var(--glass-thin-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-thin-blur)) saturate(var(--glass-saturate));
+  }
+
+  .glass-surface.glass-thick {
+    background: var(--glass-thick-bg);
+    backdrop-filter: blur(var(--glass-thick-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-thick-blur)) saturate(var(--glass-saturate));
+  }
+
+  /* ── Shadow Variants ────────────────────────────────────────────────── */
+
+  .glass-surface.glass-shadow-sm {
+    box-shadow:
+      inset 0 0.5px 0 var(--glass-highlight-top),
+      inset 0 -0.5px 0 var(--glass-highlight-bottom),
+      var(--glass-shadow-sm);
+  }
+
+  .glass-surface.glass-shadow-lg {
+    box-shadow:
+      inset 0 0.5px 0 var(--glass-highlight-top),
+      inset 0 -0.5px 0 var(--glass-highlight-bottom),
+      var(--glass-shadow-lg);
+  }
+
+  /* ── Radius Variants ────────────────────────────────────────────────── */
+
+  .glass-surface.glass-radius-card    { border-radius: var(--radius-card); }
+  .glass-surface.glass-radius-panel   { border-radius: var(--radius-panel); }
+  .glass-surface.glass-radius-popover { border-radius: var(--radius-popover); }
+  .glass-surface.glass-radius-tooltip { border-radius: var(--radius-tooltip); }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Animation Helpers (Sprint A3)
+   ════════════════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spring-pop {
+  0%   { transform: scale(0.85); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1.00); opacity: 1; }
+}
+
+@keyframes spring-press {
+  0%   { transform: scale(1.00); }
+  35%  { transform: scale(0.92); }
+  100% { transform: scale(1.00); }
+}
+
+@keyframes genie-minimize {
+  0%   { transform: scale(1)    translateY(0)    skewX(0deg);  opacity: 1; }
+  60%  { transform: scale(0.6)  translateY(40vh) skewX(-2deg); opacity: 0.7; }
+  100% { transform: scale(0.05) translateY(95vh) skewX(0deg);  opacity: 0; }
+}
+
+.anim-spring-pop   { animation: spring-pop var(--spring-duration-medium) var(--spring-bouncy) both; }
+.anim-spring-press { animation: spring-press 0.18s var(--spring-snappy) both; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Base Reset
+   ════════════════════════════════════════════════════════════════════════ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
