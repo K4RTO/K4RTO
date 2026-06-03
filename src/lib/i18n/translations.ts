@@ -185,7 +185,12 @@ const translations: Record<string, TranslationEntry> = {
   "spotlight.placeholder":     { en: "Spotlight Search",          zh: "Spotlight 搜索" },
   "spotlight.application":     { en: "Application",               zh: "应用程序" },
   "spotlight.searchWebFor":    { en: "Search the Web for \"{q}\"", zh: "在网络上搜索\"{q}\"" },
+  // `spotlight.google` is legacy — kept so existing callsites don't break, but
+  // the rewrite uses Bing (Google refuses to embed); `spotlight.web` is the new
+  // subtitle on the web-search suggestion row.
   "spotlight.google":          { en: "Google",                    zh: "谷歌" },
+  "spotlight.web":             { en: "Bing",                      zh: "Bing" },
+  "spotlight.clearQuery":      { en: "Clear search",              zh: "清除搜索" },
 
   // ── Finder sidebar ───────────────────────────────────────────────────────
   "finder.sidebar.recents":    { en: "Recents",                   zh: "最近使用" },
