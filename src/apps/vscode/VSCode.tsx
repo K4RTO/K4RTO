@@ -331,11 +331,14 @@ export default function VSCode({ windowId }: AppComponentProps) {
           style={{ height: 35, backgroundColor: "#2d2d2d", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
         >
           <div
-            className="flex items-center px-4 h-full text-[12px] gap-2"
+            className="flex items-center px-4 h-full text-[12px] gap-2 max-w-[240px] flex-shrink-0"
             style={{ backgroundColor: "#1e1e1e", borderRight: "1px solid rgba(255,255,255,0.1)", color: "#d4d4d4" }}
+            title={currentFileName}
           >
             <FileIconSmall />
-            {currentFileName}
+            {/* truncate keeps the Preview/Edit button visible when a user opens
+                a long-named file from Finder. Full name is in the title tooltip. */}
+            <span className="truncate">{currentFileName}</span>
             {modified && <span style={{ color: "#e2c08d" }}>●</span>}
           </div>
           {/* Preview/Edit toggle — works for MD (markdown render) and code (Shiki highlight) */}

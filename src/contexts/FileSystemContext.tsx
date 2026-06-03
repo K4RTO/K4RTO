@@ -13,6 +13,7 @@ import type {
   FileSystemContextValue,
 } from "@/lib/filesystem/types";
 import { buildDefaults } from "@/lib/filesystem/defaults";
+import { PORTFOLIO_SOURCE_ROOT } from "@/apps/vscode/portfolioSources";
 
 const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 
@@ -21,11 +22,49 @@ const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 // v4: added README.zh.md (Chinese version) to K4RTO/Source/
 const LS_KEY = "vfs_state_v4";
 
+/**
+ * Try to migrate an older VFS snapshot forward without nuking user-written data
+ * (Notes content, TextEdit drafts, custom files in Desktop / Documents, etc).
+ *
+ * Currently handles v3 → v4: preserves the entire prior state, then overlays
+ * fresh entries under `PORTFOLIO_SOURCE_ROOT` so any new / updated portfolio
+ * samples land in the showcase without touching the user's own files.
+ *
+ * Returns null if there's nothing to migrate from.
+ */
+function migrateFromOlder(): FsState | null {
+  const legacyKeys = ["vfs_state_v3"];   // only do controlled bumps; older deltas were bigger
+  for (const key of legacyKeys) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      const prior = JSON.parse(raw) as FsState;
+      const fresh = buildDefaults();
+      const overlay = Object.fromEntries(
+        Object.entries(fresh).filter(([k]) =>
+          k === PORTFOLIO_SOURCE_ROOT || k.startsWith(`${PORTFOLIO_SOURCE_ROOT}/`),
+        ),
+      );
+      return { ...prior, ...overlay };
+    } catch {
+      // Corrupt legacy snapshot — fall through to next candidate / full reset.
+    }
+  }
+  return null;
+}
+
 function loadOrInit(): FsState {
   if (typeof window === "undefined") return buildDefaults();
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return JSON.parse(raw) as FsState;
+    const migrated = migrateFromOlder();
+    if (migrated) {
+      // Persist immediately so the next load skips migration; don't delete the
+      // legacy snapshot — keeps a recovery path if the new version is buggy.
+      try { localStorage.setItem(LS_KEY, JSON.stringify(migrated)); } catch {}
+      return migrated;
+    }
   } catch {}
   return buildDefaults();
 }
