@@ -1,8 +1,13 @@
 name: Deploy to GitHub Pages
 
+# Auto-trigger on push is currently disabled — GitHub account is locked due to
+# unrelated billing (small metered usage with no payment method on file).
+# Re-enable by uncommenting `push:` once a payment method is added (Actions on
+# this public repo will still cost $0). Until then, deploy via:
+#   ./deploy-manual.sh
 on:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 # Lets GITHUB_TOKEN push to gh-pages
