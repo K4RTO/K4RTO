@@ -3,33 +3,299 @@
 import { useState, useEffect, useCallback } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
-import { useT } from "@/contexts/SystemContext";
+import { useT, useSystem } from "@/contexts/SystemContext";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
-interface Note { id: string; title: string; content: string; modifiedAt: number; }
+// ── Types ──────────────────────────────────────────────────────────────────
+// title/content can be either a plain string (user-created notes) or a
+// bilingual record (preset portfolio notes). `readLang()` resolves to the
+// active language at render time.
+
+type LangText = string | { en: string; zh: string };
+
+interface Note {
+  id: string;
+  title: LangText;
+  content: LangText;
+  modifiedAt: number;
+  /** True for preset portfolio notes — locked editable fields update the current lang only. */
+  pinned?: boolean;
+}
+
+function readLang(text: LangText, lang: "en" | "zh"): string {
+  if (typeof text === "string") return text;
+  return text[lang] ?? text.en ?? "";
+}
+
+function writeLang(prev: LangText, lang: "en" | "zh", value: string): LangText {
+  if (typeof prev === "string") return value;            // single-lang note: replace
+  return { ...prev, [lang]: value };                     // bilingual: update only this lang
+}
+
+// ── Portfolio sample notes — sourced from K4RTO's Resume ──────────────────
 
 const NOW = Date.now();
 const DAY = 86400000;
+
 const SAMPLES: Note[] = [
-  { id: "welcome", title: "Welcome", content: "Welcome to Notes!\n\nThis is your personal note-taking app. You can:\n\n- Create new notes with the pencil icon\n- Organize notes into folders\n- Search through all your notes\n\nNotes are saved automatically as you type.", modifiedAt: NOW - 1000 },
-  { id: "shopping", title: "Shopping List", content: "Grocery run:\n\n- Apples\n- Almond milk\n- Greek yogurt\n- Sourdough bread\n- Cherry tomatoes\n- Olive oil\n- Pasta & Parmesan\n- Dark chocolate", modifiedAt: NOW - DAY - 3600000 },
-  { id: "meeting", title: "Meeting Notes", content: "2026-02-20 — Team Sync\n\nReviewed Q1 roadmap\nDesign review scheduled for Friday\nAPI endpoints finalized\n\nAction items:\n  Alice: wireframes\n  Bob: database schema\n  Carol: user testing plan", modifiedAt: NOW - 4 * DAY },
+  {
+    id: "about-me",
+    pinned: true,
+    modifiedAt: NOW - 60_000,
+    title: { en: "About Me", zh: "关于我" },
+    content: {
+      en: `K4RTO — Yan Han
+
+I'm a graphics / game-engine engineer with a Master of Computing from the Australian National University (QS #34) and a Bachelor's in Functional Materials from Donghua University (Project 211).
+
+What I actually do:
+• Build real-time computer vision systems (custom YOLOv7 keypoint detection)
+• Write game-engine code in C++ (Vulkan grass renderer, Piccolo engine extensions)
+• Ship metaverse / AR products at scale (Baidu Xirang × Lingjing Oasis Spring Festival event — 20K+ pre-registered, Baidu official showcase)
+• Operate WeChat mini-game data (Save the Town: 3M users, retention 15% → 27%)
+
+What I value:
+A mix of low-level engineering rigor and product instinct. I like problems where shaders meet user retention.
+
+How to reach me:
+Email   k4rtol@163.com
+WeChat  K4RTOL
+GitHub  https://github.com/K4RTO
+LinkedIn https://www.linkedin.com/in/K4RTO/
+
+Try Terminal → 'whoami' for a faster version.`,
+      zh: `K4RTO — 严晗
+
+澳大利亚国立大学计算机硕士（QS 第 34），东华大学 211 本科功能材料。
+
+我做什么：
+• 实时计算机视觉系统（定制 YOLOv7 人体关键点检测）
+• C++ 游戏引擎开发（Vulkan 草地物理渲染、Piccolo 引擎反射系统扩展）
+• 元宇宙 / AR 产品（百度希壤 × 灵境绿洲《元宇宙过大年》，2W+ 预约，百度官方优秀案例）
+• 微信小游戏数据运营（《救世小镇》300W 用户，留存 15% → 27%）
+
+我看重什么：
+低层工程能力 + 产品直觉的结合。我喜欢"shader 碰到留存率"这种问题。
+
+联系方式：
+邮箱     k4rtol@163.com
+微信     K4RTOL
+GitHub   https://github.com/K4RTO
+LinkedIn https://www.linkedin.com/in/K4RTO/
+
+打开 Terminal 输入 'whoami' 看更快的版本。`,
+    },
+  },
+
+  {
+    id: "tech-stack",
+    pinned: true,
+    modifiedAt: NOW - 2 * 60_000,
+    title: { en: "Tech Stack", zh: "技术栈" },
+    content: {
+      en: `My toolbelt, grouped by use:
+
+LANGUAGES (daily)
+  C++ · Python · TypeScript · Java · JavaScript
+
+GRAPHICS / GPU
+  Vulkan · GLSL shaders · LUT color grading
+  Bezier-curve geometry · Frustum / distance culling
+
+GAME ENGINES
+  Piccolo (reflection-driven editor)
+  Cocos Creator (WeChat mini-games)
+  Unity (basics)
+
+COMPUTER VISION
+  YOLOv7 (custom training)
+  Keypoint detection · Pose analysis
+  Real-time inference pipelines
+
+MOBILE / WEB
+  Android · Firebase Firestore
+  Next.js 15 · React 19 · Tailwind 4
+
+PRODUCT / OPS
+  Jira · Retention analytics
+  AR design · Prototype / PRD writing
+  Metaverse event production
+
+Honesty note:
+"Daily" means I've shipped production code in it. Less-frequent stacks (Rust / Go / Unreal / WebGPU) are open to learn for the right role.`,
+      zh: `按用途分组的工具箱：
+
+语言（日用）
+  C++ · Python · TypeScript · Java · JavaScript
+
+图形 / GPU
+  Vulkan · GLSL 着色器 · LUT 色彩调整
+  贝塞尔曲线几何 · 视锥剔除 / 距离剔除
+
+游戏引擎
+  Piccolo（反射驱动编辑器）
+  Cocos Creator（微信小游戏）
+  Unity（基础）
+
+计算机视觉
+  YOLOv7（定制训练）
+  人体关键点检测 · 姿态分析
+  实时推理 pipeline
+
+移动 / Web
+  Android · Firebase Firestore
+  Next.js 15 · React 19 · Tailwind 4
+
+产品 / 运营
+  Jira · 留存数据分析
+  AR 设计 · 产品原型 / PRD 撰写
+  元宇宙活动策划
+
+诚实说明：
+"日用"是指我上过生产代码。其他栈（Rust / Go / Unreal / WebGPU）对的岗位都愿意现学。`,
+    },
+  },
+
+  {
+    id: "working-style",
+    pinned: true,
+    modifiedAt: NOW - 3 * 60_000,
+    title: { en: "Working Style", zh: "工作风格" },
+    content: {
+      en: `Collaboration
+  • Async by default — written specs over impromptu calls
+  • Sync for ambiguity / debugging / kickoffs
+  • Comfort zone is small focused teams (3–6 people)
+
+Code reviews
+  • I give them seriously. Expect line-level comments.
+  • Same for receiving — I want the reviewer to catch what I missed,
+    not nod through.
+
+Ownership
+  • From spec writing → shipping → on-call.
+  • I dislike "thrown over the wall" handoffs.
+
+Learning
+  • I read source code more than tutorials.
+  • Best learning happens during real shipping pressure.
+
+What I don't do well
+  • Meetings without an agenda.
+  • Sprawling MVPs that never ship.
+
+When I'm at my best
+  • A specific problem, clear constraints, freedom on implementation.`,
+      zh: `协作
+  • 默认 async — 文档化的 spec 优于临时拉会
+  • 模糊 / 调试 / 启动期改用 sync
+  • 最舒适的是 3-6 人小而专注的团队
+
+代码审查
+  • 给的认真，会有行级评论
+  • 收的也是 — 想让 reviewer 抓到我漏的，而不是过水流程
+
+负责制
+  • 从写 spec → 上线 → on-call 全包
+  • 不喜欢"扔过墙"式交接
+
+学习
+  • 读源码比读教程多
+  • 真正学到东西的时候都是上线压力下
+
+我做不好的
+  • 没 agenda 的会议
+  • 一直 MVP 不上线的项目
+
+我状态最好的时候
+  • 具体的问题 + 明确的约束 + 实现自由`,
+    },
+  },
+
+  {
+    id: "why-hire-me",
+    pinned: true,
+    modifiedAt: NOW - 4 * 60_000,
+    title: { en: "Why Hire Me", zh: "为什么雇我" },
+    content: {
+      en: `Three concrete reasons:
+
+1. I shipped the first major metaverse event in China.
+   Lingjing Oasis × Baidu Xirang × Fengyuzhu — "Metaverse Spring Festival".
+   Led product design, prototype, and dev schedule.
+   20K+ pre-registered users in 2 days.
+   3-day event with a ¥1M prize pool.
+   Featured as Baidu Xirang's official showcase case.
+
+2. I moved a game's 30-day retention from 15% → 27% (+80%).
+   《Save the Town》 at Lingdong Interactive.
+   Iterated user flow + onboarding + retention hooks over 3 months.
+   3M total users via WeChat optimization channel.
+   ¥500K cumulative revenue.
+
+3. I built a real-time fall-detection CV system that ANU showcased.
+   Custom YOLOv7 for keypoint + pose analysis in Python.
+   Partnership with a Western Australia firm.
+   Featured at the ANU Techlauncher event.
+   PM-ed the team via Jira while writing the model code.
+
+Pattern across these:
+  Multi-disciplinary — graphics, ML, product, ops.
+  Quantified outcomes — not "I worked on X".
+  Stuff people actually saw — Baidu showcase, ANU showcase, 3M users.
+
+Want the full story? Email k4rtol@163.com.`,
+      zh: `三条具体理由：
+
+1. 我做过国内第一个元宇宙大型活动。
+   灵境绿洲 × 百度希壤 × 风雨筑《元宇宙过大年》。
+   负责产品原型设计、PRD 撰写、研发进度管理。
+   预热 2 天预约 2W+ 用户。
+   三天活动，奖池累计 100W。
+   成为百度希壤元宇宙官方优秀案例。
+
+2. 我把一款游戏 30 日留存从 15% 拉到 27%（+80%）。
+   灵动互娱《救世小镇》。
+   3 个月迭代新手引导 + 主循环 + 留存钩子。
+   通过微信优选累计 300W 用户。
+   三月营收 50W。
+
+3. 我做了 ANU 拿出去展示的实时跌倒检测系统。
+   Python 定制 YOLOv7 做人体关键点 + 姿态分析。
+   与西澳公司合作。
+   受邀澳国立 Techlauncher 活动展示。
+   一边写模型，一边用 Jira 管团队。
+
+这三件事的共同点：
+  跨学科 — 图形、ML、产品、运营。
+  可量化的结果 — 不是"参与过 X"。
+  外人看得见 — 百度展示、ANU 展示、300W 用户。
+
+想了解细节？发邮件 k4rtol@163.com。`,
+    },
+  },
 ];
 
-function fmtDate(ts: number): string {
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function fmtDate(ts: number, lang: "en" | "zh"): string {
   const diff = Date.now() - ts;
-  if (diff < DAY) return "Today";
-  if (diff < 2 * DAY) return "Yesterday";
-  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diff < DAY) return lang === "zh" ? "今天" : "Today";
+  if (diff < 2 * DAY) return lang === "zh" ? "昨天" : "Yesterday";
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
+  return new Date(ts).toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 const VFS_BASE = "/Users/guest/Documents/Notes";
 
+// ── Component ──────────────────────────────────────────────────────────────
+
 export default function Notes(_props: AppComponentProps) {
   const fs = useFileSystemOptional();
   const t = useT();
+  const { lang } = useSystem();
   const [notes, setNotes] = useState<Note[]>(SAMPLES);
-  const [selId, setSelId] = useState<string | null>("welcome");
+  const [selId, setSelId] = useState<string | null>("about-me");
 
   useEffect(() => {
     if (!fs) return;
@@ -38,14 +304,33 @@ export default function Notes(_props: AppComponentProps) {
       SAMPLES.forEach(n => fs.writeFile(`${VFS_BASE}/${n.id}.json`, JSON.stringify(n)));
       return;
     }
-    const entries = fs.readDir(VFS_BASE).filter(e => e.name.endsWith(".json"));
-    if (entries.length === 0) {
-      SAMPLES.forEach(n => fs.writeFile(`${VFS_BASE}/${n.id}.json`, JSON.stringify(n)));
-      return;
+    // Remove legacy v1 samples (welcome / shopping / meeting) for returning visitors.
+    const LEGACY_SAMPLE_IDS = new Set(["welcome", "shopping", "meeting"]);
+    for (const lid of LEGACY_SAMPLE_IDS) {
+      const path = `${VFS_BASE}/${lid}.json`;
+      if (fs.exists(path)) fs.remove(path);
+    }
+    // Filter legacy ids in-memory too — React state updates are async, so readDir()
+    // may still see the just-removed entries within this same effect tick.
+    const entries = fs.readDir(VFS_BASE).filter(e =>
+      e.name.endsWith(".json") && !LEGACY_SAMPLE_IDS.has(e.name.replace(/\.json$/, ""))
+    );
+    // Always reseed the bilingual pinned samples in case the user's vfs predates them.
+    // We only re-write the sample ids; user-created notes are preserved.
+    const sampleIds = new Set(SAMPLES.map(n => n.id));
+    const existingIds = new Set(entries.map(e => e.name.replace(/\.json$/, "")));
+    for (const sample of SAMPLES) {
+      if (!existingIds.has(sample.id)) {
+        fs.writeFile(`${VFS_BASE}/${sample.id}.json`, JSON.stringify(sample));
+      }
     }
     const loaded: Note[] = [];
     entries.forEach(e => { try { const r = fs.readFile(e.path); if (r) loaded.push(JSON.parse(r) as Note); } catch {} });
-    if (loaded.length > 0) { loaded.sort((a, b) => b.modifiedAt - a.modifiedAt); setNotes(loaded); setSelId(loaded[0].id); }
+    // Merge: replace stale sample notes with the latest hard-coded version
+    const merged = loaded.map(n => sampleIds.has(n.id) ? (SAMPLES.find(s => s.id === n.id) ?? n) : n);
+    // Add samples that weren't on disk
+    for (const sample of SAMPLES) if (!merged.find(n => n.id === sample.id)) merged.push(sample);
+    if (merged.length > 0) { merged.sort((a, b) => b.modifiedAt - a.modifiedAt); setNotes(merged); setSelId(merged[0].id); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -59,11 +344,11 @@ export default function Notes(_props: AppComponentProps) {
     if (!selId) return;
     setNotes(prev => prev.map(n => {
       if (n.id !== selId) return n;
-      const upd = { ...n, [field]: val, modifiedAt: Date.now() };
+      const upd: Note = { ...n, [field]: writeLang(n[field], lang, val), modifiedAt: Date.now() };
       persist(upd);
       return upd;
     }).sort((a, b) => b.modifiedAt - a.modifiedAt));
-  }, [selId, persist]);
+  }, [selId, persist, lang]);
 
   const createNote = useCallback(() => {
     const n: Note = { id: `note-${Date.now()}`, title: t("notes.newNote"), content: "", modifiedAt: Date.now() };
@@ -77,13 +362,26 @@ export default function Notes(_props: AppComponentProps) {
     // callback both operate on the same id, even if selId changes mid-update.
     const id = selId;
     if (!id) return;
+    // Pinned portfolio samples can't be deleted — surface a brief alert so the
+    // user understands why the menu action looked like it did nothing.
+    const note = notes.find(n => n.id === id);
+    if (note?.pinned) {
+      if (typeof window !== "undefined") {
+        window.alert(
+          lang === "zh"
+            ? "Portfolio 笔记受保护，无法删除。你可以创建新笔记后再删除自己的。"
+            : "Portfolio notes are protected and can't be deleted. Create your own note first, then delete that."
+        );
+      }
+      return;
+    }
     if (fs) fs.remove(`${VFS_BASE}/${id}.json`);
     setNotes(prev => {
       const next = prev.filter(n => n.id !== id);
       setSelId(next[0]?.id ?? null);
       return next;
     });
-  }, [selId, fs]);
+  }, [selId, fs, notes, lang]);
 
   useAppMenuListener("notes", (detail) => {
     switch (detail.type) {
@@ -132,18 +430,25 @@ export default function Notes(_props: AppComponentProps) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {sorted.map(note => (
-            <button key={note.id} onClick={() => setSelId(note.id)} className="w-full text-left px-4 py-2"
-              style={{ backgroundColor: note.id === selId ? "rgba(255,255,255,0.08)" : "transparent", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-              <div className="flex items-baseline justify-between gap-1">
-                <span className="truncate" style={{ ...normal, fontSize: 13, fontWeight: 600 }}>{note.title || t("notes.newNote")}</span>
-                <span className="flex-shrink-0" style={{ ...dim, fontSize: 11 }}>{fmtDate(note.modifiedAt)}</span>
-              </div>
-              <div style={{ ...dim, fontSize: 11, lineHeight: "1.4", marginTop: 2, overflow: "hidden", maxHeight: "2.8em" }}>
-                {note.content.replace(/\n/g, " ").trim() || t("notes.noAdditionalText")}
-              </div>
-            </button>
-          ))}
+          {sorted.map(note => {
+            const title = readLang(note.title, lang);
+            const content = readLang(note.content, lang);
+            return (
+              <button key={note.id} onClick={() => setSelId(note.id)} className="w-full text-left px-4 py-2"
+                style={{ backgroundColor: note.id === selId ? "rgba(255,255,255,0.08)" : "transparent", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div className="flex items-baseline justify-between gap-1">
+                  <span className="truncate" style={{ ...normal, fontSize: 13, fontWeight: 600 }}>
+                    {note.pinned && <span style={{ color: "var(--accent)", marginRight: 4 }}>●</span>}
+                    {title || t("notes.newNote")}
+                  </span>
+                  <span className="flex-shrink-0" style={{ ...dim, fontSize: 11 }}>{fmtDate(note.modifiedAt, lang)}</span>
+                </div>
+                <div style={{ ...dim, fontSize: 11, lineHeight: "1.4", marginTop: 2, overflow: "hidden", maxHeight: "2.8em" }}>
+                  {content.replace(/\n/g, " ").trim() || t("notes.noAdditionalText")}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -160,18 +465,30 @@ export default function Notes(_props: AppComponentProps) {
               <button className="flex items-center justify-center px-2 py-1 rounded hover:bg-white/5" style={dim}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
               </button>
+              {sel.pinned && (
+                <span style={{ ...dim, fontSize: 11, marginLeft: 8 }}>
+                  {lang === "zh" ? "Portfolio · 受保护" : "Portfolio · protected"}
+                </span>
+              )}
             </div>
             {/* Title */}
             <div className="px-6 pt-5 pb-1 flex-shrink-0">
-              <input type="text" value={sel.title} onChange={e => updateNote("title", e.target.value)}
-                className="w-full bg-transparent outline-none border-none" style={{ ...normal, fontSize: 22, fontWeight: 700, lineHeight: "1.2" }} placeholder="Title" />
+              <input type="text" value={readLang(sel.title, lang)} onChange={e => updateNote("title", e.target.value)}
+                readOnly={!!sel.pinned}
+                className="w-full bg-transparent outline-none border-none" style={{ ...normal, fontSize: 22, fontWeight: 700, lineHeight: "1.2", cursor: sel.pinned ? "default" : "text" }} placeholder="Title" />
             </div>
             <div className="px-6 pb-3 flex-shrink-0">
-              <span style={{ ...dim, fontSize: 12 }}>{new Date(sel.modifiedAt).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+              <span style={{ ...dim, fontSize: 12 }}>
+                {new Date(sel.modifiedAt).toLocaleDateString(
+                  lang === "zh" ? "zh-CN" : "en-US",
+                  { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+                )}
+              </span>
             </div>
-            <textarea value={sel.content} onChange={e => updateNote("content", e.target.value)}
+            <textarea value={readLang(sel.content, lang)} onChange={e => updateNote("content", e.target.value)}
+              readOnly={!!sel.pinned}
               className="flex-1 px-6 pb-6 bg-transparent outline-none border-none resize-none"
-              style={{ ...normal, fontSize: 14, lineHeight: "1.6", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" }}
+              style={{ ...normal, fontSize: 14, lineHeight: "1.6", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif", cursor: sel.pinned ? "default" : "text" }}
               placeholder="Note content..." spellCheck={false} />
           </>
         ) : (
