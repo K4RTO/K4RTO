@@ -10,7 +10,14 @@
 
 # misc
 .DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+._*
 *.pem
+
+# package manager — repo uses npm, lockfile is package-lock.json
+yarn.lock
 
 # debug
 npm-debug.log*
@@ -29,6 +36,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude code (project-only notes)
+# claude code
 CLAUDE.md
+.claude/
+.claude.*
 agents_processing.md

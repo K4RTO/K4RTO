@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
+import CodeView from "./CodeView";
+import { langFromExt as shikiLang } from "./shiki";
+import { PORTFOLIO_SOURCE_ROOT, PORTFOLIO_SOURCES } from "./portfolioSources";
 
 // ── Safe markdown renderer (React elements, no dangerouslySetInnerHTML) ──────
 function MdLine({ line }: { line: string }) {
@@ -115,31 +118,50 @@ export default function VSCode({ windowId }: AppComponentProps) {
 
   const [content, setContent] = useState("");
   const [modified, setModified] = useState(false);
-  const [mdPreview, setMdPreview] = useState(false);
+  const [preview, setPreview] = useState(false);
   const [activeTab, setActiveTab] = useState<"explorer" | "search" | "git">("explorer");
   const [sidebarFiles, setSidebarFiles] = useState<{ name: string; path: string }[]>([]);
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentFileName, setCurrentFileName] = useState(fileName);
+  const [currentFilePath, setCurrentFilePath] = useState(filePath);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   const ext = currentFileName.split(".").pop()?.toLowerCase() ?? "";
   const isMd = ext === "md";
   const lang = langFromExt(ext);
+  const shikiCodeLang = useMemo(() => shikiLang(ext), [ext]);
+  // Read-only sample files under /K4RTO/Source/ default to preview mode and disable edits
+  const isPortfolioSource = currentFilePath.startsWith("/Users/guest/K4RTO/Source/");
+  const previewAvailable = isMd || shikiCodeLang !== null;
 
   // Load file on mount
   useEffect(() => {
-    dispatch({ type: "SET_TITLE", id: windowId, title: fileName });
-    setCurrentFileName(fileName);
+    // Default behavior when VSCode is launched without a file (Dock click,
+    // Spotlight, etc.): open the first K4RTO portfolio sample so the user
+    // lands directly on showcase code instead of an empty editor.
+    const fallbackPath = `${PORTFOLIO_SOURCE_ROOT}/${PORTFOLIO_SOURCES[0]?.name ?? ""}`;
+    const fallbackName = PORTFOLIO_SOURCES[0]?.name ?? "Untitled";
+    const effectivePath = filePath || fallbackPath;
+    const effectiveName = filePath ? fileName : fallbackName;
 
-    if (!fs || !filePath) return;
-    const raw = fs.readFile(filePath);
-    if (raw !== null && !raw.startsWith("__public:")) {
-      setContent(raw);
+    dispatch({ type: "SET_TITLE", id: windowId, title: effectiveName });
+    setCurrentFileName(effectiveName);
+    setCurrentFilePath(effectivePath);
+    // Portfolio sources default to preview mode (Shiki render)
+    setPreview(effectivePath.startsWith(`${PORTFOLIO_SOURCE_ROOT}/`));
+
+    if (!fs) return;
+    if (effectivePath) {
+      const raw = fs.readFile(effectivePath);
+      if (raw !== null && !raw.startsWith("__public:")) {
+        setContent(raw);
+      }
     }
 
-    // Load sibling files for sidebar
-    const dir = filePath.split("/").slice(0, -1).join("/") || "/";
+    // Load sibling files for sidebar — for the fallback case, this puts
+    // the rest of the portfolio samples in the explorer next to the open one.
+    const dir = effectivePath.split("/").slice(0, -1).join("/") || "/";
     if (fs.exists(dir)) {
       const entries = fs.readDir(dir)
         .filter(e => e.type === "file")
@@ -155,10 +177,15 @@ export default function VSCode({ windowId }: AppComponentProps) {
   }, []);
 
   const handleSave = useCallback(() => {
-    if (!fs || !filePath) return;
-    fs.writeFile(filePath, content);
+    // Use currentFilePath, not the mount-time filePath — they diverge after
+    // the user switches files via the sidebar. Saving to the original meta
+    // path would either overwrite the wrong file or no-op when VSCode was
+    // launched without a file (filePath = "").
+    if (!fs || !currentFilePath) return;
+    if (isPortfolioSource) return;  // portfolio samples are read-only
+    fs.writeFile(currentFilePath, content);
     setModified(false);
-  }, [fs, filePath, content]);
+  }, [fs, currentFilePath, isPortfolioSource, content]);
 
   const handleCursorMove = useCallback(() => {
     const ta = taRef.current;
@@ -195,9 +222,11 @@ export default function VSCode({ windowId }: AppComponentProps) {
       setContent(raw);
       setModified(false);
       setCurrentFileName(name);
+      setCurrentFilePath(path);
       dispatch({ type: "SET_TITLE", id: windowId, title: name });
-      const newExt = name.split(".").pop()?.toLowerCase() ?? "";
-      if (newExt !== "md") setMdPreview(false);
+      // Portfolio sources default to preview mode (read-only showcase);
+      // other files start in edit mode.
+      setPreview(path.startsWith("/Users/guest/K4RTO/Source/"));
     }
   }, [fs, dispatch, windowId]);
 
@@ -251,10 +280,13 @@ export default function VSCode({ windowId }: AppComponentProps) {
           <div className="flex-1 overflow-y-auto">
             <div
               className="flex items-center gap-1 px-4 py-1 cursor-pointer select-none text-[12px]"
+              title={currentFilePath.split("/").slice(0, -1).join("/") || "/"}
             >
               <ChevronDown />
-              <span className="uppercase text-[11px] tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
-                Open Files
+              <span className="uppercase text-[11px] tracking-wider truncate" style={{ color: "rgba(255,255,255,0.5)" }}>
+                {currentFilePath.startsWith(`${PORTFOLIO_SOURCE_ROOT}/`)
+                  ? "K4RTO · Source"
+                  : (currentFilePath.split("/").slice(0, -1).pop() || "Files")}
               </span>
             </div>
             {sidebarFiles.map(f => (
@@ -303,25 +335,28 @@ export default function VSCode({ windowId }: AppComponentProps) {
             {currentFileName}
             {modified && <span style={{ color: "#e2c08d" }}>●</span>}
           </div>
-          {/* MD preview toggle */}
-          {isMd && (
+          {/* Preview/Edit toggle — works for MD (markdown render) and code (Shiki highlight) */}
+          {previewAvailable && (
             <button
-              onClick={() => setMdPreview(v => !v)}
+              onClick={() => setPreview(v => !v)}
               className="ml-auto mr-2 px-2 py-1 rounded text-[11px]"
               style={{
-                color: mdPreview ? "#ffffff" : "rgba(255,255,255,0.5)",
-                backgroundColor: mdPreview ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                color: preview ? "#ffffff" : "rgba(255,255,255,0.5)",
+                backgroundColor: preview ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
               }}
+              title={isPortfolioSource ? "Portfolio sources are read-only — Edit shows plaintext" : undefined}
             >
-              {mdPreview ? "Edit" : "Preview"}
+              {preview ? "Edit" : "Preview"}
             </button>
           )}
         </div>
 
         {/* Editor area */}
         <div className="flex-1 overflow-hidden relative">
-          {mdPreview && isMd ? (
+          {preview && isMd ? (
             <MarkdownPreview content={content} />
+          ) : preview && shikiCodeLang ? (
+            <CodeView code={content} lang={shikiCodeLang} />
           ) : (
             <div className="flex h-full overflow-auto">
               {/* Line numbers */}
@@ -337,6 +372,7 @@ export default function VSCode({ windowId }: AppComponentProps) {
               <textarea
                 ref={taRef}
                 value={content}
+                readOnly={isPortfolioSource}
                 onChange={e => handleChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onKeyUp={handleCursorMove}

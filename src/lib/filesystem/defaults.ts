@@ -1,5 +1,6 @@
 import type { FsEntry, FsState } from "@/lib/filesystem/types";
 import apps from "@/apps/registry";
+import { PORTFOLIO_SOURCES, PORTFOLIO_SOURCE_ROOT, renderSource } from "@/apps/vscode/portfolioSources";
 
 function makeDir(path: string): FsEntry {
   const now = Date.now();
@@ -46,10 +47,18 @@ export function buildDefaults(): FsState {
     "/Applications",
     "/Users/guest/Documents/Notes",
     "/Users/guest/K4RTO",
+    PORTFOLIO_SOURCE_ROOT,
   ];
 
   for (const dir of dirs) {
     state[dir] = makeDir(dir);
+  }
+
+  // Seed K4RTO portfolio source samples — readable from VSCode app.
+  // Each sample's annotation becomes a comment header so the prose ships with the file.
+  for (const sample of PORTFOLIO_SOURCES) {
+    const path = `${PORTFOLIO_SOURCE_ROOT}/${sample.name}`;
+    state[path] = makeFile(path, renderSource(sample));
   }
 
   // Default files
