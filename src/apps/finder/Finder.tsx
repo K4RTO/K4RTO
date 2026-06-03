@@ -119,6 +119,89 @@ function TagIcon()        { return <svg width="14" height="14" viewBox="0 0 24 2
 function SearchIcon()     { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>; }
 function MoreIcon()       { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg>; }
 function PersonIcon()     { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>; }
+function SearchInputIcon(){ return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>; }
+function CloseXIcon()     { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>; }
+
+// ── Get Info Popover ───────────────────────────────────────────────────────
+
+function GetInfoPanel({ file, onClose, t }: { file: FileEntry; onClose: () => void; t: (key: string, vars?: Record<string, string>) => string }) {
+  const lastSlash = file.fullPath.lastIndexOf("/");
+  const where = lastSlash > 0 ? file.fullPath.slice(0, lastSlash) : "/";
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+  // ESC to close — matches AboutThisMac / Spotlight modal conventions
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 flex items-start justify-center"
+      style={{ zIndex: 99998, backgroundColor: "rgba(0,0,0,0.32)", paddingTop: "10vh" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="glass-surface glass-thick glass-radius-panel glass-shadow-lg"
+        style={{
+          width: 340,
+          padding: 22,
+          color: "rgba(255,255,255,0.92)",
+          animation: "spring-pop 0.22s var(--spring-bouncy) both",
+          position: "relative",
+        }}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute flex items-center justify-center"
+          style={{ top: 12, left: 12, width: 22, height: 22, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.65)" }}
+          aria-label={t("finder.ctx.getInfo")}
+        >
+          <CloseXIcon />
+        </button>
+
+        {/* Big icon */}
+        <div className="flex flex-col items-center" style={{ marginTop: 8, marginBottom: 18 }}>
+          <div style={{ marginBottom: 12 }}>
+            {file.type === "folder"
+              ? <FolderFileIcon size={72} />
+              : <DocumentFileIcon size={72} />}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, textAlign: "center", maxWidth: 280, wordBreak: "break-word" }}>
+            {file.name}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+            {file.size} · {file.kind}
+          </div>
+        </div>
+
+        {/* Info rows */}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.10)", paddingTop: 12 }}>
+          {[
+            [t("finder.col.kind"),  file.kind],
+            [t("finder.col.size"),  file.size],
+            [t("finder.info.where"), where],
+            [t("finder.info.modified"), file.date],
+            ...(ext ? [[t("finder.info.extension"), ext.toUpperCase()] as [string, string]] : []),
+          ].map(([k, v]) => (
+            <div key={k} className="flex items-baseline gap-3" style={{ padding: "4px 0", fontSize: 12 }}>
+              <div style={{ width: 90, color: "rgba(255,255,255,0.45)", textAlign: "right", flexShrink: 0 }}>{k}</div>
+              <div style={{ color: "rgba(255,255,255,0.88)", wordBreak: "break-all", overflow: "hidden" }}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Path */}
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.10)" }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{t("finder.info.path")}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", wordBreak: "break-all", fontFamily: "Menlo, monospace" }}>{file.fullPath}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Special View (AirDrop / Network) ───────────────────────────────────────
 
@@ -187,6 +270,9 @@ export default function Finder(_props: AppComponentProps) {
   const [sortCol, setSortCol] = useState<"name" | "size" | "kind" | "date">("name");
   const [sortAsc, setSortAsc] = useState(true);
   const [ctxMenu, setCtxMenu] = useState<CtxMenuState | null>(null);
+  const [getInfoFile, setGetInfoFile] = useState<FileEntry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Navigation
   const [currentPath, setCurrentPath] = useState("/Users/guest/Downloads");
@@ -219,6 +305,10 @@ export default function Finder(_props: AppComponentProps) {
   // Navigate to a path (adds to history)
   const navigateTo = useCallback((path: string) => {
     setSpecialView(null);
+    // Reset search on every navigation — stale filter would silently empty the
+    // new directory and the user would think it's empty (reviewer P0-1).
+    setSearchQuery("");
+    setSearchOpen(false);
     setCurrentPath(path);
     setPathHistory(h => {
       const nh = h.slice(0, histIdx + 1);
@@ -231,6 +321,8 @@ export default function Finder(_props: AppComponentProps) {
   // Navigate without adding to history (for back/forward)
   const jumpTo = useCallback((path: string) => {
     setSpecialView(null);
+    setSearchQuery("");
+    setSearchOpen(false);
     setCurrentPath(path);
     loadDir(path);
   }, [loadDir]);
@@ -330,7 +422,7 @@ export default function Finder(_props: AppComponentProps) {
     }
     items.push(
       { separator: true },
-      { label: t("finder.ctx.getInfo"), action: () => {} },
+      { label: t("finder.ctx.getInfo"), action: () => setGetInfoFile(file) },
       { separator: true },
       { label: t("finder.ctx.duplicate"), disabled: true },
       {
@@ -348,8 +440,14 @@ export default function Finder(_props: AppComponentProps) {
     return items;
   }, [t, openFile, fs, loadDir, currentPath]);
 
+  // Filter by search query first (when search bar is open) — case-insensitive
+  // substring match on file name. Empty query = no filter.
+  const filteredFiles = searchOpen && searchQuery.trim()
+    ? files.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : files;
+
   // Sorting
-  const sortedFiles = [...files].sort((a, b) => {
+  const sortedFiles = [...filteredFiles].sort((a, b) => {
     // Folders always first
     if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
     let va = "", vb = "";
@@ -434,8 +532,56 @@ export default function Finder(_props: AppComponentProps) {
           </button>
         </div>
 
-        {/* Title */}
-        <span className="text-[15px] font-bold flex-1 ml-1">{currentFolderName}</span>
+        {/* Title / breadcrumb */}
+        {specialView ? (
+          <span className="text-[15px] font-bold flex-1 ml-1">{currentFolderName}</span>
+        ) : (
+          <div className="flex items-center gap-1 flex-1 ml-1 min-w-0 overflow-hidden">
+            {pathSegments.map((seg, i, arr) => {
+              const isLast = i === arr.length - 1;
+              const onClick = () => {
+                if (i === 0) return; // "Macintosh HD" — no nav target
+                if (isLast) return;  // already there
+                const parts = pathSegments.slice(1, i + 1);
+                navigateTo("/" + parts.join("/"));
+              };
+              // Last segment gets `flex-shrink` + `min-w-0` so it can shrink without
+              // being pushed off when path is deep; non-last get a tighter maxWidth
+              // so they yield space to the current-dir name.
+              return (
+                <span
+                  key={`${seg}-${i}`}
+                  className="flex items-center gap-1"
+                  style={{
+                    minWidth: 0,
+                    flexShrink: isLast ? 1 : 0.5,
+                  }}
+                >
+                  <span
+                    onClick={onClick}
+                    className="truncate"
+                    style={{
+                      fontSize: 15,
+                      fontWeight: isLast ? 700 : 500,
+                      color: isLast ? "white" : "rgba(255,255,255,0.55)",
+                      cursor: isLast || i === 0 ? "default" : "pointer",
+                      padding: "2px 4px",
+                      borderRadius: 4,
+                      transition: "background-color 0.12s ease",
+                      maxWidth: isLast ? undefined : 90,
+                      minWidth: 0,
+                    }}
+                    onMouseEnter={e => { if (!isLast && i !== 0) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                  >
+                    {seg}
+                  </span>
+                  {!isLast && <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, flexShrink: 0 }}>&#8250;</span>}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* View toggle */}
         <div className="flex items-center rounded-[8px] overflow-hidden mr-1"
@@ -454,12 +600,53 @@ export default function Finder(_props: AppComponentProps) {
         </div>
 
         {/* Right actions */}
-        {[<ShareIcon />, <TagIcon />, <MoreIcon />, <SearchIcon />].map((icon, i) => (
+        {[<ShareIcon />, <TagIcon />, <MoreIcon />].map((icon, i) => (
           <button key={i} className="w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ color: "rgba(255,255,255,0.55)", backgroundColor: "rgba(255,255,255,0.07)" }}>
+            style={{ color: "rgba(255,255,255,0.55)", backgroundColor: "rgba(255,255,255,0.07)" }}
+            disabled
+            title="Coming soon"
+          >
             {icon}
           </button>
         ))}
+
+        {/* Search — toggles between icon button and inline input */}
+        {searchOpen ? (
+          <div
+            className="flex items-center gap-1.5 px-2 h-8 rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.10)", border: "0.5px solid rgba(255,255,255,0.08)", minWidth: 200, maxWidth: 260 }}
+          >
+            <span style={{ color: "rgba(255,255,255,0.55)", display: "flex" }}><SearchInputIcon /></span>
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === "Escape") { setSearchQuery(""); setSearchOpen(false); } }}
+              placeholder={t("finder.searchPlaceholder")}
+              className="flex-1 outline-none bg-transparent text-[12px]"
+              style={{ color: "rgba(255,255,255,0.9)", border: "none", minWidth: 0 }}
+              aria-label="Filter files"
+            />
+            <button
+              onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
+              className="w-5 h-5 rounded-full flex items-center justify-center"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+              aria-label="Close search"
+            >
+              <CloseXIcon />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ color: "rgba(255,255,255,0.7)", backgroundColor: "rgba(255,255,255,0.07)" }}
+            title={t("finder.searchPlaceholder")}
+            aria-label="Search"
+          >
+            <SearchIcon />
+          </button>
+        )}
       </div>
 
       {/* ── Body ── */}
@@ -607,8 +794,8 @@ export default function Finder(_props: AppComponentProps) {
                   className="cursor-default"
                   style={{ color: i === arr.length - 1 ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.35)" }}
                   onClick={() => {
-                    if (i === 0) return; // Macintosh HD
-                    // Rebuild path from segments up to i
+                    if (i === 0) return;                  // Macintosh HD
+                    if (i === arr.length - 1) return;     // already on this dir — don't duplicate history
                     const parts = pathSegments.slice(1, i + 1); // skip "Macintosh HD"
                     navigateTo("/" + parts.join("/"));
                   }}
@@ -640,6 +827,15 @@ export default function Finder(_props: AppComponentProps) {
           y={ctxMenu.y}
           items={buildCtxItems(ctxMenu.file)}
           onClose={() => setCtxMenu(null)}
+        />
+      )}
+
+      {/* ── Get Info Panel ── */}
+      {getInfoFile && (
+        <GetInfoPanel
+          file={getInfoFile}
+          onClose={() => setGetInfoFile(null)}
+          t={t}
         />
       )}
     </div>

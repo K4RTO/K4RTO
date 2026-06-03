@@ -221,6 +221,13 @@ const translations: Record<string, TranslationEntry> = {
   "finder.col.kind":           { en: "Kind",                      zh: "种类" },
   "finder.col.date":           { en: "Date Added",                zh: "添加日期" },
 
+  // Finder search + Get Info
+  "finder.searchPlaceholder":  { en: "Filter files",              zh: "过滤当前目录" },
+  "finder.info.where":         { en: "Where",                     zh: "位置" },
+  "finder.info.modified":      { en: "Modified",                  zh: "修改时间" },
+  "finder.info.extension":     { en: "Extension",                 zh: "扩展名" },
+  "finder.info.path":          { en: "Full path",                 zh: "完整路径" },
+
   // ── Finder context menu ──────────────────────────────────────────────────
   "finder.ctx.open":           { en: "Open",                      zh: "打开" },
   "finder.ctx.openWithTextEdit":{ en: "Open With TextEdit",       zh: "用\"文本编辑\"打开" },
