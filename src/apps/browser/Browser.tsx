@@ -100,9 +100,18 @@ const ALLOWED_SCHEMES = new Set(["http:", "https:", "mailto:", "ftp:"]);
 
 /** Bing is our default search engine because it renders cleanly inside an
  *  iframe (no JS frame-busting, no X-Frame-Options). Google would force-jump
- *  even through the proxy. */
+ *  even through the proxy.
+ *
+ *  Force the US/English locale (setmkt + setlang + cc): Bing otherwise
+ *  responds with the visitor's geo-derived locale, which for our Cloudflare
+ *  Worker can land anywhere on Earth and surface mixed-language results that
+ *  feel wrong for a portfolio's primary audience. */
 function bingSearch(q: string): string {
-  return `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
+  // Bing's actual market parameter is `mkt`, not `setmkt` — that earlier name
+  // is silently ignored and Bing falls back to the Cloudflare Worker's geo-
+  // derived locale, which defeats the purpose. setlang controls UI language;
+  // cc influences country-of-origin signals for ranking.
+  return `https://www.bing.com/search?q=${encodeURIComponent(q)}&mkt=en-US&setlang=en-US&cc=US`;
 }
 
 /** Heuristic: does this look like a hostname the user wants to visit?
@@ -141,8 +150,9 @@ function rewriteForEmbed(url: string): string {
     // Redirect search queries to Bing (embeds cleanly) and homepages to Bing too.
     if (host === "google.com" || host === "google.co.uk" || host.endsWith(".google.com")) {
       const q = u.searchParams.get("q");
-      if (q) return `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
-      return "https://www.bing.com/";
+      // Use bingSearch() so Google→Bing redirects also force the US locale.
+      if (q) return bingSearch(q);
+      return "https://www.bing.com/?mkt=en-US&setlang=en-US&cc=US";
     }
 
     if (host === "open.spotify.com" && /^\/(playlist|track|album|episode|show)\//.test(u.pathname)) {
@@ -674,7 +684,11 @@ export default function Browser(_props: AppComponentProps) {
   );
   useEffect(() => { saveJSON(LS_BOOKMARKS, userBookmarks); }, [userBookmarks]);
   const [mode, setMode] = useState<Mode>("start");
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // One iframe per tab so switching tabs preserves their DOM state — same as
+  // real browsers. Map<tabId, iframeEl> populated by ref callbacks below.
+  // iframeRef proxies to "the active tab's iframe" for legacy call sites.
+  const iframeRefs = useRef<Map<string, HTMLIFrameElement>>(new Map());
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) ?? tabs[0];
@@ -724,11 +738,33 @@ export default function Browser(_props: AppComponentProps) {
   // Sync input box with active tab URL
   useEffect(() => { setInputUrl(url); }, [url]);
 
+  // Sync iframeRef.current to the active tab's iframe. The ref-callback only
+  // fires on mount/unmount, not on isActive changes, so without this effect
+  // refresh/handleIframeLoad would still point at whichever iframe mounted
+  // first.
+  useEffect(() => {
+    iframeRef.current = iframeRefs.current.get(activeTabId) ?? null;
+  }, [activeTabId, tabs]);
+
+  // Track URLs whose iframe has already fired onLoad — switching back to a
+  // cached tab should NOT replay loading→timeout, because the iframe DOM is
+  // preserved (display:none doesn't unload) and onLoad won't fire again.
+  // Keyed by URL because the same URL across tabs is effectively the same
+  // "loaded thing"; per-tab keying would needlessly miss cache on duplicates.
+  const loadedUrlsRef = useRef<Set<string>>(new Set());
+
   // Decide embed mode on URL change (also fires when switching tabs)
   useEffect(() => {
     if (!url) { setMode("start"); return; }
     if (!PROXY_ENABLED && isBlocked(url)) {
       setMode("blocked");
+      return;
+    }
+    // Cached: the iframe for this URL already loaded once and its DOM
+    // survived a hide/show cycle. Skip the loading spinner + timeout race.
+    if (loadedUrlsRef.current.has(url)) {
+      setMode("embedded");
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
       return;
     }
     setMode("loading");
@@ -815,29 +851,25 @@ export default function Browser(_props: AppComponentProps) {
       return;
     }
     const u = rewriteForEmbed(normalized);
-    // Build the new tab OUTSIDE setTabs so the updater stays pure (React's
-    // Concurrent Mode contract — updaters may be replayed). `newEmptyTab()` is
-    // pure (UUID + fresh struct), so calling it here is fine.
-    const t: Tab = { ...newEmptyTab(), hist: [u], histIdx: 0 };
-    let accepted = false;
-    setTabs(prev => {
-      if (prev.length >= MAX_TABS) return prev;
-      accepted = true;
-      return [...prev, t];
-    });
-    if (!accepted) {
-      // Silent drop on max-tabs would leave the user wondering why their click
-      // had no effect; surface it in the console at least.
+    // Cap check up-front. tabs.length is closure-stale by at most one render —
+    // acceptable for popup interception since postMessages arrive one at a time
+    // (the iframe can't burst-fire). The previous attempt to read an
+    // `accepted` flag set inside setTabs(updater) was buggy: React updaters
+    // run during scheduling, not synchronously at the call site, so the flag
+    // was always false when we read it next line.
+    if (tabs.length >= MAX_TABS) {
       console.warn(`[k4rto-browser] popup dropped — MAX_TABS (${MAX_TABS}) reached`);
       return;
     }
+    const t: Tab = { ...newEmptyTab(), hist: [u], histIdx: 0 };
+    setTabs(prev => [...prev, t]);
     setActiveTabId(t.id);
     setGlobalHistory(g => {
       const filtered = g.filter(item => item !== u);
       return [...filtered, u].slice(-HISTORY_LIMIT);
     });
     trackEvent("browser_popup_opened_in_tab", { host: hostOf(u) });
-  }, []);
+  }, [tabs.length]);
 
   // Listen for the worker stub's popup-nav messages and route them to a new
   // in-app tab.
@@ -884,6 +916,9 @@ export default function Browser(_props: AppComponentProps) {
 
   const refresh = useCallback(() => {
     if (!iframeRef.current || !url) return;
+    // Force-invalidate the cache so the loading→embedded transition replays
+    // and the user actually sees a "loading" indicator on the refresh.
+    loadedUrlsRef.current.delete(url);
     setMode("loading");
     iframeRef.current.src = viaProxy(url) || "about:blank";
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -912,6 +947,9 @@ export default function Browser(_props: AppComponentProps) {
       const href = ifr.contentWindow?.location.href;
       if (!href || href === "about:blank") isBlankOrSameOrigin = true;
     } catch {
+      // Cross-origin contentWindow access throws — that's success; the page
+      // loaded and is in its own origin (the proxy domain).
+      loadedUrlsRef.current.add(url);
       setMode("embedded");
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
       return;
@@ -920,6 +958,7 @@ export default function Browser(_props: AppComponentProps) {
       setMode("blocked");
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     } else {
+      loadedUrlsRef.current.add(url);
       setMode("embedded");
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     }
@@ -1228,8 +1267,41 @@ export default function Browser(_props: AppComponentProps) {
       )}
 
       {/* ── Content area ─────────────────────────────────────────────── */}
+      {/* One iframe per non-start tab is kept mounted in the DOM with display
+       *  toggling — switching tabs preserves scroll position and any in-tab JS
+       *  state, matching real browsers. Re-mounting on every switch (the old
+       *  behavior) would force every tab to re-download on each return. */}
       <div className="flex-1 relative overflow-hidden" style={{ backgroundColor: "#fff" }}>
-        {mode === "start" ? (
+        {tabs.map(tab => {
+          const tabUrl = tab.histIdx >= 0 ? tab.hist[tab.histIdx] ?? "" : "";
+          const isActive = tab.id === activeTabId;
+          if (!tabUrl) return null; // start-page tabs render via StartPage below
+          return (
+            <iframe
+              key={tab.id}
+              ref={el => {
+                if (el) iframeRefs.current.set(tab.id, el);
+                else iframeRefs.current.delete(tab.id);
+                if (isActive) iframeRef.current = el;
+              }}
+              src={viaProxy(tabUrl) || "about:blank"}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                border: "none",
+                backgroundColor: "white",
+                // display:none keeps the DOM tree alive but stops layout;
+                // contentDocument and JS state are preserved across hides.
+                display: isActive ? "block" : "none",
+              }}
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+              onLoad={isActive ? handleIframeLoad : undefined}
+              title="Web content"
+            />
+          );
+        })}
+
+        {/* Start page — overlays the iframe layer only when active tab has no history. */}
+        {mode === "start" && (
           <div className="absolute inset-0" style={{ backgroundColor: "#1c1c1e" }}>
             <StartPage
               onNavigate={navigate}
@@ -1241,31 +1313,17 @@ export default function Browser(_props: AppComponentProps) {
               t={t}
             />
           </div>
-        ) : (
-          <>
-            {/* Single iframe; key combines activeTabId + url so tab switches reset it. */}
-            <iframe
-              key={`${activeTabId}::${url}`}
-              ref={iframeRef}
-              src={viaProxy(url) || "about:blank"}
-              className="w-full h-full"
-              style={{ border: "none", backgroundColor: "white" }}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-              onLoad={handleIframeLoad}
-              title="Web content"
-            />
+        )}
 
-            {mode === "loading" && (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "#1c1c1e", pointerEvents: "none" }}>
-                <div className="w-6 h-6 rounded-full border-2 animate-spin"
-                  style={{ borderColor: "rgba(255,255,255,0.18)", borderTopColor: "#0a84ff" }} />
-              </div>
-            )}
+        {mode === "loading" && (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "#1c1c1e", pointerEvents: "none" }}>
+            <div className="w-6 h-6 rounded-full border-2 animate-spin"
+              style={{ borderColor: "rgba(255,255,255,0.18)", borderTopColor: "#0a84ff" }} />
+          </div>
+        )}
 
-            {(mode === "blocked" || mode === "timeout") && url && (
-              <ExternalPreviewCard url={url} t={t} reason={mode === "blocked" ? "blocked" : "timeout"} />
-            )}
-          </>
+        {(mode === "blocked" || mode === "timeout") && url && (
+          <ExternalPreviewCard url={url} t={t} reason={mode === "blocked" ? "blocked" : "timeout"} />
         )}
       </div>
     </div>
