@@ -129,11 +129,16 @@ export function AboutThisMac({ onClose }: { onClose: () => void }) {
           animation: "aboutIn 0.22s var(--spring-bouncy)",
         }}
       >
-        {/* Close button */}
+        {/* Close button. zIndex:10 is mandatory — without it the following
+            sibling header div (normal flow) paints on top of this absolute
+            button in the same stacking context (DOM order = paint order
+            when neither element opts into a z-index). Symptom was "click
+            does nothing" because hits landed on the header text instead. */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 flex items-center justify-center"
           style={{
+            zIndex: 10,
             width: 26, height: 26, borderRadius: "50%",
             backgroundColor: "rgba(255,255,255,0.07)",
             border: "0.5px solid rgba(255,255,255,0.12)",

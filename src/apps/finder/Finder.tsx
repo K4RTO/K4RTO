@@ -163,11 +163,13 @@ function GetInfoPanel({ file, onClose, t }: { file: FileEntry; onClose: () => vo
           position: "relative",
         }}
       >
-        {/* Close */}
+        {/* Close. zIndex needed — without it the sibling modal body in the
+            same stacking context can paint on top of this absolute button
+            and swallow the click. Same fix as AboutThisMac. */}
         <button
           onClick={onClose}
           className="absolute flex items-center justify-center"
-          style={{ top: 12, left: 12, width: 22, height: 22, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.65)" }}
+          style={{ zIndex: 10, top: 12, left: 12, width: 22, height: 22, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.65)" }}
           aria-label={t("finder.ctx.getInfo")}
         >
           <CloseXIcon />

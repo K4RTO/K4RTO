@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSystem } from "@/contexts/SystemContext";
 
 // ── Wallpaper palettes ──────────────────────────────────────────────────
@@ -108,13 +109,41 @@ export function Wallpaper() {
   const { wallpaper } = useSystem();
   const palette = PALETTES[wallpaper] ?? PALETTES[DEFAULT_PALETTE_KEY];
 
+  // Per-session randomization — each blob's position, size, and animation
+  // phase get jittered so two visits never look identical. Lives in state
+  // populated by useEffect rather than useMemo (Math.random() in render
+  // would cause an SSR/CSR hydration mismatch — server gets one set of
+  // values, client another, React warns and remounts). First-render uses
+  // the deterministic palette.blobs so hydration matches; mount then swaps
+  // in the jittered version a few ms later. Visually unnoticeable because
+  // the wallpaper sits behind LoginScreen on initial load.
+  const [randomized, setRandomized] = useState<Blob[]>(palette.blobs);
+  useEffect(() => {
+    setRandomized(palette.blobs.map(b => {
+      const jitterX = (Math.random() - 0.5) * 20; // ±10% nudge
+      const jitterY = (Math.random() - 0.5) * 20;
+      const jitterSize = (Math.random() - 0.5) * 16; // ±8 vmax
+      // Random animation start offset (added to any existing delay) so blobs
+      // sharing a keyframe pick genuinely independent points in their cycles.
+      const phaseOffset = Math.floor(Math.random() * 120); // 0..120s
+      const baseDelay = b.delay ?? 0;
+      return {
+        ...b,
+        x: Math.max(-5, Math.min(105, b.x + jitterX)),
+        y: Math.max(-5, Math.min(105, b.y + jitterY)),
+        size: Math.max(40, b.size + jitterSize),
+        delay: baseDelay + phaseOffset,
+      };
+    }));
+  }, [palette]);
+
   return (
     <div
       className="wp-stage absolute inset-0 overflow-hidden"
       style={{ background: palette.base }}
       aria-hidden
     >
-      {palette.blobs.map((b, i) => (
+      {randomized.map((b, i) => (
         <div
           key={i}
           className="wp-blob"
@@ -134,8 +163,7 @@ export function Wallpaper() {
             mixBlendMode: palette.blend,
             // Each blob picks one of 4 keyframes so motion isn't perfectly synced.
             // 100-130s cycles feel like an ambient slow tide; the per-blob delay
-            // (optional) lets two blobs reusing the same keyframe stay visually
-            // independent rather than moving in lockstep.
+            // (now jittered) lets blobs sharing a keyframe stay independent.
             animation: `wp-drift-${b.drift} ${100 + b.drift * 10}s ease-in-out infinite alternate`,
             animationDelay: b.delay ? `-${b.delay}s` : undefined,
             willChange: "transform",
