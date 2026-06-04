@@ -192,6 +192,11 @@ const translations: Record<string, TranslationEntry> = {
   "spotlight.web":             { en: "Bing",                      zh: "Bing" },
   "spotlight.clearQuery":      { en: "Clear search",              zh: "清除搜索" },
 
+  // ── Launchpad ────────────────────────────────────────────────────────────
+  "dock.launchpad":            { en: "Launchpad",                 zh: "启动台" },
+  "launchpad.searchPlaceholder": { en: "Search",                  zh: "搜索" },
+  "launchpad.noResults":       { en: "No matching apps",          zh: "没有匹配的应用" },
+
   // ── Login Screen ─────────────────────────────────────────────────────────
   "login.enter":               { en: "Enter",                     zh: "进入" },
   "login.hint":                { en: "Click anywhere or press any key to continue",

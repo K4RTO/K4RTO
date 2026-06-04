@@ -17,6 +17,7 @@ import { SystemProvider, useSystem } from "@/contexts/SystemContext";
 import { getApp } from "@/apps/registry";
 import { AboutThisMac } from "@/components/desktop/AboutThisMac";
 import { LoginScreen } from "@/components/desktop/LoginScreen";
+import { Launchpad } from "@/components/desktop/Launchpad";
 
 const LOGIN_SESSION_KEY = "k4rto_unlocked";
 
@@ -36,6 +37,7 @@ function DesktopContent() {
   const { launch, kill, getProcessByWindowId } = useProcesses();
   const { lang, setLang } = useSystem();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [launchpadOpen, setLaunchpadOpen] = useState(false);
   const [showAboutThisMac, setShowAboutThisMac] = useState(false);
 
   // Lock screen — shown once per browser session. We start `locked = false` to
@@ -75,6 +77,14 @@ function DesktopContent() {
   // Keyboard shortcuts
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      // F4 opens Launchpad. Closing is handled inside Launchpad itself (so
+      // it can run the exit animation cleanly); we only fire the open path
+      // here when it isn't already showing.
+      if (e.key === "F4") {
+        e.preventDefault();
+        setLaunchpadOpen((open) => open ? open : true);
+        return;
+      }
       if (e.metaKey && (e.key === " ")) {
         e.preventDefault();
         setSpotlightOpen(v => !v);
@@ -147,7 +157,10 @@ function DesktopContent() {
         );
       })}
 
-      <Dock onLaunchApp={launch} />
+      <Dock
+        onLaunchApp={launch}
+        onShowLaunchpad={() => setLaunchpadOpen(true)}
+      />
 
       {/* About This Mac */}
       {showAboutThisMac && (
@@ -157,6 +170,15 @@ function DesktopContent() {
       {/* Spotlight */}
       {spotlightOpen && (
         <Spotlight onClose={() => setSpotlightOpen(false)} onLaunchApp={launch} />
+      )}
+
+      {/* Launchpad — full-screen app grid. Sits above windows + dock but
+          below the lock screen. */}
+      {launchpadOpen && (
+        <Launchpad
+          onClose={() => setLaunchpadOpen(false)}
+          onLaunchApp={launch}
+        />
       )}
 
       {/* Lock screen — sits above everything until unlocked */}

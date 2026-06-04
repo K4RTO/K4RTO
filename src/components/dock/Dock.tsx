@@ -558,6 +558,37 @@ function WordIcon() {
   );
 }
 
+function LaunchpadIconDock() {
+  // 4×4 grid of small rounded squares on a translucent silver background —
+  // mirrors macOS's Launchpad icon (rocket-on-grid in older versions, plain
+  // grid in modern). Keeping it grid-only sidesteps needing color art that
+  // doesn't fit the system-tinted glass icons elsewhere.
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lp-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#9ca3b0" stopOpacity="0.95" />
+          <stop offset="1" stopColor="#5e6573" stopOpacity="0.95" />
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="40" height="40" rx="9" fill="url(#lp-bg)" />
+      {[0, 1, 2, 3].flatMap((row) =>
+        [0, 1, 2, 3].map((col) => (
+          <rect
+            key={`${row}-${col}`}
+            x={6 + col * 7.5}
+            y={6 + row * 7.5}
+            width="5"
+            height="5"
+            rx="1.2"
+            fill="rgba(255,255,255,0.88)"
+          />
+        )),
+      )}
+    </svg>
+  );
+}
+
 function SpotifyDockIcon() {
   return (
     <div style={{ width: "100%", height: "100%", borderRadius: "22%", overflow: "hidden", position: "relative" }}>
@@ -646,14 +677,16 @@ function ClockIcon() {
 }
 
 // --- Dock item definitions ---
-interface DockAppItem {
+export interface DockAppItem {
   nameKey: string;
   icon?: string;
   svgIcon?: React.ReactNode;
   appId: string;
 }
 
-const dockAppItems: DockAppItem[] = [
+// Exported so Launchpad can render the same set of apps without duplicating
+// icon definitions. Read-only consumer contract.
+export const dockAppItems: DockAppItem[] = [
   { nameKey: "dock.finder",     icon: "finder.webp",         appId: "finder" },
   { nameKey: "dock.safari",     svgIcon: <SafariIcon />,     appId: "safari" },
   { nameKey: "dock.notes",      svgIcon: <NotesIcon />,      appId: "notes" },
@@ -682,10 +715,15 @@ interface CtxMenuState { x: number; y: number; items: CtxMenuItem[] }
 
 export function Dock({
   onLaunchApp,
+  onShowLaunchpad,
 }: {
   // Widened to accept meta — trash click passes initialPath so the new Finder
   // window opens directly at .Trash rather than the Downloads default.
   onLaunchApp?: (appId: string, meta?: Record<string, string>) => string | null;
+  /** Open the full-screen Launchpad overlay. The Launchpad isn't a real app
+   *  (no window / process), it's a system surface, so it lives outside the
+   *  appId launch flow. */
+  onShowLaunchpad?: () => void;
 }) {
   const { dockRef, scales, onMouseMove, onMouseEnter, onMouseLeave } =
     useDockMagnification(BASE_SIZE, MAX_SIZE, MAG_RANGE);
@@ -753,7 +791,11 @@ export function Dock({
     [getProcessesByAppId, kill, onLaunchApp, t, wmState, wmDispatch, focusWindow]
   );
 
-  const totalPermanentItems = dockAppItems.length + folderItemDefs.length;
+  // Launchpad is a system-level overlay (not an app process), so it doesn't
+  // count toward app items. It still occupies one slot in the dock for the
+  // magnification scale calc.
+  const launchpadSlot = onShowLaunchpad ? 1 : 0;
+  const totalPermanentItems = dockAppItems.length + launchpadSlot + folderItemDefs.length;
 
   return (
     <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[9998]">
@@ -796,9 +838,20 @@ export function Dock({
             />
           );
         })}
+        {/* Launchpad — the rocket-on-grid system button. Sits at the end of
+            the app strip, just before the folder separator, matching macOS. */}
+        {onShowLaunchpad && (
+          <DockItem
+            name={t("dock.launchpad")}
+            svgIcon={<LaunchpadIconDock />}
+            onClick={() => onShowLaunchpad()}
+            scale={getScale(dockAppItems.length)}
+            baseSize={BASE_SIZE}
+          />
+        )}
         <DockSeparator />
         {folderItemDefs.map((item, i) => {
-          const scale = getScale(dockAppItems.length + i);
+          const scale = getScale(dockAppItems.length + launchpadSlot + i);
           if (item.nameKey === "dock.trash") {
             const hasItems = trashEntryCount > 0;
             return (
