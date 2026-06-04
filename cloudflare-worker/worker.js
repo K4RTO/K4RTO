@@ -81,6 +81,11 @@ const FALLBACK_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit
  *     to control the iframe element on the client side too).
  */
 const ANTI_FRAMEBUST_STUB = `<script>(function(){
+  // CAPTURE the real parent BEFORE we override window.parent — otherwise the
+  // popup forwarder below would call window.parent.postMessage which (after
+  // the override) routes back to ourselves and never reaches k4rto.com.
+  // Closure-scoped so page code can't reach it.
+  var __k4rtoRealParent = window.parent;
   try { Object.defineProperty(window, 'top', { get: function() { return window; }, configurable: false }); } catch (e) {}
   try { Object.defineProperty(window, 'parent', { get: function() { return window; }, configurable: false }); } catch (e) {}
   try { Object.defineProperty(window, 'frameElement', { get: function() { return null; }, configurable: false }); } catch (e) {}
@@ -112,8 +117,9 @@ const ANTI_FRAMEBUST_STUB = `<script>(function(){
       // Use targetOrigin '*' because the parent (k4rto.com) and this iframe
       // (workers.dev proxy) are on different origins by design. The parent
       // verifies e.origin === proxyOrigin before acting; the wildcard here
-      // only loosens our outbound contract.
-      window.parent.postMessage({ type: 'k4rto-popup-nav', url: abs }, '*');
+      // only loosens our outbound contract. Use the captured real parent
+      // ref — window.parent itself is overridden to point at self above.
+      __k4rtoRealParent.postMessage({ type: 'k4rto-popup-nav', url: abs }, '*');
     } catch (e) {}
   }
   try {
