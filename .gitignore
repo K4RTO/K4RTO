@@ -45,3 +45,4 @@ agents_processing.md
 # Playwright visual regression artifacts (local-only test output)
 k4rto-*.png
 .playwright-mcp/
+cloudflare-worker/node_modules/

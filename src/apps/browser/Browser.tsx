@@ -92,6 +92,23 @@ function faviconUrl(url: string, size = 64): string {
 
 const ALLOWED_SCHEMES = new Set(["http:", "https:", "mailto:", "ftp:"]);
 
+/** Bing is our default search engine because it renders cleanly inside an
+ *  iframe (no JS frame-busting, no X-Frame-Options). Google would force-jump
+ *  even through the proxy. */
+function bingSearch(q: string): string {
+  return `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
+}
+
+/** Heuristic: does this look like a hostname the user wants to visit?
+ *  Requires no spaces, ≥1 dot, and a TLD-like trailing label (starts with a
+ *  letter, ≥2 chars). Rejects "3.14" and "1.0.0" — those should search.
+ *  Accepts "react.dev", "claude.ai", "example.co.uk", "github.com/foo".
+ *  IPv4 addresses (all-numeric labels) fall through to search, which is
+ *  rarely wrong in practice. */
+function looksLikeDomain(s: string): boolean {
+  return /^([a-zA-Z0-9-]+\.)+[a-zA-Z][a-zA-Z0-9-]{1,}(?:[/?#].*)?$/.test(s);
+}
+
 function normalizeUrl(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) return "";
@@ -99,11 +116,14 @@ function normalizeUrl(input: string): string {
   if (schemeMatch) {
     const scheme = schemeMatch[1].toLowerCase() + ":";
     if (ALLOWED_SCHEMES.has(scheme)) return trimmed;
-    return `https://www.bing.com/search?q=${encodeURIComponent(trimmed)}`;
+    // Unrecognized scheme (javascript:, file:, etc.) → treat as search query.
+    return bingSearch(trimmed);
   }
-  if (trimmed.includes(".") && !trimmed.includes(" ")) return "https://" + trimmed;
-  // Default search engine: Bing (embeds cleanly in iframe, unlike Google).
-  return `https://www.bing.com/search?q=${encodeURIComponent(trimmed)}`;
+  if (!trimmed.includes(" ") && looksLikeDomain(trimmed)) {
+    return "https://" + trimmed;
+  }
+  // Default: Bing search.
+  return bingSearch(trimmed);
 }
 
 function rewriteForEmbed(url: string): string {
