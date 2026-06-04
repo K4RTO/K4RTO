@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
-import { useSystem } from "@/contexts/SystemContext";
+import { useSystem, useT } from "@/contexts/SystemContext";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useProcesses } from "@/contexts/ProcessContext";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
@@ -133,6 +133,7 @@ function commonPrefix(strs: string[]): string {
 export default function Terminal({ windowId, processId: _pid }: AppComponentProps) {
   const vfs = useFileSystemOptional();
   const { lang } = useSystem();
+  const t = useT();
   const wm = useWindowManager();
   const { launch } = useProcesses();
   const fsRef = useRef<TerminalFsCtx>(createFallback());
@@ -216,7 +217,7 @@ export default function Terminal({ windowId, processId: _pid }: AppComponentProp
     const cmd = findCommand(name);
 
     if (!cmd) {
-      appendLines([plain(`zsh: command not found: ${name}`, COLORS.err)]);
+      appendLines([plain(`${t("terminal.commandNotFound")}${name}`, COLORS.err)]);
       setInput("");
       return;
     }
@@ -229,7 +230,7 @@ export default function Terminal({ windowId, processId: _pid }: AppComponentProp
       await cmd.handler(args, ctx);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      appendLines([plain(`error: ${msg}`, COLORS.err)]);
+      appendLines([plain(`${t("terminal.error")}${msg}`, COLORS.err)]);
     } finally {
       setBusy(false);
     }

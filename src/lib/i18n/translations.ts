@@ -442,6 +442,11 @@ const translations: Record<string, TranslationEntry> = {
   "browser.proxy.tooltip":     { en: "All navigations route through the Cloudflare Worker proxy",
                                  zh: "所有导航通过 Cloudflare Worker 代理转发" },
   "browser.proxy.enabled":     { en: "Proxy enabled",             zh: "代理已启用" },
+  "browser.myBookmarks":       { en: "My Bookmarks",              zh: "我的书签" },
+  "browser.bookmark.add":      { en: "Add bookmark",              zh: "添加书签" },
+  "browser.bookmark.remove":   { en: "Remove bookmark",           zh: "移除书签" },
+  "browser.bookmark.renamePrompt": { en: "Rename bookmark:",      zh: "重命名书签：" },
+  "browser.bookmark.renameHint":   { en: "Double-click to rename", zh: "双击重命名" },
 
   // ── i18n sweep: Preview ────────────────────────────────────────────────
   "preview.resumeLanguageGroup": { en: "Resume language",         zh: "简历语言" },
@@ -507,6 +512,12 @@ const translations: Record<string, TranslationEntry> = {
   // ── i18n sweep: LoginScreen + MenuBar ──────────────────────────────────
   "loginscreen.power":         { en: "Power",                     zh: "电源" },
   "menubar.spotlight":         { en: "Spotlight (⌘Space)",        zh: "Spotlight 搜索 (⌘Space)" },
+
+  // ── i18n sweep round 2 ────────────────────────────────────────────────
+  "settings.guest":            { en: "Guest",                     zh: "访客" },
+  "settings.label":            { en: "Settings",                  zh: "设置" },
+  "terminal.commandNotFound":  { en: "zsh: command not found: ",  zh: "zsh: 找不到命令: " },
+  "terminal.error":            { en: "error: ",                   zh: "错误: " },
 };
 
 export default translations;

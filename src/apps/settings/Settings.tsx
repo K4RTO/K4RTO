@@ -62,7 +62,7 @@ function AppearancePane() {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#1c1c1e" }}>
+    <div className="flex-1 overflow-y-auto pt-4" style={{ backgroundColor: "#1c1c1e" }}>
       {section("appearance.section.appearance")}
       <div className="mx-4 rounded-xl overflow-hidden mb-2" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
@@ -127,7 +127,7 @@ function WallpaperPane() {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#1c1c1e" }}>
+    <div className="flex-1 overflow-y-auto pt-4" style={{ backgroundColor: "#1c1c1e" }}>
       {section("wallpaper.section.preset")}
       <div className="px-4 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", marginBottom: 16 }}>
         {WALLPAPER_PRESETS.map(p => {
@@ -225,7 +225,7 @@ export default function Settings(_props: AppComponentProps) {
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
             style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}>G</div>
           <div>
-            <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: 600 }}>Guest</div>
+            <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: 600 }}>{t("settings.guest")}</div>
             <div style={{ ...dim, fontSize: 11 }}>{t("settings.appleId")}</div>
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function Settings(_props: AppComponentProps) {
       <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: "transparent" }}>
         <div className="px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <h1 style={{ color: "rgba(255,255,255,0.9)", fontSize: 22, fontWeight: 700 }}>
-            {selPane ? t(selPane.labelKey) : "Settings"}
+            {selPane ? t(selPane.labelKey) : t("settings.label")}
           </h1>
         </div>
         {sel === "appearance" ? (

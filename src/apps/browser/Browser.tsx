@@ -51,6 +51,10 @@ const KNOWN_BLOCKED_DOMAINS = new Set([
 ]);
 
 const LS_HISTORY = "browser_history_v1";
+// User bookmarks live alongside (but never mutate) the hardcoded
+// PERSONAL/GENERAL sets. Persisted as a Bookmark[] array; ids are timestamp-
+// based to avoid collisions with the hardcoded ids.
+const LS_BOOKMARKS = "browser_bookmarks_v1";
 const EMBED_TIMEOUT_MS = 5000;
 const HISTORY_LIMIT = 100;
 const MAX_TABS = 12;
@@ -237,10 +241,14 @@ interface StartPageProps {
   onNavigate: (url: string) => void;
   recents: string[];
   onClearHistory: () => void;
+  /** User-added bookmarks (persisted across sessions). */
+  userBookmarks: Bookmark[];
+  onRemoveBookmark: (id: string) => void;
+  onRenameBookmark: (id: string, label: string) => void;
   t: (key: string, vars?: Record<string, string>) => string;
 }
 
-function StartPage({ onNavigate, recents, onClearHistory, t }: StartPageProps) {
+function StartPage({ onNavigate, recents, onClearHistory, userBookmarks, onRemoveBookmark, onRenameBookmark, t }: StartPageProps) {
   const sectionTitle: React.CSSProperties = {
     color: "rgba(255,255,255,0.45)",
     fontSize: 11,
@@ -309,6 +317,71 @@ function StartPage({ onNavigate, recents, onClearHistory, t }: StartPageProps) {
           </button>
         ))}
       </div>
+
+      {/* My Bookmarks — user-added, persisted to localStorage. Rendered only
+          when non-empty so first-time visitors don't see a "0 items" header.
+          Each tile gets a delete × on hover; double-click the label to rename. */}
+      {userBookmarks.length > 0 && (
+        <>
+          <div style={sectionTitle}>{t("browser.myBookmarks")}</div>
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", marginBottom: 44 }}>
+            {userBookmarks.map((bm) => (
+              <div
+                key={bm.id}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl group"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.035)",
+                  border: "0.5px solid rgba(255,255,255,0.06)",
+                  position: "relative",
+                  transition: "background-color 0.15s ease",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(255,255,255,0.07)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(255,255,255,0.035)"; }}
+              >
+                <button
+                  onClick={() => onNavigate(bm.url)}
+                  className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                  style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+                  aria-label={t("browser.openExternal") + " " + bm.label}
+                >
+                  <FaviconImage url={bm.url} size={20} label={bm.label} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.85)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        const next = window.prompt(t("browser.bookmark.renamePrompt"), bm.label);
+                        if (next !== null) onRenameBookmark(bm.id, next);
+                      }}
+                      title={t("browser.bookmark.renameHint")}
+                    >
+                      {bm.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hostOf(bm.url)}</div>
+                  </div>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRemoveBookmark(bm.id); }}
+                  className="w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-100"
+                  style={{
+                    color: "rgba(255,255,255,0.55)",
+                    background: "rgba(255,255,255,0.08)",
+                    flexShrink: 0,
+                    transition: "opacity 0.15s ease",
+                  }}
+                  title={t("browser.bookmark.remove")}
+                  aria-label={t("browser.bookmark.remove")}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Frequently Visited */}
       <div style={sectionTitle}>{t("browser.frequentlyVisited")}</div>
@@ -475,12 +548,49 @@ export default function Browser(_props: AppComponentProps) {
   const [activeTabId, setActiveTabId] = useState<string>(() => tabs[0].id);
   const [inputUrl, setInputUrl] = useState("");
   const [globalHistory, setGlobalHistory] = useState<string[]>(() => loadJSON<string[]>(LS_HISTORY, []));
+  // User-added bookmarks. Persist on every change. ids include a random suffix
+  // so back-to-back adds at the same millisecond don't collide.
+  const [userBookmarks, setUserBookmarks] = useState<Bookmark[]>(
+    () => loadJSON<Bookmark[]>(LS_BOOKMARKS, []),
+  );
+  useEffect(() => { saveJSON(LS_BOOKMARKS, userBookmarks); }, [userBookmarks]);
   const [mode, setMode] = useState<Mode>("start");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeTab = tabs.find(tab => tab.id === activeTabId) ?? tabs[0];
   const url = activeTab.histIdx >= 0 ? activeTab.hist[activeTab.histIdx] ?? "" : "";
+
+  // ── User bookmarks: add / remove / is-bookmarked ─────────────────────
+  // Add the current URL as a bookmark. No-op if URL is empty (start page) or
+  // already present (would create a duplicate). Label defaults to the host;
+  // user can edit later via the right-click menu on the bookmark tile.
+  const addCurrentBookmark = useCallback(() => {
+    if (!url) return;
+    if (userBookmarks.some((b) => b.url === url)) return;
+    const label = hostOf(url) || url;
+    const bm: Bookmark = {
+      id: `user-${Date.now()}-${Math.floor(Math.random() * 1e6).toString(36)}`,
+      label,
+      url,
+      embeddable: !KNOWN_BLOCKED_DOMAINS.has(hostOf(url).toLowerCase()),
+    };
+    setUserBookmarks((prev) => [...prev, bm]);
+    trackEvent("browser_bookmark_added", { host: hostOf(url) });
+  }, [url, userBookmarks]);
+
+  const removeUserBookmark = useCallback((id: string) => {
+    setUserBookmarks((prev) => prev.filter((b) => b.id !== id));
+    trackEvent("browser_bookmark_removed", { id });
+  }, []);
+
+  const renameUserBookmark = useCallback((id: string, label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setUserBookmarks((prev) => prev.map((b) => b.id === id ? { ...b, label: trimmed } : b));
+  }, []);
+
+  const isCurrentBookmarked = !!url && userBookmarks.some((b) => b.url === url);
 
   // Persist global history (shared across all tabs)
   useEffect(() => {
@@ -846,12 +956,37 @@ export default function Browser(_props: AppComponentProps) {
               aria-label="Address bar"
             />
             {url && (
-              <button type="button" onClick={openCurrentExternal}
-                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                style={{ color: "rgba(255,255,255,0.5)" }}
-                title={t("browser.openExternal")} aria-label={t("browser.openExternal")}>
-                <ExternalIcon />
-              </button>
+              <>
+                {/* Bookmark / unbookmark — star icon toggles. Filled star =
+                    URL is in user bookmarks; outline = not yet. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isCurrentBookmarked) {
+                      const existing = userBookmarks.find((b) => b.url === url);
+                      if (existing) removeUserBookmark(existing.id);
+                    } else {
+                      addCurrentBookmark();
+                    }
+                  }}
+                  className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                  style={{ color: isCurrentBookmarked ? "#ffcc00" : "rgba(255,255,255,0.5)" }}
+                  title={isCurrentBookmarked ? t("browser.bookmark.remove") : t("browser.bookmark.add")}
+                  aria-label={isCurrentBookmarked ? t("browser.bookmark.remove") : t("browser.bookmark.add")}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24"
+                       fill={isCurrentBookmarked ? "currentColor" : "none"}
+                       stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </button>
+                <button type="button" onClick={openCurrentExternal}
+                  className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                  title={t("browser.openExternal")} aria-label={t("browser.openExternal")}>
+                  <ExternalIcon />
+                </button>
+              </>
             )}
           </div>
         </form>
@@ -910,7 +1045,15 @@ export default function Browser(_props: AppComponentProps) {
       <div className="flex-1 relative overflow-hidden" style={{ backgroundColor: "#fff" }}>
         {mode === "start" ? (
           <div className="absolute inset-0" style={{ backgroundColor: "#1c1c1e" }}>
-            <StartPage onNavigate={navigate} recents={recents} onClearHistory={clearHistory} t={t} />
+            <StartPage
+              onNavigate={navigate}
+              recents={recents}
+              onClearHistory={clearHistory}
+              userBookmarks={userBookmarks}
+              onRemoveBookmark={removeUserBookmark}
+              onRenameBookmark={renameUserBookmark}
+              t={t}
+            />
           </div>
         ) : (
           <>
