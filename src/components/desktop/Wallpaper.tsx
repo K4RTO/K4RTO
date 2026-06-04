@@ -95,7 +95,7 @@ export function Wallpaper() {
 
   return (
     <div
-      className="absolute inset-0 overflow-hidden"
+      className="wp-stage absolute inset-0 overflow-hidden"
       style={{ background: palette.base }}
       aria-hidden
     >
@@ -118,7 +118,9 @@ export function Wallpaper() {
             filter: "blur(36px)",
             mixBlendMode: palette.blend,
             // Each blob picks one of 4 keyframes so motion isn't perfectly synced.
-            animation: `wp-drift-${b.drift} ${48 + b.drift * 6}s ease-in-out infinite alternate`,
+            // Slower than the previous 48-66s so the drift reads as a slow tide
+            // rather than visible animation — 90-114s feels like ambient motion.
+            animation: `wp-drift-${b.drift} ${90 + b.drift * 8}s ease-in-out infinite alternate`,
             willChange: "transform",
             pointerEvents: "none",
           }}

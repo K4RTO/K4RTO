@@ -370,28 +370,41 @@ html, body {
    alive without ever drawing attention to the motion itself.
    ════════════════════════════════════════════════════════════════════════ */
 @keyframes wp-drift-0 {
-  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(8%,   -6% ) scale(1.08); }
-  100% { transform: translate(-50%, -50%) translate(-4%,  10% ) scale(0.95); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(14%,  -10%) scale(1.14); }
+  100% { transform: translate(-50%, -50%) translate(-9%,   17%) scale(0.90); }
 }
 @keyframes wp-drift-1 {
-  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(-10%, 8%  ) scale(0.92); }
-  100% { transform: translate(-50%, -50%) translate(6%,   -8% ) scale(1.10); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(-16%,  13%) scale(0.88); }
+  100% { transform: translate(-50%, -50%) translate(11%,  -13%) scale(1.16); }
 }
 @keyframes wp-drift-2 {
-  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(7%,   7%  ) scale(1.06); }
-  100% { transform: translate(-50%, -50%) translate(-9%,  -4% ) scale(0.94); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(12%,   11%) scale(1.10); }
+  100% { transform: translate(-50%, -50%) translate(-15%, -7% ) scale(0.91); }
 }
 @keyframes wp-drift-3 {
-  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(-6%,  -10%) scale(1.07); }
-  100% { transform: translate(-50%, -50%) translate(10%,  6%  ) scale(0.93); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(-10%, -16%) scale(1.12); }
+  100% { transform: translate(-50%, -50%) translate(16%,   10%) scale(0.89); }
 }
+
+/* Wallpaper-level hue + brightness drift — a single long cycle layered on top
+   of per-blob motion so the entire scene seems to breathe color rather than
+   just slide around. Applied to the stage container, so the filter affects
+   blob children too. ±18deg hue keeps each palette recognizable (deep navy
+   stays navy, just leans warmer/cooler over a 3-minute cycle). */
+@keyframes wp-stage-shift {
+  0%   { filter: hue-rotate(0deg)   brightness(1   ) saturate(1   ); }
+  50%  { filter: hue-rotate(18deg)  brightness(1.05) saturate(1.08); }
+  100% { filter: hue-rotate(-15deg) brightness(0.96) saturate(0.95); }
+}
+.wp-stage { animation: wp-stage-shift 180s ease-in-out infinite alternate; }
+
 @media (prefers-reduced-motion: reduce) {
   /* Keep wallpaper static for users who request reduced motion — preserves
      accessibility intent without losing the chosen palette's resting look. */
-  .wp-blob { animation: none !important; }
+  .wp-blob, .wp-stage { animation: none !important; filter: none !important; }
 }
 
