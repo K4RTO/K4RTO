@@ -6,8 +6,11 @@ import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useT } from "@/contexts/SystemContext";
 import CodeView from "./CodeView";
+import { Minimap } from "./Minimap";
 import { langFromExt as shikiLang } from "./shiki";
 import { PORTFOLIO_SOURCE_ROOT, PORTFOLIO_SOURCES } from "./portfolioSources";
+
+const EDITOR_LINE_HEIGHT = 18; // px — keeps minimap viewport math in sync with textarea CSS
 
 // ── Safe markdown renderer (React elements, no dangerouslySetInnerHTML) ──────
 function MdLine({ line }: { line: string }) {
@@ -124,6 +127,16 @@ export default function VSCode({ windowId }: AppComponentProps) {
   const [content, setContent] = useState("");
   const [modified, setModified] = useState(false);
   const [preview, setPreview] = useState(false);
+  // Minimap on by default — VSCode's own default. localStorage-backed so
+  // power users who turn it off don't have to keep doing so.
+  const [minimapOn, setMinimapOn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try { return JSON.parse(localStorage.getItem("k4rto.vscode.minimap") ?? "true"); }
+    catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("k4rto.vscode.minimap", JSON.stringify(minimapOn)); } catch { /* ignore */ }
+  }, [minimapOn]);
   const [activeTab, setActiveTab] = useState<"explorer" | "search" | "git">("explorer");
   const [sidebarFiles, setSidebarFiles] = useState<{ name: string; path: string }[]>([]);
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
@@ -350,11 +363,30 @@ export default function VSCode({ windowId }: AppComponentProps) {
             <span className="truncate">{currentFileName}</span>
             {modified && <span style={{ color: "#e2c08d" }}>●</span>}
           </div>
+          {/* Spacer pushes the toggles to the right of the file tab. */}
+          <div className="ml-auto" />
+          {/* Minimap toggle — only meaningful in raw-edit mode (preview hides
+              the textarea so there's nothing for the minimap to mirror). */}
+          {!preview && (
+            <button
+              onClick={() => setMinimapOn(v => !v)}
+              className="mr-1 px-2 py-1 rounded text-[11px]"
+              style={{
+                color: minimapOn ? "#ffffff" : "rgba(255,255,255,0.5)",
+                backgroundColor: minimapOn ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+              }}
+              title={t("vscode.minimap.tooltip")}
+              aria-label={t("vscode.minimap.tooltip")}
+              aria-pressed={minimapOn}
+            >
+              {t("vscode.minimap.label")}
+            </button>
+          )}
           {/* Preview/Edit toggle — works for MD (markdown render) and code (Shiki highlight) */}
           {previewAvailable && (
             <button
               onClick={() => setPreview(v => !v)}
-              className="ml-auto mr-2 px-2 py-1 rounded text-[11px]"
+              className="mr-2 px-2 py-1 rounded text-[11px]"
               style={{
                 color: preview ? "#ffffff" : "rgba(255,255,255,0.5)",
                 backgroundColor: preview ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
@@ -373,7 +405,7 @@ export default function VSCode({ windowId }: AppComponentProps) {
           ) : preview && shikiCodeLang ? (
             <CodeView code={content} lang={shikiCodeLang} />
           ) : (
-            <div className="flex h-full overflow-auto">
+            <div className="flex h-full overflow-hidden">
               {/* Line numbers */}
               <div
                 className="flex-shrink-0 py-2 text-right text-[12px] select-none"
@@ -408,6 +440,12 @@ export default function VSCode({ windowId }: AppComponentProps) {
                 }}
                 placeholder={t("vscode.placeholder")}
               />
+              {/* Minimap — only in raw edit mode (preview modes already show
+               *  the rendered output, no value in a minimap there). Hidden
+               *  when the file is too short to need navigation aid. */}
+              {minimapOn && content.split("\n").length > 30 && (
+                <Minimap code={content} textareaRef={taRef} lineHeight={EDITOR_LINE_HEIGHT} />
+              )}
             </div>
           )}
         </div>

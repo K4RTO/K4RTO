@@ -482,7 +482,13 @@ const translations: Record<string, TranslationEntry> = {
   "cal.today":                 { en: "Today",                     zh: "今天" },
   "cal.events":                { en: "Events",                    zh: "活动" },
   "cal.noEventsToday":         { en: "No events today",           zh: "今天没有活动" },
+  "cal.noEventsDay":           { en: "No events on this day",     zh: "这天没有活动" },
   "cal.noEvents":              { en: "No events",                 zh: "没有活动" },
+  "cal.addEvent":              { en: "Add",                       zh: "添加" },
+  "cal.eventTitle":            { en: "Event title",               zh: "活动标题" },
+  "cal.eventTimeHint":         { en: "Optional time (HH:mm)",     zh: "可选时间（HH:mm）" },
+  "cal.deleteEvent":           { en: "Delete event",              zh: "删除活动" },
+  "cal.eventCount":            { en: "{n} events",                zh: "{n} 个活动" },
 
   // ── i18n sweep: Calculator ─────────────────────────────────────────────
   "calculator.sci.switchToBasic":      { en: "Switch to Basic",          zh: "切换到基础模式" },
@@ -603,6 +609,8 @@ const translations: Record<string, TranslationEntry> = {
                                         zh: "作品集源码只读 — 切到 Edit 可看纯文本" },
   "vscode.tabs.edit":          { en: "Edit",                      zh: "编辑" },
   "vscode.tabs.preview":       { en: "Preview",                   zh: "预览" },
+  "vscode.minimap.label":      { en: "Map",                       zh: "缩略图" },
+  "vscode.minimap.tooltip":    { en: "Toggle minimap",            zh: "切换缩略图" },
   "vscode.placeholder":        { en: "// Start typing...",        zh: "// 开始输入..." },
   "vscode.status.branch":      { en: "⎇ main",                    zh: "⎇ main" },
   "vscode.status.modified":    { en: "● Modified",                zh: "● 已修改" },

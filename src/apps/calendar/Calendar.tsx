@@ -1,9 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useT } from "@/contexts/SystemContext";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
+
+/** Event model — keep it simple. ISO date (YYYY-MM-DD) keys avoid any
+ *  timezone math during render; time is optional ("HH:mm") for all-day vs
+ *  timed entries. id is a non-secret nonce so React can key reliably. */
+interface CalEvent {
+  id: string;
+  date: string;   // "YYYY-MM-DD"
+  title: string;
+  time?: string;  // "HH:mm" or undefined for all-day
+}
+
+const LS_EVENTS = "k4rto.calendar.events";
+
+function pad2(n: number): string { return n < 10 ? `0${n}` : `${n}`; }
+function dateKey(y: number, m: number, d: number): string { return `${y}-${pad2(m + 1)}-${pad2(d)}`; }
+function loadEvents(): CalEvent[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(LS_EVENTS);
+    if (!raw) return [];
+    const v = JSON.parse(raw);
+    if (!Array.isArray(v)) return [];
+    return v.filter((e): e is CalEvent =>
+      e && typeof e.id === "string" && typeof e.date === "string" && typeof e.title === "string"
+    );
+  } catch { return []; }
+}
 
 function daysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 function firstDay(y: number, m: number) { return new Date(y, m, 1).getDay(); }
@@ -37,6 +64,56 @@ export default function Calendar(_props: AppComponentProps) {
 
   const [mm, setMm] = useState(tm);
   const [my, setMy] = useState(ty);
+
+  // Events — loaded once on mount, persisted to localStorage on every change.
+  const [events, setEvents] = useState<CalEvent[]>(() => loadEvents());
+  useEffect(() => {
+    try { localStorage.setItem(LS_EVENTS, JSON.stringify(events)); } catch { /* ignore */ }
+  }, [events]);
+
+  /** Map of "YYYY-MM-DD" → events on that day. Pre-computed so every
+   *  cell render is O(1) instead of O(events) scanning the array. */
+  const eventsByDay = useMemo(() => {
+    const m = new Map<string, CalEvent[]>();
+    for (const e of events) {
+      const arr = m.get(e.date);
+      if (arr) arr.push(e); else m.set(e.date, [e]);
+    }
+    // Sort each day's events: timed entries first (chronologically), then all-day.
+    for (const arr of m.values()) {
+      arr.sort((a, b) => {
+        if (a.time && b.time) return a.time.localeCompare(b.time);
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return a.title.localeCompare(b.title);
+      });
+    }
+    return m;
+  }, [events]);
+
+  // New-event form state — only relevant when sel is set.
+  const [newTitle, setNewTitle] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  function addEvent() {
+    if (!sel || !newTitle.trim()) return;
+    const ev: CalEvent = {
+      id: `${Date.now()}-${Math.floor(Math.random() * 1e6).toString(36)}`,
+      date: dateKey(sel.year, sel.month, sel.day),
+      title: newTitle.trim(),
+      // Tighten the regex to reject semantically-invalid times like "25:99"
+      // (loose `\d{1,2}:\d{2}` would accept those). Hours 00-23, minutes 00-59.
+      time: /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(newTime) ? newTime : undefined,
+    };
+    setEvents(prev => [...prev, ev]);
+    setNewTitle("");
+    setNewTime("");
+    // Refocus so users can rapid-fire entries.
+    titleInputRef.current?.focus();
+  }
+  function deleteEvent(id: string) {
+    setEvents(prev => prev.filter(e => e.id !== id));
+  }
 
   // Build translated arrays
   const MONTHS   = Array.from({ length: 12 }, (_, i) => t(`cal.month.${i}`));
@@ -100,10 +177,107 @@ export default function Calendar(_props: AppComponentProps) {
           </div>
           {/* Today button */}
           <button onClick={goToday} style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.8)", borderRadius: 6, padding: "4px 0", fontSize: 12, cursor: "pointer", width: "100%" }}>{t("cal.today")}</button>
-          {/* Events */}
+          {/* Events for the selected day (or today if no selection). Shows the
+              add-event form when a day is selected, and the day's existing
+              events with delete-on-hover. */}
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t("cal.events")}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{t("cal.noEventsToday")}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>{t("cal.events")}</div>
+            {(() => {
+              const focusedDay = sel ?? { day: td, month: tm, year: ty, current: true };
+              const key = dateKey(focusedDay.year, focusedDay.month, focusedDay.day);
+              const list = eventsByDay.get(key) ?? [];
+              return (
+                <>
+                  {list.length === 0 && (
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>
+                      {sel ? t("cal.noEventsDay") : t("cal.noEventsToday")}
+                    </div>
+                  )}
+                  {list.map(ev => (
+                    <div
+                      key={ev.id}
+                      className="group"
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 6,
+                        marginBottom: 6,
+                        fontSize: 12,
+                        color: "rgba(255,255,255,0.85)",
+                      }}
+                    >
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#ff453a", marginTop: 5, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {ev.time && <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, marginRight: 4 }}>{ev.time}</span>}
+                        <span>{ev.title}</span>
+                      </div>
+                      <button
+                        onClick={() => deleteEvent(ev.id)}
+                        className="opacity-0 group-hover:opacity-100"
+                        style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0, transition: "opacity 0.12s" }}
+                        title={t("cal.deleteEvent")}
+                        aria-label={t("cal.deleteEvent")}
+                      >×</button>
+                    </div>
+                  ))}
+                  {sel && (
+                    <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+                      <input
+                        ref={titleInputRef}
+                        type="text"
+                        value={newTitle}
+                        onChange={e => setNewTitle(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") addEvent(); }}
+                        placeholder={t("cal.eventTitle")}
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          color: "rgba(255,255,255,0.9)",
+                          borderRadius: 4,
+                          padding: "4px 6px",
+                          fontSize: 12,
+                          outline: "none",
+                        }}
+                      />
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <input
+                          type="text"
+                          value={newTime}
+                          onChange={e => setNewTime(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") addEvent(); }}
+                          placeholder="09:00"
+                          maxLength={5}
+                          style={{
+                            backgroundColor: "rgba(255,255,255,0.06)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "rgba(255,255,255,0.9)",
+                            borderRadius: 4,
+                            padding: "4px 6px",
+                            fontSize: 11,
+                            outline: "none",
+                            width: 64,
+                          }}
+                          title={t("cal.eventTimeHint")}
+                        />
+                        <button
+                          onClick={addEvent}
+                          disabled={!newTitle.trim()}
+                          style={{
+                            flex: 1,
+                            backgroundColor: newTitle.trim() ? "#0058d0" : "rgba(255,255,255,0.06)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            color: newTitle.trim() ? "white" : "rgba(255,255,255,0.4)",
+                            borderRadius: 4,
+                            fontSize: 11,
+                            cursor: newTitle.trim() ? "pointer" : "default",
+                          }}
+                        >{t("cal.addEvent")}</button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 
@@ -119,21 +293,50 @@ export default function Calendar(_props: AppComponentProps) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "6px 16px 0" }}>
             {DAYS.map(d => <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", paddingBottom: 4 }}>{d}</div>)}
           </div>
-          {/* Day grid */}
+          {/* Day grid — each cell shows the date in the top-right and up to 3
+              event dots below, with a "+N" badge if there are more. */}
           <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gridTemplateRows: "repeat(6, 1fr)", padding: "0 16px 8px", gap: 2, overflow: "hidden" }}>
-            {mainGrid.map((c, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", justifyContent: "flex-end", padding: "4px 4px 0 0", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <DayDot c={c} size={30} />
-              </div>
-            ))}
+            {mainGrid.map((c, i) => {
+              const k = dateKey(c.year, c.month, c.day);
+              const dayEvents = eventsByDay.get(k) ?? [];
+              return (
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", padding: "4px 4px 4px 4px", borderTop: "1px solid rgba(255,255,255,0.06)", minHeight: 0, overflow: "hidden" }}>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <DayDot c={c} size={30} />
+                  </div>
+                  {/* Event dots — keep to 3 visible plus a "+N" overflow badge. */}
+                  {dayEvents.length > 0 && (
+                    <div style={{ marginTop: 2, display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center" }}>
+                      {dayEvents.slice(0, 3).map(ev => (
+                        <span
+                          key={ev.id}
+                          title={`${ev.time ? ev.time + " " : ""}${ev.title}`}
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            backgroundColor: "#ff453a",
+                            display: "inline-block",
+                          }}
+                        />
+                      ))}
+                      {dayEvents.length > 3 && (
+                        <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 9, marginLeft: 2 }}>+{dayEvents.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Status bar */}
+      {/* Status bar — total events overall (not just current month) so users
+       *  always know they have data, even when navigating to empty months. */}
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: "6px 16px", fontSize: 12, color: "rgba(255,255,255,0.4)", display: "flex", justifyContent: "space-between", backgroundColor: "#1c1c1e", flexShrink: 0 }}>
         <span>{selStr}</span>
-        <span>{t("cal.noEvents")}</span>
+        <span>{events.length === 0 ? t("cal.noEvents") : t("cal.eventCount", { n: String(events.length) })}</span>
       </div>
     </div>
   );
