@@ -622,6 +622,36 @@ export function MenuBar({
       </div>
 
       <div className="flex items-center gap-2 text-white">
+        {/* Mission Control — three-rectangle stack glyph echoing the dock icon */}
+        {onShowMissionControl && (
+          <button
+            onClick={onShowMissionControl}
+            className="flex items-center justify-center w-6 h-7 rounded hover:bg-white/10 opacity-70 hover:opacity-100"
+            title={t("dock.missionControl")}
+          >
+            <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+              <rect x="0.5"  y="0.5" width="9"  height="6.2" rx="1" stroke="currentColor" strokeWidth="1" />
+              <rect x="2.5"  y="2.5" width="9"  height="6.2" rx="1" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
+              <rect x="0.5"  y="4.5" width="9"  height="6"   rx="1" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3"/>
+            </svg>
+          </button>
+        )}
+        {/* Launchpad — 3×3 grid glyph */}
+        {onShowLaunchpad && (
+          <button
+            onClick={onShowLaunchpad}
+            className="flex items-center justify-center w-6 h-7 rounded hover:bg-white/10 opacity-70 hover:opacity-100"
+            title={t("dock.launchpad")}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              {[0, 1, 2].flatMap((row) =>
+                [0, 1, 2].map((col) => (
+                  <rect key={`${row}-${col}`} x={1 + col * 4.5} y={1 + row * 4.5} width="3" height="3" rx="0.7" />
+                )),
+              )}
+            </svg>
+          </button>
+        )}
         {/* Spotlight */}
         <button
           onClick={onSpotlight}

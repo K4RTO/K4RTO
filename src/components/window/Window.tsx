@@ -152,6 +152,12 @@ export function Window({
   }, []);
 
   // Drag handling
+  // Snap-zone state — drives the preview overlay while dragging near a screen
+  // edge. Cleared on pointerup or when the cursor leaves all trigger zones.
+  // Local to this window because only one window can be dragged at a time.
+  type SnapZone = null | "max" | "left" | "right";
+  const [snapZone, setSnapZone] = useState<SnapZone>(null);
+
   const onDragStart = useCallback(
     (e: React.PointerEvent) => {
       if ((e.target as HTMLElement).closest("button")) return;
@@ -166,15 +172,60 @@ export function Window({
         dispatch({ type: "RESTORE_WINDOW", id: windowState.id });
       }
 
+      // Edge-trigger band: cursor within this many pixels of a screen edge
+      // arms the corresponding snap zone. Real macOS uses ~5px; we lean a bit
+      // wider so trackpad users without precise pointers can reliably hit it.
+      const EDGE = 14;
+      const MENU_BAR = 28;
+
       const onPointerMove = (ev: PointerEvent) => {
         const newX = startPos.x + (ev.clientX - startX);
-        const newY = Math.max(28, startPos.y + (ev.clientY - startY));
+        const newY = Math.max(MENU_BAR, startPos.y + (ev.clientY - startY));
         dispatch({ type: "MOVE_WINDOW", id: windowState.id, x: newX, y: newY });
+
+        // Determine which snap zone (if any) the cursor is currently arming.
+        // Top edge wins over left/right because dragging up-into-corner is
+        // the most common "I want full screen" gesture.
+        let zone: SnapZone = null;
+        if (ev.clientY <= MENU_BAR + EDGE) zone = "max";
+        else if (ev.clientX <= EDGE)              zone = "left";
+        else if (ev.clientX >= window.innerWidth - EDGE) zone = "right";
+        setSnapZone(zone);
       };
 
-      const onPointerUp = () => {
+      const onPointerUp = (ev: PointerEvent) => {
         document.removeEventListener("pointermove", onPointerMove);
         document.removeEventListener("pointerup", onPointerUp);
+
+        // Apply whichever snap zone was armed at release. We re-evaluate from
+        // the final cursor position rather than trusting setSnapZone — React
+        // state updates are async so the latest move event might not have
+        // committed yet.
+        const dockReserve = 80;  // approximate dock height, mirrors MAXIMIZE_WINDOW reducer
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        let finalZone: SnapZone = null;
+        if (ev.clientY <= MENU_BAR + EDGE) finalZone = "max";
+        else if (ev.clientX <= EDGE)              finalZone = "left";
+        else if (ev.clientX >= w - EDGE)          finalZone = "right";
+
+        if (finalZone === "max") {
+          dispatch({ type: "MAXIMIZE_WINDOW", id: windowState.id });
+        } else if (finalZone === "left") {
+          dispatch({
+            type: "RESIZE_WINDOW",
+            id: windowState.id,
+            rect: { x: 0, y: MENU_BAR, width: Math.floor(w / 2), height: h - MENU_BAR - dockReserve },
+          });
+        } else if (finalZone === "right") {
+          const halfW = Math.floor(w / 2);
+          dispatch({
+            type: "RESIZE_WINDOW",
+            id: windowState.id,
+            rect: { x: w - halfW, y: MENU_BAR, width: halfW, height: h - MENU_BAR - dockReserve },
+          });
+        }
+        setSnapZone(null);
       };
 
       document.addEventListener("pointermove", onPointerMove);
@@ -319,6 +370,44 @@ export function Window({
 
       {/* Resize handles */}
       <ResizeHandles windowId={windowState.id} windowState={windowState} />
+
+      {/* Snap-zone preview overlay — only shown during a drag when the cursor
+          is in a snap trigger band. Rendered as a child of the window so it
+          inherits this window's stacking context; uses `position: fixed` so
+          its coordinates are viewport-relative regardless of the parent's
+          transform. */}
+      {snapZone && <SnapPreview zone={snapZone} />}
     </div>
+  );
+}
+
+/** Translucent preview rectangle showing where a drag-snap will land. */
+function SnapPreview({ zone }: { zone: "max" | "left" | "right" }) {
+  const MENU_BAR = 28;
+  const DOCK_RESERVE = 80;
+  let style: React.CSSProperties = { left: 0, top: MENU_BAR };
+  if (zone === "max") {
+    style = { left: 0, top: MENU_BAR, width: "100vw", height: `calc(100vh - ${MENU_BAR + DOCK_RESERVE}px)` };
+  } else if (zone === "left") {
+    style = { left: 0, top: MENU_BAR, width: "50vw", height: `calc(100vh - ${MENU_BAR + DOCK_RESERVE}px)` };
+  } else {
+    style = { left: "50vw", top: MENU_BAR, width: "50vw", height: `calc(100vh - ${MENU_BAR + DOCK_RESERVE}px)` };
+  }
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "fixed",
+        zIndex: 99000,
+        pointerEvents: "none",
+        background: "rgba(96, 165, 250, 0.18)",
+        border: "2px solid rgba(96, 165, 250, 0.55)",
+        borderRadius: 12,
+        backdropFilter: "blur(2px)",
+        WebkitBackdropFilter: "blur(2px)",
+        transition: "all 0.12s cubic-bezier(0.32, 0.72, 0, 1.0)",
+        ...style,
+      }}
+    />
   );
 }
