@@ -105,8 +105,8 @@ const APP_MENU_SPECS: Record<string, AppMenuSpec> = {
   },
   calculator: {
     view: [
-      { kind: "item", labelKey: "menu.calc.basic",           shortcut: "⌘1",   actionType: "view-basic", disabled: true },
-      { kind: "item", labelKey: "menu.calc.scientific",      shortcut: "⌘2",   actionType: "view-scientific", disabled: true },
+      { kind: "item", labelKey: "menu.calc.basic",           shortcut: "⌘1",   actionType: "view-basic" },
+      { kind: "item", labelKey: "menu.calc.scientific",      shortcut: "⌘2",   actionType: "view-scientific" },
     ],
   },
   calendar: {
@@ -340,6 +340,8 @@ export function MenuBar({
   onHideApp,
   onHideOthers,
   onShowAll,
+  onShowLaunchpad,
+  onShowMissionControl,
 }: {
   activeAppName?: string;
   activeAppId?: string | null;
@@ -356,6 +358,10 @@ export function MenuBar({
   onHideApp?: () => void;
   onHideOthers?: () => void;
   onShowAll?: () => void;
+  /** Open the system Launchpad overlay (matches the Dock icon + F4 trigger). */
+  onShowLaunchpad?: () => void;
+  /** Open the system Mission Control overlay (matches the Dock icon + F3). */
+  onShowMissionControl?: () => void;
 }) {
   const t = useT();
   const [openMenu, setOpenMenu] = useState<MenuKey | null>(null);
@@ -444,6 +450,17 @@ export function MenuBar({
     ? finderViewMenu
     : ((activeAppId ? specToItems(appSpec?.view, activeAppId, t) : null)) ?? fallbackViewMenu;
 
+  // Trailing block shared by both Finder and non-Finder Go menus: a separator
+  // plus the Launchpad entry. Mirrors macOS placing Launchpad under Go in
+  // older releases (its true home was the dock + F4, but the menu entry is
+  // useful when keyboard discovery is the only path).
+  const launchpadGoEntry: MenuItem[] = onShowLaunchpad
+    ? [
+        { label: "", separator: true },
+        { label: t("dock.launchpad"), shortcut: "F4", action: onShowLaunchpad },
+      ]
+    : [];
+
   const goMenuItems: MenuItem[] = isFinder ? [
     { label: t("menu.go.back"), shortcut: "⌘[", action: () => dispatchFinderAction("goBack") },
     { label: t("menu.go.forward"), shortcut: "⌘]", action: () => dispatchFinderAction("goForward") },
@@ -456,6 +473,7 @@ export function MenuBar({
     { label: t("menu.go.home"), shortcut: "⇧⌘H", disabled: true },
     { label: "", separator: true },
     { label: t("menu.go.goToFolder"), shortcut: "⇧⌘G", disabled: true },
+    ...launchpadGoEntry,
   ] : [
     { label: t("menu.go.back"), shortcut: "⌘[" },
     { label: t("menu.go.forward"), shortcut: "⌘]" },
@@ -468,7 +486,17 @@ export function MenuBar({
     { label: t("menu.go.home"), shortcut: "⇧⌘H" },
     { label: "", separator: true },
     { label: t("menu.go.goToFolder"), shortcut: "⇧⌘G" },
+    ...launchpadGoEntry,
   ];
+
+  // Mission Control is shared by all apps' Window menu — same as macOS where
+  // it lives under the universal Window menu regardless of focused app.
+  const missionControlEntry: MenuItem[] = onShowMissionControl
+    ? [
+        { label: "", separator: true },
+        { label: t("dock.missionControl"), shortcut: "F3", action: onShowMissionControl },
+      ]
+    : [];
 
   const windowMenuItems: MenuItem[] = isFinder ? [
     { label: t("menu.window.minimize"), shortcut: "⌘M", action: onMinimizeWindow },
@@ -478,6 +506,7 @@ export function MenuBar({
     { label: t("menu.window.moveRight"), disabled: true },
     { label: "", separator: true },
     { label: t("menu.window.bringAllToFront"), disabled: true },
+    ...missionControlEntry,
   ] : [
     { label: t("menu.window.minimize"), shortcut: "⌘M" },
     { label: t("menu.window.zoom") },
@@ -486,6 +515,7 @@ export function MenuBar({
     { label: t("menu.window.moveRight") },
     { label: "", separator: true },
     { label: t("menu.window.bringAllToFront") },
+    ...missionControlEntry,
   ];
 
   const helpMenuItems: MenuItem[] = [

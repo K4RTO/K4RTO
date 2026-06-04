@@ -138,10 +138,16 @@ export function Window({
   const titleBarRef = useRef<HTMLDivElement>(null);
   const [isNew, setIsNew] = useState(true);
   const [isMinimizing, setIsMinimizing] = useState(false);
+  // Close animation flag — when true, the window plays a fade+scale-down
+  // before the parent actually unmounts it. Without this the close traffic
+  // light just makes the window vanish instantly, which feels janky.
+  const [isClosing, setIsClosing] = useState(false);
 
-  // Open animation
+  // Open animation — spring-pop keyframe lives in globals.css. We let the
+  // browser run the animation directly (instead of toggling inline transform)
+  // so the bouncy overshoot reads correctly. 320ms covers the full pop.
   useEffect(() => {
-    const timer = setTimeout(() => setIsNew(false), 50);
+    const timer = setTimeout(() => setIsNew(false), 320);
     return () => clearTimeout(timer);
   }, []);
 
@@ -181,21 +187,42 @@ export function Window({
   if (windowState.status === "minimized" && !isMinimizing) return null;
 
   const handleClose = () => {
-    const proc = getProcessByWindowId(windowState.id);
-    if (proc) {
-      kill(proc.id);
-    } else {
-      closeWindow(windowState.id);
-    }
+    // Animate fade+scale-down first, THEN actually kill the process. The
+    // 180ms matches the CSS transition below; without the delay the window
+    // would unmount before users could see anything happen.
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      const proc = getProcessByWindowId(windowState.id);
+      if (proc) {
+        kill(proc.id);
+      } else {
+        closeWindow(windowState.id);
+      }
+    }, 180);
   };
 
-  // Intercept minimize: play animation first, then dispatch
+  // Intercept minimize: play the genie animation first, then dispatch the
+  // MINIMIZE_WINDOW state change so the window collapses to the dock with
+  // the curved skew real macOS uses.
+  //
+  // Race condition we guard against: the user can click the Dock icon to
+  // restore the window during the 420ms animation. The reducer will set
+  // status back to "normal" mid-flight; if we then dispatched MINIMIZE_WINDOW
+  // anyway, the window would re-minimize unexpectedly. We sample the latest
+  // status via a ref at fire-time instead of trusting the captured closure.
+  const statusRef = useRef(windowState.status);
+  useEffect(() => { statusRef.current = windowState.status; }, [windowState.status]);
   const handleMinimize = () => {
+    if (isMinimizing) return;
     setIsMinimizing(true);
     setTimeout(() => {
       setIsMinimizing(false);
-      dispatch({ type: "MINIMIZE_WINDOW", id: windowState.id });
-    }, 260);
+      // If something restored the window mid-animation, don't re-minimize.
+      if (statusRef.current !== "minimized") {
+        dispatch({ type: "MINIMIZE_WINDOW", id: windowState.id });
+      }
+    }, 420);
   };
 
   const handleMaximize = () => {
@@ -206,14 +233,30 @@ export function Window({
     }
   };
 
-  // Compose transform and opacity based on animation state
-  const animTransform = isMinimizing
-    ? "scale(0.1) translateY(400px)"
-    : isNew ? "scale(0.95)" : "scale(1)";
-  const animOpacity = (isMinimizing || isNew) ? 0 : 1;
-  const animTransition = isMinimizing
-    ? "transform 0.26s cubic-bezier(0.4,0,0.6,1), opacity 0.2s ease"
-    : "transform 0.2s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease";
+  // Compose animation state.
+  //
+  //   isMinimizing → use `genie-minimize` keyframe (curved skew → Dock)
+  //   isNew        → use `spring-pop` keyframe (bouncy scale-in)
+  //   isClosing    → inline transform/opacity transition (snappy fade-out)
+  //   otherwise    → no animation, no inline transform
+  //
+  // Keyframes take precedence over inline transform when both are set, so
+  // these states are kept mutually exclusive in practice (isClosing can't
+  // overlap isNew because the user can't click close in the first frame).
+  let animAnimation: string | undefined;
+  let animTransform: string | undefined;
+  let animOpacity: number | undefined;
+  let animTransition: string | undefined;
+
+  if (isMinimizing) {
+    animAnimation = "genie-minimize 0.42s cubic-bezier(0.4, 0, 0.6, 1) both";
+  } else if (isClosing) {
+    animTransform = "scale(0.88)";
+    animOpacity = 0;
+    animTransition = "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease";
+  } else if (isNew) {
+    animAnimation = "spring-pop var(--spring-duration-medium) var(--spring-bouncy) both";
+  }
 
   return (
     <div
@@ -226,9 +269,12 @@ export function Window({
         zIndex: windowState.zIndex,
         borderRadius: windowState.status === "maximized" ? 0 : 10,
         boxShadow: "0 28px 80px 6px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.08)",
+        animation: animAnimation,
         transform: animTransform,
         opacity: animOpacity,
         transition: animTransition,
+        // Bottom origin so spring-pop "rises from the dock" and genie sucks
+        // straight down toward the dock — closer to real macOS visuals.
         transformOrigin: "center bottom",
       }}
       onPointerDown={() => focusWindow(windowState.id)}

@@ -79,6 +79,11 @@ function DesktopContent() {
   // Keyboard shortcuts
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      // While the lock screen is up, swallow everything. LoginScreen has its
+      // own key listener that unlocks on any key; we don't want F4 / F3 /
+      // ⌘Space to also pop overlays open underneath, leaving the user on a
+      // desktop that's already cluttered the moment they unlock.
+      if (locked) return;
       // F4 opens Launchpad. Closing is handled inside Launchpad itself (so
       // it can run the exit animation cleanly); we only fire the open path
       // here when it isn't already showing. Mutually exclusive with
@@ -118,7 +123,7 @@ function DesktopContent() {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [focusedWindowId, focusedProcess, closeWindow, kill]);
+  }, [focusedWindowId, focusedProcess, closeWindow, kill, locked]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
@@ -146,6 +151,14 @@ function DesktopContent() {
           Array.from(state.windows.values())
             .filter(w => w.status === "minimized")
             .forEach(w => dispatch({ type: "RESTORE_WINDOW", id: w.id }));
+        }}
+        onShowLaunchpad={() => {
+          setMissionControlOpen(false);
+          setLaunchpadOpen(true);
+        }}
+        onShowMissionControl={() => {
+          setLaunchpadOpen(false);
+          setMissionControlOpen(true);
         }}
       />
 

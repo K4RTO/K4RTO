@@ -271,12 +271,25 @@ export function DesktopGrid({ onLaunchApp }: { onLaunchApp?: (appId: string, met
           // "Show in Finder" opens a Finder window pointed at the parent dir
           // (Desktop) — matches the macOS Finder gesture. Without initialPath
           // we'd land at the default Downloads location.
+          //
+          // "Move to Trash" matches Finder's right-click affordance for parity —
+          // without it, the only way to trash a desktop icon was to open Finder
+          // first, navigate to Desktop, and trash from there.
           const fileItems: MenuItem[] = [
             { label: t("desktop.file.open"), action: () => openVfsItem(e.path, e.name, isDir) },
             { separator: true },
             {
               label: t("desktop.file.showInFinder"),
               action: () => onLaunchApp?.("finder", { initialPath: "/Users/guest/Desktop" }),
+            },
+            { separator: true },
+            {
+              label: t("finder.ctx.moveToTrash"),
+              action: () => {
+                if (!fs) return;
+                fs.moveToTrash(e.path);
+                if (selected === e.path) setSelected(null);
+              },
             },
           ];
           return (
