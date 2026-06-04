@@ -94,17 +94,53 @@ const ANTI_FRAMEBUST_STUB = `<script>(function(){
     loc.replace = function(u) { if (sameAsCurrent(u)) return; return rRep(u); };
     loc.assign  = function(u) { if (sameAsCurrent(u)) return; return rAsg(u); };
   } catch (e) {}
+  // Popup interception — route _blank / _top / _parent navigations to the parent
+  // frame via postMessage so the K4RTO Safari app can open them in a new tab
+  // INSIDE the app instead of letting them escape to the host browser. Without
+  // this, every Bing result click jumps to the user's real browser.
+  function reportPopup(u) {
+    try {
+      // Resolve relative URLs against the injected <base href>, not
+      // document.location.href — the latter is the proxy URL inside this iframe,
+      // so a JS call like window.open('/search?q=x', '_blank') would resolve to
+      // the workers.dev origin instead of the target site. <base> carries the
+      // real target origin. Fall back to document.location.href if <base> is
+      // missing (e.g. very short HTML responses).
+      var baseEl = document.querySelector('base[href]');
+      var baseHref = (baseEl && baseEl.getAttribute('href')) || document.location.href;
+      var abs = new URL(u, baseHref).href;
+      // Use targetOrigin '*' because the parent (k4rto.com) and this iframe
+      // (workers.dev proxy) are on different origins by design. The parent
+      // verifies e.origin === proxyOrigin before acting; the wildcard here
+      // only loosens our outbound contract.
+      window.parent.postMessage({ type: 'k4rto-popup-nav', url: abs }, '*');
+    } catch (e) {}
+  }
   try {
     var realOpen = window.open;
     window.open = function(u, target) {
-      if (target === '_top' || target === '_parent') {
-        // Convert frame-bust window.open to in-place navigation, which we can
-        // intercept via our location.replace/assign overrides above.
-        try { window.location.href = u; } catch (e) {}
+      if (!target || target === '_blank' || target === '_top' || target === '_parent') {
+        if (u) reportPopup(u);
         return null;
       }
       return realOpen.apply(window, arguments);
     };
+  } catch (e) {}
+  // Capture-phase click listener on <a target=...> so we beat the default
+  // navigation. Without capture-phase + preventDefault, allow-popups-to-escape-
+  // sandbox lets the click open in the top browser before our handler runs.
+  try {
+    document.addEventListener('click', function(e) {
+      var t = e.target;
+      var a = (t && t.closest) ? t.closest('a[target]') : null;
+      if (!a) return;
+      var tgt = a.getAttribute('target');
+      if (tgt !== '_blank' && tgt !== '_top' && tgt !== '_parent') return;
+      if (!a.href) return;
+      e.preventDefault();
+      e.stopPropagation();
+      reportPopup(a.href);
+    }, true);
   } catch (e) {}
 })();</script>`;
 

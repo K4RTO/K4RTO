@@ -61,6 +61,12 @@ const MAX_TABS = 12;
 
 const PROXY_URL: string = process.env.NEXT_PUBLIC_PROXY_URL ?? "";
 const PROXY_ENABLED: boolean = Boolean(PROXY_URL);
+/** Used to verify postMessage source when the worker's anti-frame-bust stub
+ *  reports an in-iframe popup click. Computed once at module load. */
+const PROXY_ORIGIN: string = (() => {
+  if (!PROXY_URL) return "";
+  try { return new URL(PROXY_URL).origin; } catch { return ""; }
+})();
 
 function viaProxy(target: string): string {
   if (!PROXY_ENABLED || !target) return target;
@@ -795,6 +801,73 @@ export default function Browser(_props: AppComponentProps) {
     });
     trackEvent("browser_navigate", { host: hostOf(u), rewritten: u !== normalized });
   }, [updateActiveTab]);
+
+  /** Open a URL in a brand-new tab. Used by the worker stub's popup interceptor —
+   *  when Bing (or any embedded page) tries to open a link with target=_blank,
+   *  it postMessages here and we materialize a real K4RTO tab instead of letting
+   *  the click escape to the host browser. Does its own normalization so the
+   *  caller doesn't have to know our URL rules. */
+  const addTabAndNavigate = useCallback((target: string) => {
+    const normalized = normalizeUrl(target);
+    if (!normalized) return;
+    if (normalized.startsWith("mailto:")) {
+      window.open(normalized, "_blank", "noopener");
+      return;
+    }
+    const u = rewriteForEmbed(normalized);
+    // Build the new tab OUTSIDE setTabs so the updater stays pure (React's
+    // Concurrent Mode contract — updaters may be replayed). `newEmptyTab()` is
+    // pure (UUID + fresh struct), so calling it here is fine.
+    const t: Tab = { ...newEmptyTab(), hist: [u], histIdx: 0 };
+    let accepted = false;
+    setTabs(prev => {
+      if (prev.length >= MAX_TABS) return prev;
+      accepted = true;
+      return [...prev, t];
+    });
+    if (!accepted) {
+      // Silent drop on max-tabs would leave the user wondering why their click
+      // had no effect; surface it in the console at least.
+      console.warn(`[k4rto-browser] popup dropped — MAX_TABS (${MAX_TABS}) reached`);
+      return;
+    }
+    setActiveTabId(t.id);
+    setGlobalHistory(g => {
+      const filtered = g.filter(item => item !== u);
+      return [...filtered, u].slice(-HISTORY_LIMIT);
+    });
+    trackEvent("browser_popup_opened_in_tab", { host: hostOf(u) });
+  }, []);
+
+  // Listen for the worker stub's popup-nav messages and route them to a new
+  // in-app tab.
+  //
+  // SECURITY MODEL — accepted risk, not full protection:
+  //   The e.origin check only confirms the message came from our proxy ORIGIN.
+  //   ANY page loaded through the proxy gets that origin, including malicious
+  //   ones an attacker tricks the user into visiting through the proxy. Such
+  //   a page can postMessage arbitrary URLs here and force a new-tab open.
+  //   We accept this because:
+  //     a) The attacker must already have got the user to type/click an
+  //        attacker URL into our address bar — they had navigation control.
+  //     b) No credentials transit through the proxy (set-cookie stripped).
+  //     c) Worst case is an unwanted tab in the in-app Browser, which the
+  //        user can close. URL bar still shows the destination clearly.
+  //   Hardening options if abuse surfaces: hostname allowlist on `data.url`,
+  //   signed-nonce protocol in the stub, or rate-limit per message-source.
+  useEffect(() => {
+    if (!PROXY_ORIGIN) return;
+    function onMessage(e: MessageEvent) {
+      if (e.origin !== PROXY_ORIGIN) return;
+      const data = e.data;
+      if (!data || typeof data !== "object") return;
+      if (data.type !== "k4rto-popup-nav") return;
+      if (typeof data.url !== "string") return;
+      addTabAndNavigate(data.url);
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [addTabAndNavigate]);
 
   const goBack = useCallback(() => {
     updateActiveTab(tab => tab.histIdx > 0 ? { ...tab, histIdx: tab.histIdx - 1 } : tab);
