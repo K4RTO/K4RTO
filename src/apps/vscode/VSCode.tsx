@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
+import { useT } from "@/contexts/SystemContext";
 import CodeView from "./CodeView";
 import { langFromExt as shikiLang } from "./shiki";
 import { PORTFOLIO_SOURCE_ROOT, PORTFOLIO_SOURCES } from "./portfolioSources";
@@ -113,8 +114,12 @@ function FileIconSmall() {
 export default function VSCode({ windowId }: AppComponentProps) {
   const { state, dispatch } = useWindowManager();
   const fs = useFileSystemOptional();
+  const t = useT();
   const meta = state.windows.get(windowId)?.meta ?? {};
-  const { filePath = "", fileName = "Untitled" } = meta;
+  // Default filename is localized — meta.fileName falls back to "Untitled"/
+  // "未命名" so window title and tab label respect the lang toggle when no
+  // explicit name was supplied by the launcher.
+  const { filePath = "", fileName = t("vscode.defaultFilename") } = meta;
 
   const [content, setContent] = useState("");
   const [modified, setModified] = useState(false);
@@ -255,7 +260,11 @@ export default function VSCode({ windowId }: AppComponentProps) {
             onClick={() => { setActiveTab(id); setSidebarOpen(a => id === activeTab ? !a : true); }}
             className="w-10 h-10 flex items-center justify-center rounded"
             style={{ color: activeTab === id && sidebarOpen ? "#ffffff" : "rgba(255,255,255,0.45)" }}
-            title={id.charAt(0).toUpperCase() + id.slice(1)}
+            title={
+              id === "explorer" ? t("vscode.sidebar.explorer")
+              : id === "search"  ? t("vscode.activity.search")
+              :                    t("vscode.activity.git")
+            }
           >
             {icon}
           </button>
@@ -273,7 +282,7 @@ export default function VSCode({ windowId }: AppComponentProps) {
             className="flex items-center px-4 py-2 flex-shrink-0 select-none text-[11px] uppercase tracking-wider"
             style={{ color: "rgba(255,255,255,0.4)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
           >
-            Explorer
+            {t("vscode.sidebar.explorer")}
           </div>
 
           {/* Files section */}
@@ -305,7 +314,7 @@ export default function VSCode({ windowId }: AppComponentProps) {
             ))}
             {sidebarFiles.length === 0 && (
               <div className="px-4 py-2 text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-                No files
+                {t("vscode.sidebar.noFiles")}
               </div>
             )}
 
@@ -313,7 +322,7 @@ export default function VSCode({ windowId }: AppComponentProps) {
             <div className="flex items-center gap-1 px-4 py-1 mt-2 cursor-pointer select-none">
               <ChevronRight2 />
               <span className="uppercase text-[11px] tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
-                Outline
+                {t("vscode.sidebar.outline")}
               </span>
             </div>
           </div>
@@ -350,9 +359,9 @@ export default function VSCode({ windowId }: AppComponentProps) {
                 color: preview ? "#ffffff" : "rgba(255,255,255,0.5)",
                 backgroundColor: preview ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
               }}
-              title={isPortfolioSource ? "Portfolio sources are read-only — Edit shows plaintext" : undefined}
+              title={isPortfolioSource ? t("vscode.tooltip.portfolioReadOnly") : undefined}
             >
-              {preview ? "Edit" : "Preview"}
+              {preview ? t("vscode.tabs.edit") : t("vscode.tabs.preview")}
             </button>
           )}
         </div>
@@ -397,7 +406,7 @@ export default function VSCode({ windowId }: AppComponentProps) {
                   paddingLeft: 10,
                   paddingRight: 24,
                 }}
-                placeholder="// Start typing..."
+                placeholder={t("vscode.placeholder")}
               />
             </div>
           )}
@@ -409,13 +418,13 @@ export default function VSCode({ windowId }: AppComponentProps) {
           style={{ height: 22, backgroundColor: "#007acc", color: "rgba(255,255,255,0.9)", fontSize: 11 }}
         >
           <div className="flex items-center gap-3">
-            <span>⎇ main</span>
-            {modified && <span>● Modified</span>}
+            <span>{t("vscode.status.branch")}</span>
+            {modified && <span>{t("vscode.status.modified")}</span>}
           </div>
           <div className="flex items-center gap-3">
-            <span>Ln {cursor.line}, Col {cursor.col}</span>
+            <span>{t("vscode.status.position", { line: String(cursor.line), col: String(cursor.col) })}</span>
             <span>{lang}</span>
-            <span>UTF-8</span>
+            <span>{t("vscode.status.encoding")}</span>
           </div>
         </div>
       </div>

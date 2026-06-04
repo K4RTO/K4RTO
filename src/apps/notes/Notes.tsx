@@ -367,11 +367,7 @@ export default function Notes(_props: AppComponentProps) {
     const note = notes.find(n => n.id === id);
     if (note?.pinned) {
       if (typeof window !== "undefined") {
-        window.alert(
-          lang === "zh"
-            ? "Portfolio 笔记受保护，无法删除。你可以创建新笔记后再删除自己的。"
-            : "Portfolio notes are protected and can't be deleted. Create your own note first, then delete that."
-        );
+        window.alert(t("notes.portfolio.cannotDelete"));
       }
       return;
     }
@@ -467,7 +463,7 @@ export default function Notes(_props: AppComponentProps) {
               </button>
               {sel.pinned && (
                 <span style={{ ...dim, fontSize: 11, marginLeft: 8 }}>
-                  {lang === "zh" ? "Portfolio · 受保护" : "Portfolio · protected"}
+                  {t("notes.portfolio.protected")}
                 </span>
               )}
             </div>
@@ -475,7 +471,7 @@ export default function Notes(_props: AppComponentProps) {
             <div className="px-6 pt-5 pb-1 flex-shrink-0">
               <input type="text" value={readLang(sel.title, lang)} onChange={e => updateNote("title", e.target.value)}
                 readOnly={!!sel.pinned}
-                className="w-full bg-transparent outline-none border-none" style={{ ...normal, fontSize: 22, fontWeight: 700, lineHeight: "1.2", cursor: sel.pinned ? "default" : "text" }} placeholder="Title" />
+                className="w-full bg-transparent outline-none border-none" style={{ ...normal, fontSize: 22, fontWeight: 700, lineHeight: "1.2", cursor: sel.pinned ? "default" : "text" }} placeholder={t("notes.editor.title")} />
             </div>
             <div className="px-6 pb-3 flex-shrink-0">
               <span style={{ ...dim, fontSize: 12 }}>
@@ -489,7 +485,7 @@ export default function Notes(_props: AppComponentProps) {
               readOnly={!!sel.pinned}
               className="flex-1 px-6 pb-6 bg-transparent outline-none border-none resize-none"
               style={{ ...normal, fontSize: 14, lineHeight: "1.6", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif", cursor: sel.pinned ? "default" : "text" }}
-              placeholder="Note content..." spellCheck={false} />
+              placeholder={t("notes.editor.content")} spellCheck={false} />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center"><span style={{ ...dim, fontSize: 14 }}>{t("notes.selectNote")}</span></div>

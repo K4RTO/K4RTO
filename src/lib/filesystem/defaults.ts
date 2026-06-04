@@ -93,7 +93,30 @@ A few things worth a click:
 - **⌘ + Space** for Spotlight — try "resume", "github", or any filename.
 - **F4** to open Launchpad — every app in one grid.
 
+Use the **中 / EN** toggle at the top-right of the menu bar to switch the
+whole UI to Chinese — including this file (see Welcome.zh.md next door).
+
 Have a poke around. Nothing on this desktop will break if you click it.
+`,
+    ],
+    [
+      "/Users/guest/Desktop/Welcome.zh.md",
+      `# 你好，欢迎来到 K4RTO
+
+这是一个完全跑在浏览器里的 macOS 风格桌面。你看到的所有东西都是
+React + Tailwind + 一套基于 IndexedDB 的迷你文件系统。
+
+几个值得点点的地方：
+
+- **Resume.pdf**（桌面上这个）—— 在"预览"中打开，顶部可切英文 / 中文版。
+- **Dock 里的 Code** —— VSCode，里面用 Shiki 高亮显示了本站真实运行代码的片段。
+- **Safari** —— Bing / Wikipedia / GitHub 都能开，通过 Cloudflare Worker 代理剥掉 iframe 限制头。
+- **⌘ + 空格** 开 Spotlight —— 试试 "简历"、"github" 或任意文件名。
+- **F4** 开启 Launchpad —— 所有应用一次看完。
+
+用菜单栏右上角的 **中 / EN** 切换可以把整个界面切到英文（参考隔壁的 Welcome.md）。
+
+随便点点，桌面上不会有东西因为被你点了就坏掉。
 `,
     ],
     ["/Users/guest/Documents/Notes/Hello.txt", "Hello, World!\n"],

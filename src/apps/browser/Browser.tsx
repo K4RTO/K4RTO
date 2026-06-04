@@ -270,9 +270,9 @@ function StartPage({ onNavigate, recents, onClearHistory, t }: StartPageProps) {
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
             style={{ backgroundColor: "rgba(52,199,89,0.12)", border: "0.5px solid rgba(52,199,89,0.3)", fontSize: 11, color: "#34c759", fontWeight: 600 }}
-            title="All navigations route through your Cloudflare Worker proxy"
+            title={t("browser.proxy.tooltip")}
           >
-            <ShieldIcon /> Proxy enabled
+            <ShieldIcon /> {t("browser.proxy.enabled")}
           </div>
         )}
       </div>

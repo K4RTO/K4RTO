@@ -6,7 +6,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import type { AppComponentProps } from "@/apps/registry";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
-import { useSystem } from "@/contexts/SystemContext";
+import { useSystem, useT } from "@/contexts/SystemContext";
 import { withBase } from "@/lib/paths";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
@@ -45,6 +45,7 @@ function ChevronRightIcon(){ return <svg width="14" height="14" viewBox="0 0 24 
 export default function Preview({ windowId }: AppComponentProps) {
   const { state, dispatch } = useWindowManager();
   const { lang } = useSystem();
+  const t = useT();
   const meta = state.windows.get(windowId)?.meta ?? {};
   const { publicPath = "", fileName = "Preview", filePath = "" } = meta;
 
@@ -215,7 +216,7 @@ export default function Preview({ windowId }: AppComponentProps) {
 
         {/* Resume language toggle */}
         {isResume && (
-          <div className="flex items-center rounded-[6px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.12)" }} role="group" aria-label="Resume language">
+          <div className="flex items-center rounded-[6px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.12)" }} role="group" aria-label={t("preview.resumeLanguageGroup")}>
             {(["en", "zh"] as const).map(l => (
               <button
                 key={l}
@@ -225,7 +226,7 @@ export default function Preview({ windowId }: AppComponentProps) {
                   color: resumeLang === l ? "white" : "rgba(255,255,255,0.55)",
                   backgroundColor: resumeLang === l ? "rgba(255,255,255,0.15)" : "transparent",
                 }}
-                aria-label={l === "en" ? "English Resume" : "Chinese Resume"}
+                aria-label={l === "en" ? t("preview.resumeEnglish") : t("preview.resumeChinese")}
                 aria-pressed={resumeLang === l}
               >
                 {l === "en" ? "EN" : "中"}
@@ -242,7 +243,7 @@ export default function Preview({ windowId }: AppComponentProps) {
               disabled={currentPage <= 1}
               className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: "rgba(255,255,255,0.08)", color: currentPage > 1 ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)" }}
-              title="Previous Page"
+              title={t("preview.previousPage")}
               aria-label="Previous page"
             >
               <ChevronLeftIcon />
@@ -255,7 +256,7 @@ export default function Preview({ windowId }: AppComponentProps) {
               disabled={currentPage >= (numPages ?? 1)}
               className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: "rgba(255,255,255,0.08)", color: currentPage < (numPages ?? 1) ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)" }}
-              title="Next Page"
+              title={t("preview.nextPage")}
               aria-label="Next page"
             >
               <ChevronRightIcon />
@@ -271,13 +272,13 @@ export default function Preview({ windowId }: AppComponentProps) {
             </span>
             <button onClick={zoomOut} className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
-              title="Zoom Out (⌘−)" aria-label="Zoom out"><ZoomOutIcon /></button>
+              title={t("preview.zoomOut")} aria-label="Zoom out"><ZoomOutIcon /></button>
             <button onClick={resetZoom} className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
-              title="Actual Size (⌘0)" aria-label="Actual size"><ActualSizeIcon /></button>
+              title={t("preview.actualSize")} aria-label="Actual size"><ActualSizeIcon /></button>
             <button onClick={zoomIn} className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
-              title="Zoom In (⌘+)" aria-label="Zoom in"><ZoomInIcon /></button>
+              title={t("preview.zoomIn")} aria-label="Zoom in"><ZoomInIcon /></button>
           </div>
         )}
 
@@ -288,7 +289,7 @@ export default function Preview({ windowId }: AppComponentProps) {
               onClick={handleDownload}
               className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: "rgba(0,88,208,0.65)", color: "white" }}
-              title="Download (⌘S)"
+              title={t("preview.download")}
               aria-label="Download PDF"
             >
               <DownloadIcon />
@@ -297,7 +298,7 @@ export default function Preview({ windowId }: AppComponentProps) {
               onClick={handlePrint}
               className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
-              title="Print (⌘P)"
+              title={t("preview.print")}
               aria-label="Print PDF"
             >
               <PrintIcon />
@@ -313,13 +314,13 @@ export default function Preview({ windowId }: AppComponentProps) {
             file={actualPath}
             onLoadSuccess={({ numPages }) => setNumPages(numPages)}
             onLoadError={(err) => setPdfError(err.message)}
-            loading={<div style={{ color: "rgba(255,255,255,0.4)", marginTop: 40 }}>Loading PDF…</div>}
+            loading={<div style={{ color: "rgba(255,255,255,0.4)", marginTop: 40 }}>{t("preview.loadingPdf")}</div>}
             error={
               <div style={{ color: "rgba(255,100,100,0.7)", marginTop: 40, maxWidth: 420, textAlign: "center" }}>
-                Failed to load PDF{pdfError ? `: ${pdfError}` : ""}.
+                {t("preview.failedLoadPdf")}{pdfError ? `: ${pdfError}` : ""}.
                 <br />
                 <a href={actualPath} download style={{ color: "#4a9eff", textDecoration: "underline" }}>
-                  Download instead
+                  {t("preview.downloadInstead")}
                 </a>
               </div>
             }
@@ -329,7 +330,7 @@ export default function Preview({ windowId }: AppComponentProps) {
               scale={scale}
               renderTextLayer={true}
               renderAnnotationLayer={true}
-              loading={<div style={{ color: "rgba(255,255,255,0.4)" }}>Rendering page…</div>}
+              loading={<div style={{ color: "rgba(255,255,255,0.4)" }}>{t("preview.renderingPage")}</div>}
             />
           </Document>
         ) : isImage && publicPath ? (
@@ -350,7 +351,7 @@ export default function Preview({ windowId }: AppComponentProps) {
           </div>
         ) : (
           <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 14, marginTop: 80 }}>
-            No file to display
+            {t("preview.noFile")}
           </div>
         )}
       </div>

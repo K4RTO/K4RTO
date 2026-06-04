@@ -34,7 +34,7 @@ export default function TextEdit(_props: AppComponentProps) {
     if (!fs) { alert("File system not available."); return; }
     let name = filename;
     if (!name) {
-      const p = window.prompt("Filename:", "Untitled.txt");
+      const p = window.prompt("Filename:", t("textedit.defaultFilename"));
       if (!p?.trim()) return;
       name = p.trim();
       setFilename(name);

@@ -250,7 +250,7 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
           fontSize: 16,
         }}
         aria-hidden
-        title="Power"
+        title={t("loginscreen.power")}
       >
         ⏻
       </div>

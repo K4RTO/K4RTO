@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import type { AppComponentProps } from "@/apps/registry";
-import { useT } from "@/contexts/SystemContext";
+import { useT, useSystem } from "@/contexts/SystemContext";
 import { ContextMenu, type MenuItem } from "@/components/shared/ContextMenu";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useProcesses } from "@/contexts/ProcessContext";
@@ -10,14 +10,20 @@ import { useWindowManager } from "@/contexts/WindowManagerContext";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function formatSize(bytes: number): string {
-  if (bytes === 0) return "Zero KB";
+type Translator = (key: string, vars?: Record<string, string>) => string;
+
+function formatSize(bytes: number, t: Translator): string {
+  if (bytes === 0) return t("finder.zeroKB");
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function guessKind(name: string): string {
+  // Kind labels are technical and conventionally English in file managers
+  // (Finder, Explorer); we keep them stable across languages to avoid
+  // mis-translating things like "Markdown" / "JSON". If we ever decide to
+  // localize these, add finder.kind.* keys and route through t() here.
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   if (ext === "app") return "Application";
   if (ext === "txt") return "Plain Text";
@@ -29,20 +35,24 @@ function guessKind(name: string): string {
   return "Document";
 }
 
-function formatDate(ts: number): string {
+function formatDate(ts: number, lang: "en" | "zh", t: Translator): string {
   const diff = Date.now() - ts;
   const day = 86400000;
-  const timeStr = new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-  if (diff < day)       return `Today at ${timeStr}`;
-  if (diff < 2 * day)   return `Yesterday at ${timeStr}`;
-  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
+  const timeStr = new Date(ts).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  if (diff < day)       return t("finder.todayAt", { time: timeStr });
+  if (diff < 2 * day)   return t("finder.yesterdayAt", { time: timeStr });
+  return new Date(ts).toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
-// Convert a VFS path to breadcrumb segments for display
-function pathToSegments(path: string): string[] {
+// Convert a VFS path to breadcrumb segments for display. First segment is the
+// localized "Macintosh HD" label so the breadcrumb root reflects the lang
+// toggle; deeper path parts are literal VFS names (kept as-is).
+function pathToSegments(path: string, t: Translator): string[] {
+  const root = t("desktop.macintoshHd");
   const parts = path.split("/").filter(Boolean);
-  if (parts.length === 0) return ["Macintosh HD"];
-  return ["Macintosh HD", ...parts];
+  if (parts.length === 0) return [root];
+  return [root, ...parts];
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -269,6 +279,7 @@ export default function Finder({ windowId }: AppComponentProps) {
     ? initialMeta.initialPath
     : "/Users/guest/Downloads";
   const t = useT();
+  const { lang } = useSystem();
   const fs = useFileSystemOptional();
   const { launch } = useProcesses();
 
@@ -302,9 +313,9 @@ export default function Finder({ windowId }: AppComponentProps) {
     setFiles(entries.map(e => ({
       name: e.name,
       type: e.type === "dir" ? "folder" : "file",
-      size: e.type === "file" ? formatSize(e.size) : "--",
+      size: e.type === "file" ? formatSize(e.size, t) : "--",
       kind: e.type === "dir" ? "Folder" : guessKind(e.name),
-      date: formatDate(e.modifiedAt),
+      date: formatDate(e.modifiedAt, lang, t),
       fullPath: e.path,
     })));
     setSelectedFile(null);
@@ -547,7 +558,7 @@ export default function Finder({ windowId }: AppComponentProps) {
     : (currentPath.split("/").pop() || "Macintosh HD");
 
   // Path bar segments
-  const pathSegments = pathToSegments(currentPath);
+  const pathSegments = pathToSegments(currentPath, t);
 
   // Sidebar data with translations
   const sidebarData = [
@@ -710,7 +721,7 @@ export default function Finder({ windowId }: AppComponentProps) {
           <button key={i} className="w-8 h-8 rounded-full flex items-center justify-center"
             style={{ color: "rgba(255,255,255,0.55)", backgroundColor: "rgba(255,255,255,0.07)" }}
             disabled
-            title="Coming soon"
+            title={t("finder.toolbar.comingSoon")}
           >
             {icon}
           </button>
@@ -815,7 +826,7 @@ export default function Finder({ windowId }: AppComponentProps) {
               <div className="flex-1 overflow-y-auto">
                 {sortedFiles.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center h-full">
-                    <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 13 }}>This folder is empty</span>
+                    <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 13 }}>{t("finder.emptyFolder")}</span>
                   </div>
                 ) : sortedFiles.map((file, i) => {
                   const isSel = selectedFile === file.name;
@@ -868,7 +879,7 @@ export default function Finder({ windowId }: AppComponentProps) {
             <div className="flex-1 overflow-y-auto p-4">
               {sortedFiles.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
-                  <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 13 }}>This folder is empty</span>
+                  <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 13 }}>{t("finder.emptyFolder")}</span>
                 </div>
               ) : (
                 <div className="grid grid-cols-5 gap-3">

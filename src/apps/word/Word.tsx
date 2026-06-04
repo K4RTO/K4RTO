@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
+import { useT } from "@/contexts/SystemContext";
 
 function wordCount(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -23,8 +24,11 @@ type Align = "left" | "center" | "right";
 export default function Word({ windowId }: AppComponentProps) {
   const { state, dispatch } = useWindowManager();
   const fs = useFileSystemOptional();
+  const t = useT();
   const meta = state.windows.get(windowId)?.meta ?? {};
-  const { filePath = "", fileName = "Document.docx" } = meta;
+  // Default filename is localized — meta.fileName falls back to
+  // "Document.docx"/"文档.docx" so window title respects the lang toggle.
+  const { filePath = "", fileName = t("word.defaultFilename") } = meta;
 
   const [content, setContent] = useState("");
   const [modified, setModified] = useState(false);
@@ -122,7 +126,7 @@ export default function Word({ windowId }: AppComponentProps) {
           className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px]"
           style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)" }}
         >
-          <SaveIcon /> Save
+          <SaveIcon /> {t("word.ribbon.save")}
         </button>
       </div>
 
@@ -150,17 +154,17 @@ export default function Word({ windowId }: AppComponentProps) {
         <div className="w-px h-6 mx-1" style={{ backgroundColor: "#d0d0d0" }} />
 
         {/* Bold / Italic / Underline */}
-        {ribbonBtn(bold,      toggleBold,      <BoldIcon />,      "Bold (⌘B)")}
-        {ribbonBtn(italic,    toggleItalic,    <ItalicIcon />,    "Italic (⌘I)")}
-        {ribbonBtn(underline, toggleUnderline, <UnderlineIcon />, "Underline (⌘U)")}
+        {ribbonBtn(bold,      toggleBold,      <BoldIcon />,      t("word.ribbon.bold"))}
+        {ribbonBtn(italic,    toggleItalic,    <ItalicIcon />,    t("word.ribbon.italic"))}
+        {ribbonBtn(underline, toggleUnderline, <UnderlineIcon />, t("word.ribbon.underline"))}
 
         {/* Separator */}
         <div className="w-px h-6 mx-1" style={{ backgroundColor: "#d0d0d0" }} />
 
         {/* Alignment */}
-        {ribbonBtn(align === "left",   () => setAlignment("left"),   <AlignLeftIcon />,   "Align Left")}
-        {ribbonBtn(align === "center", () => setAlignment("center"), <AlignCenterIcon />, "Center")}
-        {ribbonBtn(align === "right",  () => setAlignment("right"),  <AlignRightIcon />,  "Align Right")}
+        {ribbonBtn(align === "left",   () => setAlignment("left"),   <AlignLeftIcon />,   t("word.ribbon.alignLeft"))}
+        {ribbonBtn(align === "center", () => setAlignment("center"), <AlignCenterIcon />, t("word.ribbon.center"))}
+        {ribbonBtn(align === "right",  () => setAlignment("right"),  <AlignRightIcon />,  t("word.ribbon.alignRight"))}
       </div>
 
       {/* Document area */}
@@ -196,7 +200,7 @@ export default function Word({ windowId }: AppComponentProps) {
               whiteSpace: "pre-wrap",
               wordBreak: "break-word",
             }}
-            data-placeholder="Start typing your document..."
+            data-placeholder={t("word.placeholder")}
           />
         </div>
       </div>
@@ -206,9 +210,9 @@ export default function Word({ windowId }: AppComponentProps) {
         className="flex items-center justify-between flex-shrink-0 select-none"
         style={{ height: 26, padding: "0 16px", backgroundColor: "#2b579a", color: "rgba(255,255,255,0.85)", fontSize: 11 }}
       >
-        <span>{words} words&nbsp;&nbsp;{chars} characters</span>
+        <span>{words} {t("word.status.words")}&nbsp;&nbsp;{chars} {t("word.status.characters")}</span>
         <span style={{ color: "rgba(255,255,255,0.6)" }}>
-          {modified ? "Unsaved changes" : "Saved"}
+          {modified ? t("word.status.unsavedChanges") : t("word.status.saved")}
         </span>
       </div>
 

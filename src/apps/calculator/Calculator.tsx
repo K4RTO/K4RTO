@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
+import { useT } from "@/contexts/SystemContext";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
 type Operation = "+" | "-" | "*" | "/" | null;
@@ -41,6 +42,7 @@ function getFS(d: string): string {
 
 export default function Calculator({ windowId }: AppComponentProps) {
   const wm = useWindowManager();
+  const t = useT();
   const [display, setDisplay] = useState("0");
   const [prev, setPrev] = useState<number | null>(null);
   const [op, setOp] = useState<Operation>(null);
@@ -149,7 +151,7 @@ export default function Calculator({ windowId }: AppComponentProps) {
     if (isNaN(v)) return;
     const r = f(v);
     if (!isFinite(r) || isNaN(r)) {
-      setDisplay("Error");
+      setDisplay(t("calculator.error"));
       setPrev(null); setOp(null); setWaiting(false); setJustCalc(true);
       return;
     }
@@ -256,9 +258,9 @@ export default function Calculator({ windowId }: AppComponentProps) {
             letterSpacing: "0.04em",
             cursor: "pointer",
           }}
-          title={sci ? "Switch to Basic" : "Switch to Scientific"}
+          title={sci ? t("calculator.sci.switchToBasic") : t("calculator.sci.switchToScientific")}
         >
-          {sci ? "Sci" : "Sci"}
+          Sci
         </button>
         <span className="text-white font-light" style={{ fontSize: getFS(disp), lineHeight: 1 }}>
           {disp}

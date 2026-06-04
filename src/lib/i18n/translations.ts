@@ -425,6 +425,88 @@ const translations: Record<string, TranslationEntry> = {
   "cal.events":                { en: "Events",                    zh: "活动" },
   "cal.noEventsToday":         { en: "No events today",           zh: "今天没有活动" },
   "cal.noEvents":              { en: "No events",                 zh: "没有活动" },
+
+  // ── i18n sweep: Calculator ─────────────────────────────────────────────
+  "calculator.sci.switchToBasic":      { en: "Switch to Basic",          zh: "切换到基础模式" },
+  "calculator.sci.switchToScientific": { en: "Switch to Scientific",     zh: "切换到科学模式" },
+  "calculator.error":          { en: "Error",                     zh: "错误" },
+
+  // ── i18n sweep: Finder ─────────────────────────────────────────────────
+  "finder.toolbar.comingSoon": { en: "Coming soon",               zh: "敬请期待" },
+  "finder.emptyFolder":        { en: "This folder is empty",      zh: "此文件夹为空" },
+  "finder.zeroKB":             { en: "Zero KB",                   zh: "零 KB" },
+  "finder.todayAt":            { en: "Today at {time}",           zh: "今天 {time}" },
+  "finder.yesterdayAt":        { en: "Yesterday at {time}",       zh: "昨天 {time}" },
+
+  // ── i18n sweep: Browser ────────────────────────────────────────────────
+  "browser.proxy.tooltip":     { en: "All navigations route through the Cloudflare Worker proxy",
+                                 zh: "所有导航通过 Cloudflare Worker 代理转发" },
+  "browser.proxy.enabled":     { en: "Proxy enabled",             zh: "代理已启用" },
+
+  // ── i18n sweep: Preview ────────────────────────────────────────────────
+  "preview.resumeLanguageGroup": { en: "Resume language",         zh: "简历语言" },
+  "preview.resumeEnglish":     { en: "English Resume",            zh: "英文简历" },
+  "preview.resumeChinese":     { en: "Chinese Resume",            zh: "中文简历" },
+  "preview.previousPage":      { en: "Previous Page",             zh: "上一页" },
+  "preview.nextPage":          { en: "Next Page",                 zh: "下一页" },
+  "preview.zoomOut":           { en: "Zoom Out (⌘−)",             zh: "缩小 (⌘−)" },
+  "preview.actualSize":        { en: "Actual Size (⌘0)",          zh: "实际大小 (⌘0)" },
+  "preview.zoomIn":            { en: "Zoom In (⌘+)",              zh: "放大 (⌘+)" },
+  "preview.download":          { en: "Download (⌘S)",             zh: "下载 (⌘S)" },
+  "preview.print":             { en: "Print (⌘P)",                zh: "打印 (⌘P)" },
+  "preview.loadingPdf":        { en: "Loading PDF…",              zh: "正在加载 PDF…" },
+  "preview.failedLoadPdf":     { en: "Failed to load PDF",        zh: "PDF 加载失败" },
+  "preview.downloadInstead":   { en: "Download instead",          zh: "改为下载" },
+  "preview.renderingPage":     { en: "Rendering page…",           zh: "正在渲染页面…" },
+  "preview.noFile":            { en: "No file to display",        zh: "没有可显示的文件" },
+
+  // ── i18n sweep: Notes ──────────────────────────────────────────────────
+  "notes.editor.title":        { en: "Title",                     zh: "标题" },
+  "notes.editor.content":      { en: "Note content...",           zh: "笔记内容..." },
+  "notes.portfolio.protected": { en: "Portfolio · protected",     zh: "作品集 · 只读" },
+  "notes.portfolio.cannotDelete": {
+    en: "Portfolio notes are protected and can't be deleted. Create your own note first, then delete that.",
+    zh: "作品集笔记受保护，无法删除。你可以先创建一个自己的笔记，然后再删除它。",
+  },
+
+  // ── i18n sweep: TextEdit ───────────────────────────────────────────────
+  "textedit.defaultFilename":  { en: "Untitled.txt",              zh: "未命名.txt" },
+
+  // ── i18n sweep: Word ───────────────────────────────────────────────────
+  "word.ribbon.bold":          { en: "Bold (⌘B)",                 zh: "粗体 (⌘B)" },
+  "word.ribbon.italic":        { en: "Italic (⌘I)",               zh: "斜体 (⌘I)" },
+  "word.ribbon.underline":     { en: "Underline (⌘U)",            zh: "下划线 (⌘U)" },
+  "word.ribbon.alignLeft":     { en: "Align Left",                zh: "左对齐" },
+  "word.ribbon.center":        { en: "Center",                    zh: "居中" },
+  "word.ribbon.alignRight":    { en: "Align Right",               zh: "右对齐" },
+  "word.ribbon.save":          { en: "Save",                      zh: "保存" },
+  "word.status.words":         { en: "words",                     zh: "词" },
+  "word.status.characters":    { en: "characters",                zh: "字符" },
+  "word.status.unsavedChanges":{ en: "Unsaved changes",           zh: "有未保存的更改" },
+  "word.status.saved":         { en: "Saved",                     zh: "已保存" },
+  "word.placeholder":          { en: "Start typing your document...", zh: "开始输入文档内容..." },
+  "word.defaultFilename":      { en: "Document.docx",             zh: "文档.docx" },
+
+  // ── i18n sweep: VSCode ─────────────────────────────────────────────────
+  "vscode.sidebar.explorer":   { en: "Explorer",                  zh: "资源管理器" },
+  "vscode.activity.search":    { en: "Search",                    zh: "搜索" },
+  "vscode.activity.git":       { en: "Git",                       zh: "Git" },
+  "vscode.defaultFilename":    { en: "Untitled",                  zh: "未命名" },
+  "vscode.sidebar.noFiles":    { en: "No files",                  zh: "没有文件" },
+  "vscode.sidebar.outline":    { en: "Outline",                   zh: "大纲" },
+  "vscode.tooltip.portfolioReadOnly": { en: "Portfolio sources are read-only — Edit shows plaintext",
+                                        zh: "作品集源码只读 — 切到 Edit 可看纯文本" },
+  "vscode.tabs.edit":          { en: "Edit",                      zh: "编辑" },
+  "vscode.tabs.preview":       { en: "Preview",                   zh: "预览" },
+  "vscode.placeholder":        { en: "// Start typing...",        zh: "// 开始输入..." },
+  "vscode.status.branch":      { en: "⎇ main",                    zh: "⎇ main" },
+  "vscode.status.modified":    { en: "● Modified",                zh: "● 已修改" },
+  "vscode.status.position":    { en: "Ln {line}, Col {col}",      zh: "行 {line}, 列 {col}" },
+  "vscode.status.encoding":    { en: "UTF-8",                     zh: "UTF-8" },
+
+  // ── i18n sweep: LoginScreen + MenuBar ──────────────────────────────────
+  "loginscreen.power":         { en: "Power",                     zh: "电源" },
+  "menubar.spotlight":         { en: "Spotlight (⌘Space)",        zh: "Spotlight 搜索 (⌘Space)" },
 };
 
 export default translations;
