@@ -193,6 +193,8 @@ const translations: Record<string, TranslationEntry> = {
   "spotlight.google":          { en: "Google",                    zh: "谷歌" },
   "spotlight.web":             { en: "Bing",                      zh: "Bing" },
   "spotlight.clearQuery":      { en: "Clear search",              zh: "清除搜索" },
+  "spotlight.math.subtitle":   { en: "Calculator · Press Enter to copy",
+                                 zh: "计算器 · 按 Enter 复制结果" },
 
   // ── Launchpad ────────────────────────────────────────────────────────────
   "dock.launchpad":            { en: "Launchpad",                 zh: "启动台" },

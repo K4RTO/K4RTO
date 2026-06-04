@@ -115,7 +115,203 @@ type SpotlightResult =
   | { kind: "command";    id: string; label: string; subtitle: string; icon: string; action: PortfolioAction }
   | { kind: "app";        id: string; label: string; subtitle: string; icon: string; appId: string }
   | { kind: "file";       id: string; label: string; subtitle: string; icon: string; filePath: string; fileName: string }
+  | { kind: "math";       id: string; label: string; subtitle: string; value: string }
   | { kind: "suggestion"; id: string; label: string; subtitle: string };
+
+/**
+ * Safe math expression evaluator for Spotlight's calculator feature.
+ *
+ * Implements a small hand-written recursive-descent parser instead of using
+ * `eval` or `new Function()` — even with whitelisting, building dynamic JS
+ * from user input is a code-injection footgun. Parsing into a numeric value
+ * via a closed grammar means an attacker has literally no payload to deliver.
+ *
+ * Grammar (lowest precedence first):
+ *   expr   ::= term (('+' | '-') term)*
+ *   term   ::= power (('*' | '/' | '%') power)*
+ *   power  ::= unary ('^' unary)*           // right-associative
+ *   unary  ::= ('+' | '-') unary | atom
+ *   atom   ::= number | constant | '(' expr ')' | func '(' expr ')'
+ *
+ * Accepts: digits, decimals, parens, + - * / % ^, the constants π/pi/e, and
+ * the function names sqrt sin cos tan asin acos atan log (=log10)
+ * ln (=natural log) abs floor ceil round.
+ *
+ * Returns the numeric result, or null on any parse/eval error.
+ */
+type MathToken =
+  | { type: "num"; value: number }
+  | { type: "op"; value: "+" | "-" | "*" | "/" | "%" | "^" }
+  | { type: "lparen" }
+  | { type: "rparen" }
+  | { type: "const"; value: number }
+  | { type: "func"; name: string };
+
+const MATH_FUNCS: Record<string, (x: number) => number> = {
+  sqrt:  Math.sqrt,
+  sin:   Math.sin,
+  cos:   Math.cos,
+  tan:   Math.tan,
+  asin:  Math.asin,
+  acos:  Math.acos,
+  atan:  Math.atan,
+  log:   Math.log10,    // base-10, matches calculator convention
+  ln:    Math.log,      // natural log
+  abs:   Math.abs,
+  floor: Math.floor,
+  ceil:  Math.ceil,
+  round: Math.round,
+};
+
+function tokenizeMath(input: string): MathToken[] | null {
+  const tokens: MathToken[] = [];
+  let i = 0;
+  while (i < input.length) {
+    const ch = input[i];
+    if (ch === " " || ch === "\t") { i++; continue; }
+    // Number (digits, optional decimal point, optional more digits)
+    if ((ch >= "0" && ch <= "9") || ch === ".") {
+      let j = i;
+      let sawDot = false;
+      while (j < input.length) {
+        const c = input[j];
+        if (c >= "0" && c <= "9") j++;
+        else if (c === "." && !sawDot) { sawDot = true; j++; }
+        else break;
+      }
+      const n = parseFloat(input.slice(i, j));
+      if (isNaN(n)) return null;
+      tokens.push({ type: "num", value: n });
+      i = j;
+      continue;
+    }
+    if (ch === "+" || ch === "-" || ch === "*" || ch === "/" || ch === "%" || ch === "^") {
+      tokens.push({ type: "op", value: ch });
+      i++;
+      continue;
+    }
+    if (ch === "(") { tokens.push({ type: "lparen" }); i++; continue; }
+    if (ch === ")") { tokens.push({ type: "rparen" }); i++; continue; }
+    if (ch === "π") { tokens.push({ type: "const", value: Math.PI }); i++; continue; }
+    // Identifier — function name or constant
+    if ((ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z")) {
+      let j = i;
+      while (j < input.length) {
+        const c = input[j];
+        if ((c >= "a" && c <= "z") || (c >= "A" && c <= "Z")) j++;
+        else break;
+      }
+      const name = input.slice(i, j).toLowerCase();
+      if (name === "pi") tokens.push({ type: "const", value: Math.PI });
+      else if (name === "e") tokens.push({ type: "const", value: Math.E });
+      else if (name in MATH_FUNCS) tokens.push({ type: "func", name });
+      else return null;
+      i = j;
+      continue;
+    }
+    return null;
+  }
+  return tokens;
+}
+
+function evalMath(raw: string): number | null {
+  const s = raw.trim();
+  // Require at least one digit so plain word queries like "github" don't
+  // accidentally light up a math row.
+  if (!s || !/[0-9]/.test(s)) return null;
+
+  const tokens = tokenizeMath(s);
+  if (!tokens || tokens.length === 0) return null;
+
+  let pos = 0;
+  function peek(): MathToken | undefined { return tokens![pos]; }
+  function eat(): MathToken | undefined { return tokens![pos++]; }
+
+  function parseExpr(): number {
+    let left = parseTerm();
+    while (peek()?.type === "op" && (peek() as { value: string }).value === "+") {
+      eat();
+      left = left + parseTerm();
+    }
+    while (true) {
+      const p = peek();
+      if (p?.type === "op" && (p.value === "+" || p.value === "-")) {
+        eat();
+        const right = parseTerm();
+        left = p.value === "+" ? left + right : left - right;
+      } else break;
+    }
+    return left;
+  }
+  function parseTerm(): number {
+    let left = parsePower();
+    while (true) {
+      const p = peek();
+      if (p?.type === "op" && (p.value === "*" || p.value === "/" || p.value === "%")) {
+        eat();
+        const right = parsePower();
+        if (p.value === "*") left = left * right;
+        else if (p.value === "/") left = left / right;
+        else left = left % right;
+      } else break;
+    }
+    return left;
+  }
+  function parsePower(): number {
+    const base = parseUnary();
+    const p = peek();
+    if (p?.type === "op" && p.value === "^") {
+      eat();
+      return Math.pow(base, parsePower());   // right-associative
+    }
+    return base;
+  }
+  function parseUnary(): number {
+    const p = peek();
+    if (p?.type === "op" && (p.value === "+" || p.value === "-")) {
+      eat();
+      const v = parseUnary();
+      return p.value === "-" ? -v : v;
+    }
+    return parseAtom();
+  }
+  function parseAtom(): number {
+    const tok = eat();
+    if (!tok) throw new Error("unexpected end");
+    if (tok.type === "num" || tok.type === "const") return tok.value;
+    if (tok.type === "lparen") {
+      const v = parseExpr();
+      const close = eat();
+      if (close?.type !== "rparen") throw new Error("missing )");
+      return v;
+    }
+    if (tok.type === "func") {
+      const open = eat();
+      if (open?.type !== "lparen") throw new Error("missing (");
+      const arg = parseExpr();
+      const close = eat();
+      if (close?.type !== "rparen") throw new Error("missing )");
+      return MATH_FUNCS[tok.name](arg);
+    }
+    throw new Error("unexpected token");
+  }
+
+  try {
+    const result = parseExpr();
+    if (pos !== tokens.length) return null;   // trailing junk
+    if (typeof result !== "number" || !isFinite(result) || isNaN(result)) return null;
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+/** Format a math result for the Spotlight row: integer if whole, else up to
+ *  10 significant digits (trims trailing zeros). */
+function formatMathResult(n: number): string {
+  if (Number.isInteger(n)) return n.toString();
+  return parseFloat(n.toPrecision(10)).toString();
+}
 
 const APP_ICON_FALLBACK = "📦";
 const FILE_ICONS: Record<string, string> = {
@@ -178,6 +374,21 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
 
     const out: SpotlightResult[] = [];
     const langKey: Lang = lang === "zh" ? "zh" : "en";
+
+    // 0. Math expression — top result when the input looks like one. Computed
+    //    first so it sits above curated commands; a recruiter typing "2+2"
+    //    sees the answer immediately, no extra clicks.
+    const mathResult = evalMath(query);
+    if (mathResult !== null) {
+      const formatted = formatMathResult(mathResult);
+      out.push({
+        kind: "math",
+        id: `math:${query}`,
+        label: `= ${formatted}`,
+        subtitle: t("spotlight.math.subtitle"),
+        value: formatted,
+      });
+    }
 
     // 1. Portfolio commands — curated, highest signal.
     for (const cmd of PORTFOLIO_COMMANDS) {
@@ -286,6 +497,16 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
         onClose();
         return;
       }
+      case "math":
+        // Copy the numeric result to the clipboard so the user can paste it
+        // wherever they were heading. Fail silently if the API isn't
+        // available (older browsers, insecure context) — the result is still
+        // visible on screen so no information is lost.
+        if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(r.value).catch(() => {});
+        }
+        onClose();
+        return;
       case "suggestion":
         // Use Bing instead of Google — Google refuses iframe embedding so opening
         // it in the in-OS Safari would just show a blank page; Bing renders fine.
@@ -357,7 +578,9 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
                 >
                   {r.kind === "suggestion"
                     ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                    : r.icon}
+                    : r.kind === "math"
+                      ? "="
+                      : r.icon}
                 </div>
                 <div className="flex flex-col min-w-0 flex-1">
                   <span
