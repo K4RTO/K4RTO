@@ -10,9 +10,79 @@ type Operation = "+" | "-" | "*" | "/" | null;
 type BtnType = "digit" | "operator" | "function" | "sci";
 
 // Width grows when Sci mode is on so the extra column has room. The basic
-// width matches the registry default (240).
+// width matches the registry default (240). Unit mode is sci-width too —
+// the converter UI uses the extra horizontal real estate for the dropdowns.
 const BASIC_WIDTH = 240;
 const SCI_WIDTH = 360;
+const UNIT_WIDTH = 360;
+
+// ── Unit converter data ────────────────────────────────────────────────────
+// Each category lists { key, ratio-to-base }. Temperature gets a custom
+// convert function because it's not multiplicative (F = C×9/5+32).
+interface UnitDef { id: string; ratio: number; }
+interface CategoryDef {
+  id: "length" | "weight" | "temperature" | "time";
+  units: UnitDef[];
+  custom?: (v: number, fromId: string, toId: string) => number;
+}
+
+const UNIT_CATEGORIES: CategoryDef[] = [
+  { id: "length", units: [
+    { id: "m",  ratio: 1 },
+    { id: "cm", ratio: 0.01 },
+    { id: "mm", ratio: 0.001 },
+    { id: "km", ratio: 1000 },
+    { id: "in", ratio: 0.0254 },
+    { id: "ft", ratio: 0.3048 },
+    { id: "mi", ratio: 1609.344 },
+  ]},
+  { id: "weight", units: [
+    { id: "kg", ratio: 1 },
+    { id: "g",  ratio: 0.001 },
+    { id: "mg", ratio: 0.000001 },
+    { id: "lb", ratio: 0.45359237 },
+    { id: "oz", ratio: 0.028349523125 },
+    { id: "t",  ratio: 1000 },
+  ]},
+  { id: "temperature", units: [
+    { id: "C", ratio: 1 },
+    { id: "F", ratio: 1 },
+    { id: "K", ratio: 1 },
+  ], custom: (v, from, to) => {
+    // Normalize to Celsius first, then convert out.
+    let c = v;
+    if (from === "F") c = (v - 32) * 5 / 9;
+    else if (from === "K") c = v - 273.15;
+    if (to === "C") return c;
+    if (to === "F") return c * 9 / 5 + 32;
+    if (to === "K") return c + 273.15;
+    return c;
+  }},
+  { id: "time", units: [
+    { id: "s",   ratio: 1 },
+    { id: "ms",  ratio: 0.001 },
+    { id: "min", ratio: 60 },
+    { id: "h",   ratio: 3600 },
+    { id: "d",   ratio: 86400 },
+    { id: "wk",  ratio: 604800 },
+  ]},
+];
+
+function convertUnit(value: number, cat: CategoryDef, fromId: string, toId: string): number {
+  if (cat.custom) return cat.custom(value, fromId, toId);
+  const from = cat.units.find((u) => u.id === fromId);
+  const to = cat.units.find((u) => u.id === toId);
+  if (!from || !to) return value;
+  // value × from.ratio → base; ÷ to.ratio → target
+  return (value * from.ratio) / to.ratio;
+}
+
+function formatConvertedResult(n: number): string {
+  if (!isFinite(n)) return "—";
+  if (Number.isInteger(n) && Math.abs(n) < 1e9) return n.toString();
+  if (Math.abs(n) >= 1e9 || (Math.abs(n) > 0 && Math.abs(n) < 1e-4)) return n.toExponential(4);
+  return parseFloat(n.toPrecision(8)).toString();
+}
 
 const BG: Record<BtnType, string> = {
   digit:    "#333333",
@@ -40,6 +110,8 @@ function getFS(d: string): string {
   return "28px";
 }
 
+type CalcMode = "basic" | "sci" | "unit";
+
 export default function Calculator({ windowId }: AppComponentProps) {
   const wm = useWindowManager();
   const t = useT();
@@ -48,37 +120,41 @@ export default function Calculator({ windowId }: AppComponentProps) {
   const [op, setOp] = useState<Operation>(null);
   const [waiting, setWaiting] = useState(false);
   const [justCalc, setJustCalc] = useState(false);
-  const [sci, setSci] = useState(false);
+  const [mode, setMode] = useState<CalcMode>("basic");
 
-  // Resize the window each time sci mode flips. Calculator was registered
+  // Resize the window each time mode flips. Calculator was registered
   // as non-resizable for drag-handle suppression — programmatic resize via
   // the reducer still works (the `resizable` flag only gates the resize
   // grips in Window.tsx).
   //
-  // Mount-skip guard: the effect would otherwise fire once with sci=false on
-  // first render and dispatch a redundant 240px resize. That's a no-op for a
-  // freshly-created Calculator (default width is 240) but would clobber the
-  // window manager's persisted width if Calculator was reopened in sci mode
-  // and the user closed it without flipping back to basic.
+  // Mount-skip guard: the effect would otherwise fire once with mode=basic
+  // on first render and dispatch a redundant 240px resize. That's a no-op
+  // for a freshly-created Calculator (default width 240) but would clobber
+  // the window manager's persisted width if Calculator was reopened in sci
+  // mode and the user closed it without flipping back to basic.
   const didMount = useRef(false);
   useEffect(() => {
     if (!didMount.current) {
       didMount.current = true;
       return;
     }
-    wm.dispatch({
-      type: "RESIZE_WINDOW",
-      id: windowId,
-      rect: { width: sci ? SCI_WIDTH : BASIC_WIDTH },
-    });
+    const w = mode === "basic" ? BASIC_WIDTH : mode === "sci" ? SCI_WIDTH : UNIT_WIDTH;
+    wm.dispatch({ type: "RESIZE_WINDOW", id: windowId, rect: { width: w } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sci]);
+  }, [mode]);
 
-  // MenuBar entries (View > Basic / Scientific) toggle this mode.
+  // MenuBar entries (View > Basic / Scientific / Unit) toggle this mode.
   useAppMenuListener("calculator", (action) => {
-    if (action.type === "view-basic") setSci(false);
-    if (action.type === "view-scientific") setSci(true);
+    if (action.type === "view-basic") setMode("basic");
+    if (action.type === "view-scientific") setMode("sci");
+    if (action.type === "view-unit") setMode("unit");
   });
+
+  // Convenience aliases — `sci` is still used in many places below, kept as
+  // a derived boolean so the existing button-rendering branches don't need
+  // a sweeping refactor. Mode === "unit" hides the calc grid entirely and
+  // renders the unit-converter panel instead.
+  const sci = mode === "sci";
 
   const isClean = display === "0" && prev === null && op === null;
 
@@ -237,68 +313,238 @@ export default function Calculator({ windowId }: AppComponentProps) {
 
   return (
     <div className="h-full flex flex-col select-none overflow-hidden" style={{ backgroundColor: "#1c1c1e", animation: "fadeIn 0.2s ease" }}>
-      {/* Display */}
-      <div className="flex items-end justify-end gap-2 px-5 pb-3" style={{ backgroundColor: "#000", height: 100, flexShrink: 0, position: "relative" }}>
-        {/* Sci toggle — top-right corner of the display area; small enough to
-            not compete with the digit readout */}
-        <button
-          type="button"
-          onClick={() => setSci((v) => !v)}
-          style={{
-            position: "absolute",
-            top: 8,
-            left: 8,
-            background: sci ? "rgba(31, 58, 95, 0.95)" : "rgba(255,255,255,0.10)",
-            color: sci ? "white" : "rgba(255,255,255,0.65)",
-            border: "1px solid rgba(255,255,255,0.18)",
-            borderRadius: 6,
-            padding: "2px 10px",
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-            cursor: "pointer",
-          }}
-          title={sci ? t("calculator.sci.switchToBasic") : t("calculator.sci.switchToScientific")}
-        >
-          Sci
-        </button>
-        <span className="text-white font-light" style={{ fontSize: getFS(disp), lineHeight: 1 }}>
-          {disp}
-        </span>
+      {/* Mode toggle — three-way pill (Basic / Sci / Unit). Sits in the top-
+          left of the display area; doesn't compete with the digit readout. */}
+      <div
+        className="absolute flex items-center"
+        style={{
+          top: 8, left: 8, zIndex: 1,
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 6, padding: 1,
+        }}
+      >
+        {(["basic", "sci", "unit"] as CalcMode[]).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            style={{
+              background: mode === m ? "rgba(31, 58, 95, 0.95)" : "transparent",
+              color: mode === m ? "white" : "rgba(255,255,255,0.55)",
+              border: "none",
+              padding: "3px 9px",
+              borderRadius: 5,
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              cursor: "pointer",
+            }}
+            title={t(`calculator.mode.${m}`)}
+          >
+            {m === "basic" ? "Basic" : m === "sci" ? "Sci" : "Unit"}
+          </button>
+        ))}
       </div>
 
-      {/* Buttons */}
-      <div className="p-4 flex-1" style={{ backgroundColor: "#1c1c1e" }}>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: 10, height: "100%" }}>
-          {cells.map((btn, i) => {
-            const bg = BG[btn.type];
-            const hv = BG_HOVER[btn.type];
-            return (
-              <button key={i} onClick={btn.fn}
-                style={{
-                  gridColumn: btn.wide ? "span 2" : undefined,
-                  borderRadius: 9999,
-                  backgroundColor: bg,
-                  color: "white",
-                  fontSize: btn.type === "sci" ? 15 : (btn.label === "+/-" ? 18 : 24),
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: btn.wide ? "flex-start" : "center",
-                  paddingLeft: btn.wide ? 28 : undefined,
-                  transition: "background-color 0.08s",
-                  minHeight: 0,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = hv)}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = bg)}
-              >
-                {btn.label}
-              </button>
-            );
-          })}
+      {/* Display — hidden in unit mode (which renders its own input row) */}
+      {mode !== "unit" && (
+        <div className="flex items-end justify-end gap-2 px-5 pb-3" style={{ backgroundColor: "#000", height: 100, flexShrink: 0, position: "relative" }}>
+          <span className="text-white font-light" style={{ fontSize: getFS(disp), lineHeight: 1 }}>
+            {disp}
+          </span>
         </div>
+      )}
+
+      {/* Body — either the digit grid (basic / sci) or the unit converter. */}
+      {mode === "unit" ? (
+        <UnitConverter t={t} />
+      ) : (
+        <div className="p-4 flex-1" style={{ backgroundColor: "#1c1c1e" }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: 10, height: "100%" }}>
+            {cells.map((btn, i) => {
+              const bg = BG[btn.type];
+              const hv = BG_HOVER[btn.type];
+              return (
+                <button key={i} onClick={btn.fn}
+                  style={{
+                    gridColumn: btn.wide ? "span 2" : undefined,
+                    borderRadius: 9999,
+                    backgroundColor: bg,
+                    color: "white",
+                    fontSize: btn.type === "sci" ? 15 : (btn.label === "+/-" ? 18 : 24),
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: btn.wide ? "flex-start" : "center",
+                    paddingLeft: btn.wide ? 28 : undefined,
+                    transition: "background-color 0.08s",
+                    minHeight: 0,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = hv)}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = bg)}
+                >
+                  {btn.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Unit Converter pane ─────────────────────────────────────────────────────
+// Self-contained: own state for category / from / to / value. No interaction
+// with the calculator's digit grid state, since switching modes resets it
+// visually and a converter that "remembered" the last digit-grid result would
+// be confusing more than useful.
+function UnitConverter({ t }: { t: (key: string, vars?: Record<string, string>) => string }) {
+  const [catId, setCatId] = useState<CategoryDef["id"]>("length");
+  const cat = UNIT_CATEGORIES.find((c) => c.id === catId)!;
+  const [fromId, setFromId] = useState<string>(cat.units[0].id);
+  const [toId, setToId] = useState<string>(cat.units[1].id);
+  const [input, setInput] = useState("1");
+
+  // When category changes, reset from/to to its first two units so we don't
+  // hold onto stale ids that don't belong to the new category.
+  useEffect(() => {
+    setFromId(cat.units[0].id);
+    setToId(cat.units[1]?.id ?? cat.units[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catId]);
+
+  const value = parseFloat(input);
+  const result = isNaN(value) ? null : convertUnit(value, cat, fromId, toId);
+
+  const selectStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "8px 10px",
+    background: "#2c2c2e",
+    color: "#fff",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 8,
+    fontSize: 13,
+    cursor: "pointer",
+  };
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: 10,
+    fontWeight: 700,
+    color: "rgba(255,255,255,0.45)",
+    letterSpacing: "0.08em",
+    marginBottom: 4,
+    textTransform: "uppercase",
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#1c1c1e", padding: "20px 18px" }}>
+      {/* Category tabs */}
+      <div className="flex gap-1.5 mb-4">
+        {UNIT_CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setCatId(c.id)}
+            style={{
+              flex: 1,
+              padding: "8px 4px",
+              background: catId === c.id ? "#ff9500" : "rgba(255,255,255,0.06)",
+              color: catId === c.id ? "white" : "rgba(255,255,255,0.75)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {t(`calculator.unit.cat.${c.id}`)}
+          </button>
+        ))}
       </div>
+
+      {/* From */}
+      <label style={labelStyle}>{t("calculator.unit.from")}</label>
+      <div className="flex gap-2 mb-3">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          inputMode="decimal"
+          style={{
+            flex: 1.4,
+            padding: "10px 12px",
+            background: "#2c2c2e",
+            color: "#fff",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 8,
+            fontSize: 18,
+            fontWeight: 600,
+            fontFamily: "'SF Mono', monospace",
+            minWidth: 0,
+            outline: "none",
+          }}
+        />
+        <select value={fromId} onChange={(e) => setFromId(e.target.value)} style={{ ...selectStyle, flex: 1 }}>
+          {cat.units.map((u) => (
+            <option key={u.id} value={u.id}>{t(`calculator.unit.u.${cat.id}.${u.id}`) || u.id}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* To */}
+      <label style={labelStyle}>{t("calculator.unit.to")}</label>
+      <div className="flex gap-2 mb-3">
+        <div
+          style={{
+            flex: 1.4,
+            padding: "10px 12px",
+            background: "#1a1a1c",
+            color: "#ff9500",
+            border: "1px solid rgba(255,149,0,0.25)",
+            borderRadius: 8,
+            fontSize: 18,
+            fontWeight: 600,
+            fontFamily: "'SF Mono', monospace",
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {result !== null ? formatConvertedResult(result) : "—"}
+        </div>
+        <select value={toId} onChange={(e) => setToId(e.target.value)} style={{ ...selectStyle, flex: 1 }}>
+          {cat.units.map((u) => (
+            <option key={u.id} value={u.id}>{t(`calculator.unit.u.${cat.id}.${u.id}`) || u.id}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Swap from <-> to */}
+      <button
+        onClick={() => {
+          const newFrom = toId, newTo = fromId;
+          setFromId(newFrom);
+          setToId(newTo);
+          // Also flip input ↔ result for natural "round-trip" UX, when result valid
+          if (result !== null) setInput(formatConvertedResult(result));
+        }}
+        style={{
+          marginTop: 8,
+          width: "100%",
+          padding: "10px 12px",
+          background: "rgba(255,255,255,0.08)",
+          color: "rgba(255,255,255,0.85)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 8,
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        ⇅ {t("calculator.unit.swap")}
+      </button>
     </div>
   );
 }

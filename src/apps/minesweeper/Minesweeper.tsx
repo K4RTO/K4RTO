@@ -250,7 +250,7 @@ export default function Minesweeper(_props: AppComponentProps) {
   return (
     <div
       className="h-full flex flex-col select-none overflow-auto"
-      style={{ backgroundColor: "#c0c0c0", padding: 16 }}
+      style={{ backgroundColor: "#c0c0c0", padding: 24 }}
       onContextMenu={(e) => e.preventDefault()}
     >
       {/* Difficulty toolbar */}

@@ -13,7 +13,7 @@ const APP_ICONS: Record<string, string> = {
   finder: "🗂",  terminal: "⌨", safari: "🧭", notes: "📝",
   textedit: "📄", settings: "⚙", calculator: "🔢", calendar: "📅",
   clock: "🕐",  preview: "🖼️", vscode: "</>", word: "📘", music: "🎵",
-  game2048: "🎮", minesweeper: "💣", snake: "🐍",
+  game2048: "🎮", minesweeper: "💣", snake: "🐍", tetris: "🧱",
 };
 
 const APP_NAME_KEYS: Record<string, string> = {
@@ -23,6 +23,7 @@ const APP_NAME_KEYS: Record<string, string> = {
   settings: "dock.settings", clock: "dock.clock", preview: "dock.preview",
   vscode: "dock.vscode", word: "dock.word", music: "dock.music",
   game2048: "dock.game2048", minesweeper: "dock.minesweeper", snake: "dock.snake",
+  tetris: "dock.tetris",
 };
 
 // ── Portfolio commands ───────────────────────────────────────────────────────

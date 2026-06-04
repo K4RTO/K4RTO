@@ -327,7 +327,7 @@ export default function Game2048(_props: AppComponentProps) {
   return (
     <div
       className="h-full flex flex-col select-none overflow-hidden"
-      style={{ backgroundColor: "#faf8ef", padding: 16 }}
+      style={{ backgroundColor: "#faf8ef", padding: 24 }}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >

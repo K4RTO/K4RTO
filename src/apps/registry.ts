@@ -155,6 +155,15 @@ const apps: Record<string, AppDefinition> = {
     minSize: { width: 380, height: 500 },
     singleInstance: true,
   },
+  tetris: {
+    id: "tetris",
+    name: "Tetris",
+    icon: null,
+    component: lazy(() => import("./tetris/Tetris")),
+    defaultRect: { x: 200, y: 50, width: 520, height: 720 },
+    minSize: { width: 460, height: 620 },
+    singleInstance: true,
+  },
 };
 
 export function getApp(id: string): AppDefinition | undefined {

@@ -22,6 +22,7 @@ const APP_NAME_KEYS: Record<string, string> = {
   game2048: "dock.game2048",
   minesweeper: "dock.minesweeper",
   snake: "dock.snake",
+  tetris: "dock.tetris",
 };
 
 // --- Dispatch a custom event to communicate with Finder (legacy bus) ---
@@ -110,6 +111,7 @@ const APP_MENU_SPECS: Record<string, AppMenuSpec> = {
     view: [
       { kind: "item", labelKey: "menu.calc.basic",           shortcut: "⌘1",   actionType: "view-basic" },
       { kind: "item", labelKey: "menu.calc.scientific",      shortcut: "⌘2",   actionType: "view-scientific" },
+      { kind: "item", labelKey: "menu.calc.unit",            shortcut: "⌘3",   actionType: "view-unit" },
     ],
   },
   calendar: {

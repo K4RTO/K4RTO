@@ -199,7 +199,7 @@ export default function Snake(_props: AppComponentProps) {
   return (
     <div
       className="h-full flex flex-col select-none overflow-hidden"
-      style={{ backgroundColor: "#0f1419", padding: 20, color: "#e6edf3" }}
+      style={{ backgroundColor: "#0f1419", padding: 28, color: "#e6edf3" }}
     >
       {/* Header: title + scores + new game */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">

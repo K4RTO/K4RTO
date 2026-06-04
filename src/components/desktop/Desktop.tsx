@@ -118,6 +118,39 @@ function DesktopContent() {
         setSpotlightOpen(v => !v);
         return;
       }
+      // Window snap shortcuts: Ctrl+Alt+Arrow snaps the focused window to a
+      // half / full / restored position. Matches the macOS "Move Window to
+      // Left/Right Side" menu entries (which on real macOS use Ctrl+Opt+arrow
+      // by default). Decoupled from the metaKey block below so the modifier
+      // chord doesn't accidentally fall through to ⌘+W / ⌘+Q.
+      if (e.ctrlKey && e.altKey && focusedWindowId && !e.metaKey && !e.shiftKey) {
+        const MENU_BAR = 28;
+        const DOCK_RESERVE = 80;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const halfW = Math.floor(w / 2);
+        const contentH = h - MENU_BAR - DOCK_RESERVE;
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          dispatch({ type: "RESIZE_WINDOW", id: focusedWindowId, rect: { x: 0, y: MENU_BAR, width: halfW, height: contentH } });
+          return;
+        }
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          dispatch({ type: "RESIZE_WINDOW", id: focusedWindowId, rect: { x: w - halfW, y: MENU_BAR, width: halfW, height: contentH } });
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          dispatch({ type: "MAXIMIZE_WINDOW", id: focusedWindowId });
+          return;
+        }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          dispatch({ type: "RESTORE_WINDOW", id: focusedWindowId });
+          return;
+        }
+      }
       if (!e.metaKey) return;
       if (e.key === "w" || e.key === "W") {
         e.preventDefault();
@@ -130,7 +163,7 @@ function DesktopContent() {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [focusedWindowId, focusedProcess, closeWindow, kill, locked]);
+  }, [focusedWindowId, focusedProcess, closeWindow, kill, locked, dispatch]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
