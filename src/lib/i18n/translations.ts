@@ -193,10 +193,9 @@ const translations: Record<string, TranslationEntry> = {
   "spotlight.clearQuery":      { en: "Clear search",              zh: "清除搜索" },
 
   // ── Login Screen ─────────────────────────────────────────────────────────
-  "login.passwordPlaceholder": { en: "Enter Password",            zh: "输入密码" },
-  "login.unlock":              { en: "Unlock",                    zh: "解锁" },
-  "login.hint":                { en: "Touch ID or Enter Password — press Esc to skip",
-                                 zh: "触控 ID 或输入密码 — 按 Esc 跳过" },
+  "login.enter":               { en: "Enter",                     zh: "进入" },
+  "login.hint":                { en: "Click anywhere or press any key to continue",
+                                 zh: "点击任意处或按任意键继续" },
 
   // ── Finder sidebar ───────────────────────────────────────────────────────
   "finder.sidebar.recents":    { en: "Recents",                   zh: "最近使用" },

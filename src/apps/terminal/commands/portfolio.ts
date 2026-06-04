@@ -10,16 +10,17 @@ import { COLORS } from "./types";
 
 // ── Static content (from Resume) ──────────────────────────────────────────
 
+// Personal identifiers (real name, phone) deliberately omitted from the public
+// portfolio — visitors are introduced as "K4RTO" only. The actual resume PDF
+// has the full details for anyone who clicks through.
 const BIO = {
   name: "K4RTO",
-  realName: "严晗 / Yan Han",
   title: {
     en: "Graphics / Game Engine Engineer · Computer Vision · Product",
     zh: "图形 / 游戏引擎工程师 · 计算机视觉 · 产品经理",
   },
   location: { en: "Shanghai · ANU Master of Computing", zh: "上海 · 澳国立 (ANU) 计算机硕士" },
   email: "k4rtol@163.com",
-  phone: "+86 180-1923-9175",
   wechat: "K4RTOL",
   website: "https://k4rto.com/",
   github: "https://github.com/K4RTO",
@@ -145,13 +146,13 @@ export const portfolioCommands: Command[] = [
   {
     name: "whoami",
     category: "portfolio",
-    description: { en: "About K4RTO (Yan Han)", zh: "介绍 K4RTO（严晗）" },
+    description: { en: "About K4RTO", zh: "介绍 K4RTO" },
     aliases: ["about"],
     handler: (_args, ctx) => {
       ctx.println("");
       ASCII_BANNER.forEach(l => ctx.println(l, COLORS.success));
       ctx.println("");
-      ctx.println(`${BIO.realName} — ${BIO.title[ctx.lang]}`, COLORS.warn);
+      ctx.println(`${BIO.name} — ${BIO.title[ctx.lang]}`, COLORS.warn);
       ctx.println(BIO.tagline[ctx.lang]);
       ctx.println("");
       printTable(ctx, [
@@ -238,7 +239,6 @@ export const portfolioCommands: Command[] = [
       ctx.println("");
       printTable(ctx, [
         ["Email",     BIO.email],
-        [ctx.lang === "zh" ? "手机" : "Phone", BIO.phone],
         ["WeChat",    BIO.wechat],
         ["GitHub",    BIO.github],
         ["LinkedIn",  BIO.linkedin],

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSystem, useT } from "@/contexts/SystemContext";
 import { Wallpaper } from "@/components/desktop/Wallpaper";
+import { withBase } from "@/lib/paths";
 
 interface LoginScreenProps {
   /** Called when the user dismisses the lock screen (login, ESC, or click-anywhere). */
@@ -13,24 +14,19 @@ interface LoginScreenProps {
  * macOS Sonoma-style lock screen.
  *
  * Shown once per session (the session-storage guard lives in Desktop.tsx so this
- * component itself stays purely presentational). The actual password is ignored —
- * any input (including empty) unlocks. ESC also unlocks. This is portfolio
- * theater, not access control.
+ * component itself stays purely presentational). Visitor-friendly version: no
+ * password input — clicking anywhere or pressing any key dismisses the lock.
+ * This is brand theater, not access control.
  *
- * Layout follows real macOS: clock + date at the top, avatar / name / password
- * stack centered below the vertical midline. The wallpaper underneath is the
- * same animated canvas the desktop uses, so the visual continuity sells the
- * "you just woke this Mac up" moment.
+ * Layout follows real macOS: clock + date at the top, avatar / name / Enter
+ * button stack centered below the vertical midline. The wallpaper underneath
+ * is the same animated canvas the desktop uses, so the visual continuity sells
+ * the "you just woke this Mac up" moment.
  */
 export function LoginScreen({ onUnlock }: LoginScreenProps) {
   const { lang } = useSystem();
   const t = useT();
-  const [password, setPassword] = useState("");
   const [closing, setClosing] = useState(false);
-  // shake = wrong-password feedback. We never actually reject, but a tiny shake
-  // on a too-long input adds the right "I tried to log in" feel.
-  const [shake, setShake] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Live clock — updates each second.
   const [now, setNow] = useState<Date | null>(null);
@@ -40,24 +36,6 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
     return () => clearInterval(id);
   }, []);
 
-  // Focus the password input after the open animation settles.
-  useEffect(() => {
-    const id = setTimeout(() => inputRef.current?.focus(), 350);
-    return () => clearTimeout(id);
-  }, []);
-
-  // ESC bypasses the lock screen.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !closing) {
-        handleUnlock();
-      }
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [closing]);
-
   function handleUnlock() {
     if (closing) return;
     setClosing(true);
@@ -65,20 +43,20 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
     setTimeout(onUnlock, 420);
   }
 
-  function trySubmit() {
-    // While the shake animation is still running, ignore further submits — without
-    // this, a user could type → submit → get shake → clear → submit empty during
-    // the 420ms window, which would bypass the rejection theater.
-    if (shake) return;
-    // Anything 32 chars or shorter unlocks. Longer = "wrong password" theater.
-    if (password.length > 32) {
-      setShake(true);
-      setTimeout(() => setShake(false), 420);
-      setPassword("");
-      return;
+  // Any key (Esc, Enter, Space, letter) dismisses the lock. We listen on
+  // window keydown rather than relying on focused inputs, because the visitor
+  // hasn't touched anything yet and the natural reaction is "press any key".
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // Ignore modifier-only presses (Cmd, Shift, etc) — those are accidental
+      // when the user is just resting fingers on the keyboard.
+      if (["Shift", "Meta", "Control", "Alt", "CapsLock"].includes(e.key)) return;
+      if (!closing) handleUnlock();
     }
-    handleUnlock();
-  }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closing]);
 
   const timeStr = now
     ? now.toLocaleTimeString(lang === "zh" ? "zh-CN" : "en-US", {
@@ -94,6 +72,10 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
   return (
     <div
       className="fixed inset-0 overflow-hidden"
+      // Any click anywhere on the screen also dismisses the lock — buttons
+      // bubble up to here, but they call handleUnlock themselves, so the
+      // guard inside handleUnlock prevents double-firing.
+      onClick={handleUnlock}
       style={{
         // 100000 is one tier above ContextMenu / AboutThisMac (both 99999) so
         // the lock screen always wins the stacking order regardless of DOM order.
@@ -101,6 +83,7 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
         opacity: closing ? 0 : 1,
         transform: closing ? "scale(1.05)" : "scale(1)",
         transition: "opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: "pointer",
       }}
     >
       {/* Same animated wallpaper as the desktop — visual continuity */}
@@ -143,38 +126,42 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
         </div>
       </div>
 
-      {/* Center-low: avatar + name + password */}
-      <div
-        className="absolute inset-x-0 flex flex-col items-center"
-        style={{
-          top: "58vh",
-          transform: shake ? "translateX(0)" : undefined,
-          animation: shake ? "lockShake 0.42s ease-in-out" : undefined,
-        }}
-      >
-        {/* Avatar circle with initials */}
-        <div
-          className="flex items-center justify-center select-none"
+      {/* Center-low: avatar + name + Enter button.
+          The container catches the click — anywhere outside the Enter button
+          itself also dismisses the lock (full-screen catcher is on the root
+          element below). */}
+      <div className="absolute inset-x-0 flex flex-col items-center">
+        {/* Avatar — uses the K4RTO mark from public/. Wrapped in a circular
+            clip so the square JPG renders as a round avatar like macOS users. */}
+        <button
+          type="button"
+          onClick={handleUnlock}
+          className="flex items-center justify-center cursor-pointer"
           style={{
-            width: 84,
-            height: 84,
+            width: 88,
+            height: 88,
             borderRadius: "50%",
-            background: "linear-gradient(135deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.10) 100%)",
+            overflow: "hidden",
             border: "1px solid rgba(255,255,255,0.35)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.30)",
-            color: "white",
-            fontSize: 30,
-            fontWeight: 500,
-            letterSpacing: "0.05em",
+            padding: 0,
+            background: "transparent",
           }}
-          aria-hidden
+          aria-label={t("login.enter")}
+          title={t("login.enter")}
         >
-          YH
-        </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={withBase("/K4RTO/logo.jpg")}
+            alt=""
+            width={88}
+            height={88}
+            style={{ display: "block", objectFit: "cover" }}
+            draggable={false}
+          />
+        </button>
 
-        {/* Display name */}
+        {/* Display name — brand only, no real name exposed */}
         <div
           className="select-none"
           style={{
@@ -182,69 +169,42 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
             fontSize: 17,
             fontWeight: 500,
             marginTop: 16,
+            letterSpacing: "0.04em",
             textShadow: "0 1px 4px rgba(0,0,0,0.5)",
           }}
         >
-          Yan Han
+          K4RTO
         </div>
 
-        {/* Password input pill */}
-        <form
-          onSubmit={(e) => { e.preventDefault(); trySubmit(); }}
-          style={{ marginTop: 16 }}
+        {/* Enter button — the only interactive primitive needed when there's
+            no password. Wide enough to feel like a CTA, not a small accent. */}
+        <button
+          type="button"
+          onClick={handleUnlock}
+          style={{
+            marginTop: 24,
+            height: 34,
+            padding: "0 24px",
+            borderRadius: 17,
+            background: "rgba(255,255,255,0.92)",
+            color: "#111",
+            fontSize: 13,
+            fontWeight: 600,
+            border: "1px solid rgba(255,255,255,0.4)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+            cursor: "pointer",
+            transition: "transform 0.15s ease-out, background 0.15s ease-out",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "white";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.92)";
+          }}
+          aria-label={t("login.enter")}
         >
-          <div
-            className="flex items-center"
-            style={{
-              width: 230,
-              height: 34,
-              borderRadius: 17,
-              background: "rgba(255,255,255,0.18)",
-              backdropFilter: "blur(20px) saturate(180%)",
-              WebkitBackdropFilter: "blur(20px) saturate(180%)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              padding: "0 4px 0 14px",
-            }}
-          >
-            <input
-              ref={inputRef}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t("login.passwordPlaceholder")}
-              className="flex-1 bg-transparent outline-none border-none"
-              style={{
-                color: "white",
-                fontSize: 13,
-                caretColor: "white",
-              }}
-              autoComplete="off"
-              spellCheck={false}
-              aria-label={t("login.passwordPlaceholder")}
-            />
-            <button
-              type="submit"
-              className="flex items-center justify-center"
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.95)",
-                color: "#111",
-                opacity: password.length > 0 ? 1 : 0.5,
-                transition: "opacity 0.15s ease-out",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-              aria-label={t("login.unlock")}
-              title={t("login.unlock")}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M5 12h14M13 5l7 7-7 7"/>
-              </svg>
-            </button>
-          </div>
-        </form>
+          {t("login.enter")}
+        </button>
 
         {/* Hint */}
         <div
@@ -285,17 +245,6 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
         ⏻
       </div>
 
-      <style>{`
-        @keyframes lockShake {
-          0%, 100% { transform: translateX(0); }
-          15%  { transform: translateX(-8px); }
-          30%  { transform: translateX(8px); }
-          45%  { transform: translateX(-6px); }
-          60%  { transform: translateX(6px); }
-          75%  { transform: translateX(-3px); }
-          90%  { transform: translateX(3px); }
-        }
-      `}</style>
     </div>
   );
 }

@@ -20,7 +20,9 @@ const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 // v2: added /Users/guest/.Trash, /Applications populated with virtual .app files, removed "files" sidebar item
 // v3: seeded /Users/guest/K4RTO/Source/ with VSCode portfolio source samples
 // v4: added README.zh.md (Chinese version) to K4RTO/Source/
-const LS_KEY = "vfs_state_v4";
+// v5: identity scrub — removed real name from any UI text (login screen,
+//     Notes seed, terminal portfolio command output)
+const LS_KEY = "vfs_state_v5";
 
 /**
  * Try to migrate an older VFS snapshot forward without nuking user-written data

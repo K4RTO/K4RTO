@@ -48,8 +48,8 @@ const PORTFOLIO_COMMANDS: PortfolioCommand[] = [
     id: "resume",
     icon: "📄",
     label:    { en: "Resume",                                 zh: "简历" },
-    subtitle: { en: "Open Yan Han's resume in Preview",       zh: "在预览中打开简历（PDF）" },
-    keywords: ["resume", "cv", "简历", "yan", "han", "严晗"],
+    subtitle: { en: "Open K4RTO's resume in Preview",         zh: "在预览中打开 K4RTO 简历（PDF）" },
+    keywords: ["resume", "cv", "简历", "k4rto"],
     // filePath = the VFS entry (Preview detects "this is a resume" via the regex
     // /\/K4RTO\/Resume(\.|-)/i, then overrides publicPath internally based on the
     // current system language). Keep filePath/publicPath/fileName CONSISTENT here
@@ -101,7 +101,7 @@ const PORTFOLIO_COMMANDS: PortfolioCommand[] = [
     id: "music",
     icon: "🎵",
     label:    { en: "Music",                            zh: "音乐" },
-    subtitle: { en: "Yan Han's playlist on Spotify",    zh: "严晗的 Spotify 歌单" },
+    subtitle: { en: "K4RTO's playlist on Spotify",      zh: "K4RTO 的 Spotify 歌单" },
     keywords: ["music", "spotify", "playlist", "音乐", "歌单"],
     action: { type: "launch", appId: "music" },
   },

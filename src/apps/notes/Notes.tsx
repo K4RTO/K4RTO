@@ -44,9 +44,9 @@ const SAMPLES: Note[] = [
     modifiedAt: NOW - 60_000,
     title: { en: "About Me", zh: "关于我" },
     content: {
-      en: `K4RTO — Yan Han
+      en: `K4RTO
 
-I'm a graphics / game-engine engineer with a Master of Computing from the Australian National University (QS #34) and a Bachelor's in Functional Materials from Donghua University (Project 211).
+Graphics / game-engine engineer with a Master of Computing from the Australian National University (QS #34) and a Bachelor's in Functional Materials from Donghua University (Project 211).
 
 What I actually do:
 • Build real-time computer vision systems (custom YOLOv7 keypoint detection)
@@ -64,7 +64,7 @@ GitHub  https://github.com/K4RTO
 LinkedIn https://www.linkedin.com/in/K4RTO/
 
 Try Terminal → 'whoami' for a faster version.`,
-      zh: `K4RTO — 严晗
+      zh: `K4RTO
 
 澳大利亚国立大学计算机硕士（QS 第 34），东华大学 211 本科功能材料。
 
