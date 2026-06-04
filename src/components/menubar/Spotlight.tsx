@@ -110,6 +110,138 @@ const PORTFOLIO_COMMANDS: PortfolioCommand[] = [
   },
 ];
 
+// ── Spotlight preview pane ────────────────────────────────────────────────────
+
+interface FsLike {
+  readFile: (path: string) => string | null;
+}
+
+/** Preview pane on the right of the Spotlight palette. Renders different
+ *  views based on the currently-selected result kind:
+ *    - file        → first ~30 non-blank lines of the file content
+ *    - math        → big-typography result
+ *    - app/command → icon + name card with "Press Return to open"
+ *    - suggestion  → plain hint
+ *  Width matches the wider Spotlight popover (820 - 460 results = 360). */
+function SpotlightPreview({
+  result, fs, t,
+}: {
+  result: SpotlightResult | undefined;
+  fs: FsLike | null;
+  t: (key: string) => string;
+}) {
+  const fileContent = useMemo(() => {
+    if (!result || result.kind !== "file") return null;
+    if (!fs) return null;
+    return fs.readFile(result.filePath);
+  }, [result, fs]);
+
+  const previewLines = useMemo(() => {
+    if (typeof fileContent !== "string") return null;
+    // Keep the preview lightweight — first ~600 chars worth of lines is plenty
+    // to convey "what kind of file is this" without loading huge sources.
+    return fileContent.split("\n").slice(0, 30).join("\n");
+  }, [fileContent]);
+
+  // Helper — detect image extensions to render the file's bytes (if any) as an
+  // <img> instead of as text. Our VFS stores text content only, so this falls
+  // back to a placeholder card.
+  function isImage(name: string): boolean {
+    return /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(name);
+  }
+
+  // All branches must apply flex-1 to the root so the preview pane reliably
+  // claims the remaining 360px in the Spotlight popover row. Without it,
+  // branches that don't use flex-1 internally collapse to content width.
+  const ROOT = "flex-1";
+  if (!result) {
+    return (
+      <div className={`${ROOT} flex items-center justify-center text-[12px]`} style={{ color: "rgba(255,255,255,0.35)" }}>
+        {t("spotlight.preview.empty")}
+      </div>
+    );
+  }
+
+  if (result.kind === "math") {
+    return (
+      <div className={`${ROOT} flex flex-col items-center justify-center px-6`}>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 8, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          {t("spotlight.preview.result")}
+        </div>
+        <div style={{ color: "white", fontSize: 38, fontWeight: 200, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+          {result.value}
+        </div>
+        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginTop: 14 }}>
+          {t("spotlight.preview.copyHint")}
+        </div>
+      </div>
+    );
+  }
+
+  if (result.kind === "app" || result.kind === "command") {
+    return (
+      <div className={`${ROOT} flex flex-col items-center justify-center px-6`}>
+        <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 14 }}>{result.icon}</div>
+        <div style={{ color: "rgba(255,255,255,0.92)", fontSize: 15, fontWeight: 600, textAlign: "center" }}>
+          {result.label}
+        </div>
+        {result.subtitle && (
+          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, marginTop: 4, textAlign: "center" }}>
+            {result.subtitle}
+          </div>
+        )}
+        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginTop: 18 }}>
+          {t("spotlight.preview.openHint")}
+        </div>
+      </div>
+    );
+  }
+
+  if (result.kind === "suggestion") {
+    return (
+      <div className={`${ROOT} flex items-center justify-center text-[12px] px-6 text-center`} style={{ color: "rgba(255,255,255,0.4)" }}>
+        {t("spotlight.preview.suggestionHint")}
+      </div>
+    );
+  }
+
+  // file
+  return (
+    <div className={`${ROOT} flex flex-col`} style={{ overflow: "hidden" }}>
+      <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <span style={{ fontSize: 18 }}>{result.icon}</span>
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="truncate" style={{ color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: 600 }}>{result.fileName}</span>
+          <span className="truncate" style={{ color: "rgba(255,255,255,0.4)", fontSize: 10 }}>{result.filePath}</span>
+        </div>
+      </div>
+      {isImage(result.fileName) ? (
+        <div className="flex-1 flex items-center justify-center px-6 text-center text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+          {t("spotlight.preview.imageNotShown")}
+        </div>
+      ) : previewLines ? (
+        <pre
+          className="flex-1 overflow-hidden px-4 py-2"
+          style={{
+            color: "rgba(255,255,255,0.75)",
+            fontSize: 10.5,
+            fontFamily: "'SF Mono', Menlo, Monaco, monospace",
+            lineHeight: 1.5,
+            whiteSpace: "pre",
+            margin: 0,
+          }}
+        >
+          {previewLines}
+        </pre>
+      ) : (
+        <div className="flex-1 flex items-center justify-center text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+          {t("spotlight.preview.notReadable")}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Result types & matching ──────────────────────────────────────────────────
 
 type SpotlightResult =
@@ -531,7 +663,15 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
     >
       <div
         className="glass-surface glass-thick glass-shadow-lg glass-radius-popover"
-        style={{ width: 640, overflow: "hidden" }}
+        // Wider when we have results so the right-hand preview pane fits;
+        // collapses back to 640 when there's nothing to preview (e.g. empty
+        // query, search-the-web suggestion only). Matches real macOS Spotlight,
+        // which also expands once results exist.
+        style={{
+          width: results.length > 0 ? 820 : 640,
+          overflow: "hidden",
+          transition: "width 0.18s ease",
+        }}
       >
         {/* Search input — px-6 (24px) for the macOS Spotlight breathing room.
             px-5 (20px) was visibly cramped against the rounded corners. */}
@@ -559,9 +699,17 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
           )}
         </div>
 
-        {/* Results */}
+        {/* Results + Preview pane — flex row when both columns are present.
+            Left pane scrolls independently; right pane shows context for the
+            currently-selected result (file content, app icon, math answer). */}
         {results.length > 0 && (
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", maxHeight: 420, overflowY: "auto" }}>
+          <div
+            className="flex"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.08)", maxHeight: 420 }}
+          >
+            <div
+              style={{ width: 460, overflowY: "auto", borderRight: "1px solid rgba(255,255,255,0.06)" }}
+            >
             {results.map((r, i) => (
               <div
                 key={r.id}
@@ -601,6 +749,8 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
                 </div>
               </div>
             ))}
+            </div>
+            <SpotlightPreview result={results[selected]} fs={fs} t={t} />
           </div>
         )}
       </div>

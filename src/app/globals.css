@@ -369,25 +369,29 @@ html, body {
    The drift amplitude is intentionally small (8-14%) so the wallpaper feels
    alive without ever drawing attention to the motion itself.
    ════════════════════════════════════════════════════════════════════════ */
+/* Drift amplitudes increased from ±15% to ±22% and scale span widened to
+   0.85-1.20 — the prior values were too timid to read as motion. Adding a
+   small rotation per keyframe gives the blobs a "swirl" rather than pure
+   translate, which sells the "flowing glass" feel the user asked for. */
 @keyframes wp-drift-0 {
-  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(14%,  -10%) scale(1.14); }
-  100% { transform: translate(-50%, -50%) translate(-9%,   17%) scale(0.90); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ) rotate(0deg); }
+  50%  { transform: translate(-50%, -50%) translate(20%,  -14%) scale(1.18) rotate(8deg); }
+  100% { transform: translate(-50%, -50%) translate(-13%,  22%) scale(0.86) rotate(-6deg); }
 }
 @keyframes wp-drift-1 {
-  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(-16%,  13%) scale(0.88); }
-  100% { transform: translate(-50%, -50%) translate(11%,  -13%) scale(1.16); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ) rotate(0deg); }
+  50%  { transform: translate(-50%, -50%) translate(-22%,  18%) scale(0.85) rotate(-10deg); }
+  100% { transform: translate(-50%, -50%) translate(16%,  -18%) scale(1.20) rotate(7deg); }
 }
 @keyframes wp-drift-2 {
-  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(12%,   11%) scale(1.10); }
-  100% { transform: translate(-50%, -50%) translate(-15%, -7% ) scale(0.91); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ) rotate(0deg); }
+  50%  { transform: translate(-50%, -50%) translate(17%,   15%) scale(1.14) rotate(6deg); }
+  100% { transform: translate(-50%, -50%) translate(-20%, -10%) scale(0.87) rotate(-9deg); }
 }
 @keyframes wp-drift-3 {
-  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ); }
-  50%  { transform: translate(-50%, -50%) translate(-10%, -16%) scale(1.12); }
-  100% { transform: translate(-50%, -50%) translate(16%,   10%) scale(0.89); }
+  0%   { transform: translate(-50%, -50%) translate(0,     0   ) scale(1   ) rotate(0deg); }
+  50%  { transform: translate(-50%, -50%) translate(-14%, -22%) scale(1.16) rotate(-7deg); }
+  100% { transform: translate(-50%, -50%) translate(22%,   14%) scale(0.86) rotate(10deg); }
 }
 
 /* Wallpaper-level hue + brightness drift — a single long cycle layered on top

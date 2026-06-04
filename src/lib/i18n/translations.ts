@@ -115,6 +115,11 @@ const translations: Record<string, TranslationEntry> = {
   "menu.vscode.toggleSidebar": { en: "Toggle Sidebar",            zh: "切换侧栏" },
   // Music
   "menu.music.showLibrary":    { en: "Show Library Sidebar",      zh: "显示资料库侧栏" },
+  "music.viz.label":           { en: "VIBE MODE — procedural, not live audio", zh: "氛围模式 — 程序生成，非实时音频" },
+  "music.viz.bars":            { en: "Bars",                      zh: "频谱" },
+  "music.viz.wave":            { en: "Wave",                      zh: "波形" },
+  "music.viz.off":             { en: "Off",                       zh: "关闭" },
+  "music.viz.show":            { en: "Show Vibe Visualizer",      zh: "显示氛围可视化" },
 
   // ── Menu bar labels ──────────────────────────────────────────────────────
   "menubar.file":              { en: "File",                      zh: "文件" },
@@ -196,6 +201,13 @@ const translations: Record<string, TranslationEntry> = {
   "spotlight.clearQuery":      { en: "Clear search",              zh: "清除搜索" },
   "spotlight.math.subtitle":   { en: "Calculator · Press Enter to copy",
                                  zh: "计算器 · 按 Enter 复制结果" },
+  "spotlight.preview.empty":   { en: "Select a result to preview",   zh: "选择一项以预览" },
+  "spotlight.preview.result":  { en: "Result",                       zh: "结果" },
+  "spotlight.preview.copyHint":{ en: "Press Return to copy",         zh: "按 Return 复制" },
+  "spotlight.preview.openHint":{ en: "Press Return to open",         zh: "按 Return 打开" },
+  "spotlight.preview.suggestionHint":{ en: "Press Return to search the web", zh: "按 Return 搜索网络" },
+  "spotlight.preview.imageNotShown": { en: "Image preview not available", zh: "图片预览不可用" },
+  "spotlight.preview.notReadable":   { en: "File contents unavailable",   zh: "无法读取文件内容" },
 
   // ── Launchpad ────────────────────────────────────────────────────────────
   "dock.launchpad":            { en: "Launchpad",                 zh: "启动台" },
@@ -579,6 +591,10 @@ const translations: Record<string, TranslationEntry> = {
   "notes.fmt.h2":              { en: "Heading 2",                 zh: "二级标题" },
   "notes.fmt.bulletList":      { en: "Bullet list",               zh: "项目列表" },
   "notes.fmt.numberedList":    { en: "Numbered list",             zh: "编号列表" },
+  "notes.searchPlaceholder":   { en: "Search notes…",             zh: "搜索笔记…" },
+  "notes.noMatches":           { en: "No matching notes",         zh: "没有匹配的笔记" },
+  "notes.addTag":              { en: "+ tag",                     zh: "+ 标签" },
+  "notes.removeTag":           { en: "Remove tag",                zh: "移除标签" },
 
   // ── i18n sweep: TextEdit ───────────────────────────────────────────────
   "textedit.defaultFilename":  { en: "Untitled.txt",              zh: "未命名.txt" },

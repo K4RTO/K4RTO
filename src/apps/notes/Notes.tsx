@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect, useCallback, useRef, useImperativeHandle, forwardRef } from "react";
+import { Fragment, useState, useEffect, useCallback, useMemo, useRef, useImperativeHandle, forwardRef } from "react";
 import type { RefObject } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
@@ -21,6 +21,10 @@ interface Note {
   modifiedAt: number;
   /** True for preset portfolio notes — locked editable fields update the current lang only. */
   pinned?: boolean;
+  /** Free-form labels for filtering. Tags are language-neutral strings (the
+   *  user types whatever they want); they're not translated. Empty/undefined
+   *  means no tags. */
+  tags?: string[];
 }
 
 function readLang(text: LangText, lang: "en" | "zh"): string {
@@ -575,7 +579,69 @@ export default function Notes(_props: AppComponentProps) {
     }
   });
 
-  const sorted = [...notes].sort((a, b) => b.modifiedAt - a.modifiedAt);
+  // Search query + tag filter — both AND-combined; clearing both restores
+  // the full list. Search is case-insensitive substring across title, content,
+  // and tag names so users don't need to remember which field a term was in.
+  const [noteQuery, setNoteQuery] = useState("");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+
+  /** All distinct tags across all notes, sorted alphabetically. Used to drive
+   *  the tag-filter chip row in the sidebar. */
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    for (const n of notes) for (const tg of n.tags ?? []) s.add(tg);
+    return Array.from(s).sort();
+  }, [notes]);
+
+  const visibleNotes = useMemo(() => {
+    const q = noteQuery.trim().toLowerCase();
+    const filtered = notes.filter(n => {
+      if (tagFilter && !(n.tags ?? []).includes(tagFilter)) return false;
+      if (!q) return true;
+      const title = readLang(n.title, lang).toLowerCase();
+      const content = readLang(n.content, lang).toLowerCase();
+      // Strip HTML tags from rich-text content before matching so users
+      // searching for "important" don't get false hits on `<strong>` etc.
+      const contentPlain = content.replace(/<[^>]*>/g, " ");
+      if (title.includes(q)) return true;
+      if (contentPlain.includes(q)) return true;
+      if ((n.tags ?? []).some(t => t.toLowerCase().includes(q))) return true;
+      return false;
+    });
+    return filtered.sort((a, b) => b.modifiedAt - a.modifiedAt);
+  }, [notes, noteQuery, tagFilter, lang]);
+
+  // Keep the legacy `sorted` name pointing at the new filtered+sorted list so
+  // existing render code doesn't need a rename pass.
+  const sorted = visibleNotes;
+
+  // Tag editing for the currently-selected note ──────────────────────────────
+  const [newTag, setNewTag] = useState("");
+  function addTag() {
+    if (!selId) return;
+    const t = newTag.trim().toLowerCase();
+    if (!t) return;
+    setNotes(prev => prev.map(n => {
+      if (n.id !== selId) return n;
+      const existing = n.tags ?? [];
+      if (existing.includes(t)) return n;
+      const upd: Note = { ...n, tags: [...existing, t].slice(0, 8), modifiedAt: Date.now() };
+      // Match updateNote/createNote — tag mutations must hit VFS too, or the
+      // chips silently revert on reload.
+      persist(upd);
+      return upd;
+    }));
+    setNewTag("");
+  }
+  function removeTag(tg: string) {
+    if (!selId) return;
+    setNotes(prev => prev.map(n => {
+      if (n.id !== selId) return n;
+      const upd: Note = { ...n, tags: (n.tags ?? []).filter(x => x !== tg), modifiedAt: Date.now() };
+      persist(upd);
+      return upd;
+    }));
+  }
   const sel = notes.find(n => n.id === selId) ?? null;
 
   const dim = { color: "rgba(255,255,255,0.4)" } as React.CSSProperties;
@@ -604,14 +670,62 @@ export default function Notes(_props: AppComponentProps) {
 
       {/* Note list */}
       <div className="flex-shrink-0 flex flex-col overflow-hidden" style={{ width: 245, backgroundColor: "#242424", borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="flex items-center justify-between px-5 py-2 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <span style={{ ...normal, fontSize: 14, fontWeight: 600 }}>{t("notes.title")}</span>
-          <button onClick={createNote} className="flex items-center justify-center w-7 h-7 rounded" style={dim} title={t("notes.newNote")}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </button>
+        <div className="flex flex-col px-5 py-2 flex-shrink-0 gap-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-center justify-between">
+            <span style={{ ...normal, fontSize: 14, fontWeight: 600 }}>{t("notes.title")}</span>
+            <button onClick={createNote} className="flex items-center justify-center w-7 h-7 rounded" style={dim} title={t("notes.newNote")}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+          </div>
+          {/* Search input — case-insensitive substring across title + content
+              + tags. AND-combined with the tag-chip filter below. */}
+          <input
+            type="text"
+            value={noteQuery}
+            onChange={e => setNoteQuery(e.target.value)}
+            placeholder={t("notes.searchPlaceholder")}
+            className="w-full"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 5,
+              padding: "4px 8px",
+              fontSize: 12,
+              color: "rgba(255,255,255,0.85)",
+              outline: "none",
+            }}
+            aria-label={t("notes.searchPlaceholder")}
+          />
+          {/* Tag chips — click to filter; click active chip to clear. Hidden
+              when there are no tags anywhere yet (avoid empty chip row). */}
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {allTags.map(tg => {
+                const active = tagFilter === tg;
+                return (
+                  <button
+                    key={tg}
+                    onClick={() => setTagFilter(active ? null : tg)}
+                    className="rounded-full"
+                    style={{
+                      backgroundColor: active ? "var(--accent)" : "rgba(255,255,255,0.07)",
+                      color: active ? "white" : "rgba(255,255,255,0.65)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      fontSize: 10,
+                      padding: "1px 7px",
+                      lineHeight: 1.4,
+                    }}
+                    aria-pressed={active}
+                  >
+                    {tg}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto">
           {sorted.map(note => {
@@ -628,11 +742,36 @@ export default function Notes(_props: AppComponentProps) {
                   <span className="flex-shrink-0" style={{ ...dim, fontSize: 11 }}>{fmtDate(note.modifiedAt, lang)}</span>
                 </div>
                 <div style={{ ...dim, fontSize: 11, lineHeight: "1.4", marginTop: 2, overflow: "hidden", maxHeight: "2.8em" }}>
-                  {content.replace(/\n/g, " ").trim() || t("notes.noAdditionalText")}
+                  {content.replace(/\n/g, " ").replace(/<[^>]*>/g, "").trim() || t("notes.noAdditionalText")}
                 </div>
+                {(note.tags ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-1" style={{ marginTop: 4 }}>
+                    {(note.tags ?? []).slice(0, 3).map(tg => (
+                      <span
+                        key={tg}
+                        style={{
+                          backgroundColor: note.id === selId ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)",
+                          color: "rgba(255,255,255,0.6)",
+                          fontSize: 9,
+                          padding: "0px 6px",
+                          borderRadius: 999,
+                          lineHeight: 1.4,
+                        }}
+                      >{tg}</span>
+                    ))}
+                    {(note.tags ?? []).length > 3 && (
+                      <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 9 }}>+{(note.tags ?? []).length - 3}</span>
+                    )}
+                  </div>
+                )}
               </button>
             );
           })}
+          {sorted.length === 0 && (noteQuery || tagFilter) && (
+            <div style={{ ...dim, fontSize: 12, padding: "16px 16px", textAlign: "center" }}>
+              {t("notes.noMatches")}
+            </div>
+          )}
         </div>
       </div>
 
@@ -661,6 +800,56 @@ export default function Notes(_props: AppComponentProps) {
                   { weekday: "long", year: "numeric", month: "long", day: "numeric" }
                 )}
               </span>
+            </div>
+            {/* Tag editor — chips with × to remove, inline input for adding.
+                Pinned notes hide the add input (their tags are part of the
+                preset content), but still display chips so they can be
+                filtered like any other note. */}
+            <div className="px-6 pb-3 flex-shrink-0 flex flex-wrap items-center gap-1.5">
+              {(sel.tags ?? []).map(tg => (
+                <span
+                  key={tg}
+                  className="inline-flex items-center gap-1 rounded-full"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.78)",
+                    fontSize: 10.5,
+                    padding: "1px 3px 1px 8px",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {tg}
+                  {!sel.pinned && (
+                    <button
+                      onClick={() => removeTag(tg)}
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.45)", cursor: "pointer", fontSize: 12, lineHeight: 1, padding: "0 4px" }}
+                      title={t("notes.removeTag")}
+                      aria-label={t("notes.removeTag")}
+                    >×</button>
+                  )}
+                </span>
+              ))}
+              {!sel.pinned && (
+                <input
+                  type="text"
+                  value={newTag}
+                  onChange={e => setNewTag(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                  placeholder={t("notes.addTag")}
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "1px dashed rgba(255,255,255,0.12)",
+                    borderRadius: 999,
+                    color: "rgba(255,255,255,0.75)",
+                    fontSize: 10.5,
+                    padding: "1px 8px",
+                    width: 90,
+                    outline: "none",
+                  }}
+                  aria-label={t("notes.addTag")}
+                />
+              )}
             </div>
             {/* Rich-text body. key forces remount when switching notes / lang
                 so the editor picks up the new initial content. */}

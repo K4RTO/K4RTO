@@ -25,6 +25,10 @@ type Blob = {
   /** Pick one of 4 named keyframes (defined in globals.css). Each takes a
    *  different lazy figure-eight so the blobs don't all drift in sync. */
   drift: 0 | 1 | 2 | 3;
+  /** Negative delay (seconds) to start mid-cycle. Lets two blobs share the
+   *  same drift keyframe but appear independent — multiplies apparent count
+   *  without doubling the keyframe table. */
+  delay?: number;
 };
 
 interface Palette {
@@ -41,14 +45,19 @@ interface Palette {
 
 const PALETTES: Record<string, Palette> = {
   // Deep cosmic navy with violet aurora — successor to the original "Monterey".
+  // 6 blobs across 4 keyframes (using `delay` to offset the 2 reused tracks) —
+  // gives the impression of more independent flowing color masses without
+  // doubling the keyframe table.
   "monterey-dark": {
     base: "linear-gradient(180deg, #07061a 0%, #0e1140 35%, #1a1a6e 70%, #221a82 100%)",
     blend: "screen",
     blobs: [
-      { color: "rgba(94, 60, 220, 0.55)",  size: 80, x: 12,  y: 18, drift: 0 },
-      { color: "rgba(140, 70, 230, 0.45)", size: 65, x: 70,  y: 30, drift: 1 },
-      { color: "rgba(60, 90, 200, 0.50)",  size: 78, x: 80,  y: 80, drift: 2 },
-      { color: "rgba(190, 110, 240, 0.35)", size: 58, x: 25, y: 80, drift: 3 },
+      { color: "rgba(94, 60, 220, 0.55)",  size: 88, x: 12, y: 18, drift: 0 },
+      { color: "rgba(140, 70, 230, 0.45)", size: 72, x: 70, y: 30, drift: 1 },
+      { color: "rgba(60, 90, 200, 0.50)",  size: 86, x: 80, y: 80, drift: 2 },
+      { color: "rgba(190, 110, 240, 0.38)", size: 64, x: 25, y: 80, drift: 3 },
+      { color: "rgba(70, 50, 180, 0.42)",  size: 78, x: 45, y: 50, drift: 0, delay: 55 },
+      { color: "rgba(160, 90, 220, 0.34)", size: 60, x: 90, y: 12, drift: 2, delay: 70 },
     ],
   },
   // Sequoia-style teal sunrise — cool blue-green with a warm seam.
@@ -56,10 +65,12 @@ const PALETTES: Record<string, Palette> = {
     base: "linear-gradient(180deg, #03253a 0%, #064a5c 40%, #0e6e6e 75%, #1c8f7a 100%)",
     blend: "screen",
     blobs: [
-      { color: "rgba(30, 200, 180, 0.50)",  size: 75, x: 15, y: 70, drift: 0 },
-      { color: "rgba(80, 150, 200, 0.45)",  size: 65, x: 65, y: 20, drift: 1 },
-      { color: "rgba(40, 130, 150, 0.55)",  size: 80, x: 50, y: 50, drift: 2 },
-      { color: "rgba(150, 230, 220, 0.32)", size: 55, x: 80, y: 75, drift: 3 },
+      { color: "rgba(30, 200, 180, 0.50)",  size: 84, x: 15, y: 70, drift: 0 },
+      { color: "rgba(80, 150, 200, 0.45)",  size: 72, x: 65, y: 20, drift: 1 },
+      { color: "rgba(40, 130, 150, 0.55)",  size: 88, x: 50, y: 50, drift: 2 },
+      { color: "rgba(150, 230, 220, 0.34)", size: 62, x: 80, y: 75, drift: 3 },
+      { color: "rgba(60, 180, 200, 0.38)",  size: 76, x: 30, y: 30, drift: 1, delay: 55 },
+      { color: "rgba(120, 220, 200, 0.30)", size: 58, x: 90, y: 50, drift: 3, delay: 70 },
     ],
   },
   // Ventura warm — sunset pinks and amber, the most colorful preset.
@@ -67,10 +78,12 @@ const PALETTES: Record<string, Palette> = {
     base: "linear-gradient(180deg, #2a0e3a 0%, #6e1a5a 35%, #c44060 70%, #ef9070 100%)",
     blend: "screen",
     blobs: [
-      { color: "rgba(255, 120, 110, 0.55)", size: 78, x: 18, y: 65, drift: 0 },
-      { color: "rgba(220, 80, 140, 0.50)",  size: 62, x: 65, y: 25, drift: 1 },
-      { color: "rgba(255, 180, 100, 0.45)", size: 70, x: 40, y: 8,  drift: 2 },
-      { color: "rgba(180, 50, 120, 0.42)",  size: 55, x: 82, y: 75, drift: 3 },
+      { color: "rgba(255, 120, 110, 0.55)", size: 86, x: 18, y: 65, drift: 0 },
+      { color: "rgba(220, 80, 140, 0.50)",  size: 70, x: 65, y: 25, drift: 1 },
+      { color: "rgba(255, 180, 100, 0.45)", size: 78, x: 40, y: 8,  drift: 2 },
+      { color: "rgba(180, 50, 120, 0.44)",  size: 62, x: 82, y: 75, drift: 3 },
+      { color: "rgba(255, 140, 90, 0.36)",  size: 80, x: 50, y: 90, drift: 0, delay: 55 },
+      { color: "rgba(200, 60, 100, 0.32)",  size: 58, x: 85, y: 45, drift: 2, delay: 70 },
     ],
   },
   // Sonoma light — pastel sky, lower contrast, for light-mode taste.
@@ -79,10 +92,12 @@ const PALETTES: Record<string, Palette> = {
     base: "linear-gradient(180deg, #c0d8f0 0%, #d2c5ee 50%, #f0d4e0 100%)",
     blend: "normal",
     blobs: [
-      { color: "rgba(180, 200, 255, 0.55)", size: 78, x: 18, y: 18, drift: 0 },
-      { color: "rgba(220, 200, 255, 0.50)", size: 65, x: 70, y: 35, drift: 1 },
-      { color: "rgba(255, 220, 240, 0.45)", size: 78, x: 35, y: 70, drift: 2 },
-      { color: "rgba(200, 230, 255, 0.45)", size: 55, x: 82, y: 78, drift: 3 },
+      { color: "rgba(180, 200, 255, 0.55)", size: 86, x: 18, y: 18, drift: 0 },
+      { color: "rgba(220, 200, 255, 0.50)", size: 72, x: 70, y: 35, drift: 1 },
+      { color: "rgba(255, 220, 240, 0.45)", size: 86, x: 35, y: 70, drift: 2 },
+      { color: "rgba(200, 230, 255, 0.45)", size: 62, x: 82, y: 78, drift: 3 },
+      { color: "rgba(240, 210, 250, 0.40)", size: 78, x: 50, y: 50, drift: 0, delay: 55 },
+      { color: "rgba(210, 240, 255, 0.36)", size: 58, x: 88, y: 15, drift: 2, delay: 70 },
     ],
   },
 };
@@ -118,9 +133,11 @@ export function Wallpaper() {
             filter: "blur(36px)",
             mixBlendMode: palette.blend,
             // Each blob picks one of 4 keyframes so motion isn't perfectly synced.
-            // Slower than the previous 48-66s so the drift reads as a slow tide
-            // rather than visible animation — 90-114s feels like ambient motion.
-            animation: `wp-drift-${b.drift} ${90 + b.drift * 8}s ease-in-out infinite alternate`,
+            // 100-130s cycles feel like an ambient slow tide; the per-blob delay
+            // (optional) lets two blobs reusing the same keyframe stay visually
+            // independent rather than moving in lockstep.
+            animation: `wp-drift-${b.drift} ${100 + b.drift * 10}s ease-in-out infinite alternate`,
+            animationDelay: b.delay ? `-${b.delay}s` : undefined,
             willChange: "transform",
             pointerEvents: "none",
           }}
