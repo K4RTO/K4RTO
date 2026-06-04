@@ -436,7 +436,7 @@ function FormatToolbar({ editorRef, disabled, pinnedLabel, t }: FormatToolbarPro
     { label: "1.",  cmd: "insertOrderedList",   title: t("notes.fmt.numberedList") },
   ];
   return (
-    <div className="flex items-center gap-1 px-4 py-2 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+    <div className="flex items-center gap-1 px-5 py-2 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
       {buttons.map((b, idx) => (
         <Fragment key={b.cmd + b.label}>
           {(idx === 3 || idx === 5) && (
@@ -604,7 +604,7 @@ export default function Notes(_props: AppComponentProps) {
 
       {/* Note list */}
       <div className="flex-shrink-0 flex flex-col overflow-hidden" style={{ width: 245, backgroundColor: "#242424", borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex items-center justify-between px-5 py-2 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <span style={{ ...normal, fontSize: 14, fontWeight: 600 }}>{t("notes.title")}</span>
           <button onClick={createNote} className="flex items-center justify-center w-7 h-7 rounded" style={dim} title={t("notes.newNote")}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

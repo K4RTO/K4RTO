@@ -994,7 +994,7 @@ export default function Browser(_props: AppComponentProps) {
 
       {/* ── Chrome bar ────────────────────────────────────────────────── */}
       <div
-        className="flex items-center gap-1.5 px-3 flex-shrink-0"
+        className="flex items-center gap-1.5 px-5 flex-shrink-0"
         style={{
           height: 46,
           backgroundColor: "rgba(0,0,0,0.15)",
@@ -1102,7 +1102,7 @@ export default function Browser(_props: AppComponentProps) {
       {/* ── Bookmarks bar ────────────────────────────────────────────── */}
       {mode !== "start" && (
         <div
-          className="flex items-center gap-0.5 px-3 flex-shrink-0 overflow-x-auto"
+          className="flex items-center gap-0.5 px-5 flex-shrink-0 overflow-x-auto"
           style={{
             height: 30,
             backgroundColor: "rgba(0,0,0,0.20)",

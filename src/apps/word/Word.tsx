@@ -115,7 +115,7 @@ export default function Word({ windowId }: AppComponentProps) {
       {/* Title bar supplement */}
       <div
         className="flex items-center flex-shrink-0 select-none"
-        style={{ height: 36, padding: "0 16px", backgroundColor: "#2b579a", borderBottom: "1px solid rgba(0,0,0,0.2)" }}
+        style={{ height: 36, padding: "0 20px", backgroundColor: "#2b579a", borderBottom: "1px solid rgba(0,0,0,0.2)" }}
       >
         <span className="text-[12px] font-medium" style={{ color: "rgba(255,255,255,0.9)" }}>
           {fileName}{modified ? " ●" : ""}
@@ -133,7 +133,7 @@ export default function Word({ windowId }: AppComponentProps) {
       {/* Ribbon */}
       <div
         className="flex items-center flex-wrap gap-1.5 flex-shrink-0 select-none"
-        style={{ height: 48, padding: "0 16px", backgroundColor: "#ffffff", borderBottom: "1px solid #d0d0d0", boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }}
+        style={{ height: 48, padding: "0 20px", backgroundColor: "#ffffff", borderBottom: "1px solid #d0d0d0", boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }}
       >
         {/* Font size */}
         <div className="flex items-center gap-1 mr-2">
@@ -208,7 +208,7 @@ export default function Word({ windowId }: AppComponentProps) {
       {/* Status bar */}
       <div
         className="flex items-center justify-between flex-shrink-0 select-none"
-        style={{ height: 26, padding: "0 16px", backgroundColor: "#2b579a", color: "rgba(255,255,255,0.85)", fontSize: 11 }}
+        style={{ height: 26, padding: "0 20px", backgroundColor: "#2b579a", color: "rgba(255,255,255,0.85)", fontSize: 11 }}
       >
         <span>{words} {t("word.status.words")}&nbsp;&nbsp;{chars} {t("word.status.characters")}</span>
         <span style={{ color: "rgba(255,255,255,0.6)" }}>

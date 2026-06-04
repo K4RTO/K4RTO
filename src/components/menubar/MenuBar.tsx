@@ -566,7 +566,7 @@ export function MenuBar({
 
   return (
     <header
-      className="glass-surface glass-thin fixed top-0 left-0 right-0 h-7 z-[9999] flex items-center justify-between px-4"
+      className="glass-surface glass-thin fixed top-0 left-0 right-0 h-7 z-[9999] flex items-center justify-between px-5"
       style={{
         borderRadius: 0,
         borderBottom: "1px solid rgba(255,255,255,0.12)",

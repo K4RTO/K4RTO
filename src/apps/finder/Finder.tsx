@@ -610,7 +610,7 @@ export default function Finder({ windowId }: AppComponentProps) {
   return (
     <div className="glass-surface flex flex-col h-full" style={{ borderRadius: 0, boxShadow: "inset 0 0.5px 0 var(--glass-highlight-top), inset 0 -0.5px 0 var(--glass-highlight-bottom)", color: "rgba(255,255,255,0.85)", animation: "fadeIn 0.2s ease" }}>
       {/* ── Toolbar ── */}
-      <div className="glass-surface glass-thin flex items-center gap-2 px-4 h-[52px] flex-shrink-0 select-none"
+      <div className="glass-surface glass-thin flex items-center gap-2 px-5 h-[52px] flex-shrink-0 select-none"
         style={{ borderRadius: 0, boxShadow: "inset 0 0.5px 0 var(--glass-highlight-top), inset 0 -1px 0 rgba(255,255,255,0.08)" }}>
         {/* Back / Forward */}
         <div className="flex items-center gap-0.5 mr-1">
@@ -816,7 +816,7 @@ export default function Finder({ windowId }: AppComponentProps) {
             <>
               {/* Column headers */}
               <div className="flex items-center h-8 flex-shrink-0 text-[12px] select-none"
-                style={{ padding: "0 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.4)" }}>
+                style={{ padding: "0 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.4)" }}>
                 {cols.map(([col, label, cls, style]) => (
                   <button key={col} className={`${cls} flex items-center gap-1 text-left`}
                     style={style as React.CSSProperties}
@@ -909,7 +909,7 @@ export default function Finder({ windowId }: AppComponentProps) {
 
           {/* ── Path Bar ── */}
           <div className="flex items-center gap-1 h-7 flex-shrink-0 text-[11px] select-none overflow-hidden"
-            style={{ padding: "0 16px", borderTop: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.4)" }}>
+            style={{ padding: "0 20px", borderTop: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.4)" }}>
             {pathSegments.map((seg, i, arr) => (
               <span key={`${seg}-${i}`} className="flex items-center gap-1 flex-shrink-0">
                 <span

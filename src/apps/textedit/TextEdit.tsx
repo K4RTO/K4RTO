@@ -77,7 +77,7 @@ export default function TextEdit(_props: AppComponentProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ backgroundColor: "#1e1e1e", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif", position: "relative", animation: "fadeIn 0.2s ease" }}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 flex-shrink-0" style={{ height: 40, backgroundColor: "#2a2a2c", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex items-center justify-between px-5 flex-shrink-0" style={{ height: 40, backgroundColor: "#2a2a2c", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-1">
           {([[t("textedit.new"), handleNew], [t("textedit.open"), handleOpen], [t("textedit.save"), handleSave]] as [string, () => void][]).map(([label, fn]) => (
             <button key={label} onClick={fn} className="px-2.5 py-1 rounded"
@@ -112,7 +112,7 @@ export default function TextEdit(_props: AppComponentProps) {
       />
 
       {/* Status bar */}
-      <div className="flex items-center justify-between px-4 flex-shrink-0"
+      <div className="flex items-center justify-between px-5 flex-shrink-0"
         style={{ height: 24, backgroundColor: "#242424", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <span style={{ ...dim, fontSize: 11 }}>
           {t("textedit.words")} {wordCount(content)}&nbsp;&nbsp;{t("textedit.chars")} {content.length}
@@ -125,7 +125,7 @@ export default function TextEdit(_props: AppComponentProps) {
       {showOpen && (
         <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 50 }} onClick={() => setShowOpen(false)}>
           <div className="rounded-lg overflow-hidden flex flex-col" style={{ width: 320, maxHeight: 400, backgroundColor: "#2a2a2c", border: "1px solid rgba(255,255,255,0.1)" }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <span style={{ ...normal, fontSize: 14, fontWeight: 600 }}>{t("textedit.openFile")}</span>
               <button onClick={() => setShowOpen(false)} style={dim}>&#10005;</button>
             </div>

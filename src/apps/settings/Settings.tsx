@@ -28,7 +28,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 function Row({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
   const dim = { color: "rgba(255,255,255,0.4)" };
   return (
-    <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
       <div>
         <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 14 }}>{label}</div>
         {desc && <div style={{ ...dim, fontSize: 12, marginTop: 2 }}>{desc}</div>}
@@ -221,7 +221,7 @@ export default function Settings(_props: AppComponentProps) {
         </div>
 
         {/* Profile */}
-        <div className="flex items-center gap-3 px-4 py-3 mb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex items-center gap-3 px-5 py-3 mb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
             style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}>G</div>
           <div>
