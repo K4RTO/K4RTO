@@ -558,6 +558,44 @@ function WordIcon() {
   );
 }
 
+function Game2048Icon() {
+  // 4 tinted tiles in 2×2 layout — recognizable 2048 mark without the full
+  // 4×4 grid clutter at dock size. width/height = 100% so the icon scales
+  // with the dock magnification effect (fixed pixel sizes would lock the
+  // icon at 40×40 even while neighbors grow).
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="40" height="40" rx="9" fill="#bbada0" />
+      <rect x="5"  y="5"  width="14" height="14" rx="2" fill="#eee4da" />
+      <rect x="21" y="5"  width="14" height="14" rx="2" fill="#ede0c8" />
+      <rect x="5"  y="21" width="14" height="14" rx="2" fill="#f2b179" />
+      <rect x="21" y="21" width="14" height="14" rx="2" fill="#f59563" />
+      <text x="12" y="15" textAnchor="middle" fontSize="7" fontWeight="800" fill="#776e65">2</text>
+      <text x="28" y="15" textAnchor="middle" fontSize="7" fontWeight="800" fill="#776e65">4</text>
+      <text x="12" y="31" textAnchor="middle" fontSize="7" fontWeight="800" fill="#f9f6f2">8</text>
+      <text x="28" y="31" textAnchor="middle" fontSize="7" fontWeight="800" fill="#f9f6f2">16</text>
+    </svg>
+  );
+}
+
+function MinesweeperIcon() {
+  // Single bomb on the classic gray cell — the universal minesweeper signifier.
+  // See Game2048Icon for the 100%/viewBox sizing rationale.
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="40" height="40" rx="9" fill="#c0c0c0" />
+      <rect x="3" y="3" width="34" height="34" rx="1" fill="none" stroke="#fff" strokeWidth="2" />
+      {/* Bomb body */}
+      <circle cx="20" cy="22" r="9" fill="#1a1a1a" />
+      {/* Fuse + spark */}
+      <path d="M22 13 Q24 9 27 8" stroke="#1a1a1a" strokeWidth="1.4" fill="none" />
+      <circle cx="27" cy="7" r="1.6" fill="#ff5959" />
+      {/* Highlight */}
+      <circle cx="17" cy="19" r="2" fill="#666" />
+    </svg>
+  );
+}
+
 function MissionControlIconDock() {
   // Three overlapping rounded rectangles meant to evoke "all windows fanned
   // out" — the visual cue real macOS Mission Control uses on its icon.
@@ -723,6 +761,8 @@ export const dockAppItems: DockAppItem[] = [
   { nameKey: "dock.vscode",     svgIcon: <VSCodeIcon />,     appId: "vscode" },
   { nameKey: "dock.word",       svgIcon: <WordIcon />,       appId: "word" },
   { nameKey: "dock.music",      svgIcon: <SpotifyDockIcon />, appId: "music" },
+  { nameKey: "dock.game2048",   svgIcon: <Game2048Icon />,    appId: "game2048" },
+  { nameKey: "dock.minesweeper",svgIcon: <MinesweeperIcon />, appId: "minesweeper" },
 ];
 
 const folderItemDefs = [

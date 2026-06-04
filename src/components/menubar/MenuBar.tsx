@@ -19,6 +19,8 @@ const APP_NAME_KEYS: Record<string, string> = {
   vscode: "dock.vscode",
   word: "dock.word",
   music: "dock.music",
+  game2048: "dock.game2048",
+  minesweeper: "dock.minesweeper",
 };
 
 // --- Dispatch a custom event to communicate with Finder (legacy bus) ---
@@ -289,7 +291,10 @@ function DropdownMenu({
   return (
     <div
       ref={ref}
-      className="glass-surface glass-radius-popover absolute top-full left-0 mt-0.5 min-w-[220px] py-1 z-[10000]"
+      // py-1.5 (was py-1) and min-w-[240px] (was 220) so item rows have a tiny
+      // bit more breathing room top/bottom and the longest label + shortcut
+      // pair doesn't crowd the dropdown's right edge.
+      className="glass-surface glass-radius-popover absolute top-full left-0 mt-0.5 min-w-[240px] py-1.5 z-[10000]"
     >
       {items.map((item, i) =>
         item.separator ? (
@@ -301,7 +306,10 @@ function DropdownMenu({
         ) : (
           <button
             key={item.label + i}
-            className="w-full flex items-center justify-between px-4 py-0.5 text-[13px] text-white/85 text-left hover:bg-[#0058d0] hover:text-white rounded-[4px] mx-1"
+            // px-5 (was px-4) for ~20px of horizontal padding inside each row.
+            // py-1 (was py-0.5) so rows are slightly taller and the hover
+            // highlight feels less cramped against the row above/below.
+            className="w-full flex items-center justify-between px-5 py-1 text-[13px] text-white/85 text-left hover:bg-[#0058d0] hover:text-white rounded-[4px] mx-1"
             style={{
               width: "calc(100% - 8px)",
               opacity: item.disabled ? 0.4 : 1,

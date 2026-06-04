@@ -196,6 +196,26 @@ const translations: Record<string, TranslationEntry> = {
 
   // ── Launchpad ────────────────────────────────────────────────────────────
   "dock.launchpad":            { en: "Launchpad",                 zh: "启动台" },
+
+  // ── Games ────────────────────────────────────────────────────────────────
+  "dock.game2048":             { en: "2048",                      zh: "2048" },
+  "dock.minesweeper":          { en: "Minesweeper",               zh: "扫雷" },
+  "game2048.score":            { en: "Score",                     zh: "得分" },
+  "game2048.best":             { en: "Best",                      zh: "最高" },
+  "game2048.newGame":          { en: "New Game",                  zh: "新游戏" },
+  "game2048.youWin":           { en: "You Win!",                  zh: "你赢了！" },
+  "game2048.gameOver":         { en: "Game Over",                 zh: "游戏结束" },
+  "game2048.keepPlaying":      { en: "Keep going",                zh: "继续玩" },
+  "game2048.tryAgain":         { en: "Try again",                 zh: "再试一次" },
+  "game2048.hint":             { en: "Use arrow keys or WASD. Same tiles merge.",
+                                 zh: "用方向键或 WASD 移动，相同数字合并。" },
+  "minesweeper.newGame":       { en: "New Game",                  zh: "新游戏" },
+  "minesweeper.diff.beginner": { en: "Beginner",                  zh: "初级" },
+  "minesweeper.diff.intermediate": { en: "Intermediate",          zh: "中级" },
+  "minesweeper.diff.expert":   { en: "Expert",                    zh: "高级" },
+  "minesweeper.hint":          { en: "Left click reveals · Right click flags",
+                                 zh: "左键揭开 · 右键标记" },
+  "minesweeper.best":          { en: "Best: {n}s",                zh: "最佳: {n}秒" },
   "launchpad.searchPlaceholder": { en: "Search",                  zh: "搜索" },
   "launchpad.noResults":       { en: "No matching apps",          zh: "没有匹配的应用" },
 

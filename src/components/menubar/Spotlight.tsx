@@ -13,6 +13,7 @@ const APP_ICONS: Record<string, string> = {
   finder: "🗂",  terminal: "⌨", safari: "🧭", notes: "📝",
   textedit: "📄", settings: "⚙", calculator: "🔢", calendar: "📅",
   clock: "🕐",  preview: "🖼️", vscode: "</>", word: "📘", music: "🎵",
+  game2048: "🎮", minesweeper: "💣",
 };
 
 const APP_NAME_KEYS: Record<string, string> = {
@@ -21,6 +22,7 @@ const APP_NAME_KEYS: Record<string, string> = {
   calculator: "dock.calculator", calendar: "dock.calendar",
   settings: "dock.settings", clock: "dock.clock", preview: "dock.preview",
   vscode: "dock.vscode", word: "dock.word", music: "dock.music",
+  game2048: "dock.game2048", minesweeper: "dock.minesweeper",
 };
 
 // ── Portfolio commands ───────────────────────────────────────────────────────
@@ -309,8 +311,9 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
         className="glass-surface glass-thick glass-shadow-lg glass-radius-popover"
         style={{ width: 640, overflow: "hidden" }}
       >
-        {/* Search input */}
-        <div className="flex items-center gap-3 px-5" style={{ height: 58 }}>
+        {/* Search input — px-6 (24px) for the macOS Spotlight breathing room.
+            px-5 (20px) was visibly cramped against the rounded corners. */}
+        <div className="flex items-center gap-3 px-6" style={{ height: 58 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round">
             <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
           </svg>
@@ -340,7 +343,7 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
             {results.map((r, i) => (
               <div
                 key={r.id}
-                className="flex items-center gap-3 px-5 cursor-default"
+                className="flex items-center gap-3 px-6 cursor-default"
                 style={{
                   height: 48,
                   backgroundColor: i === selected ? "rgba(0,88,208,0.9)" : "transparent",

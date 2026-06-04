@@ -128,6 +128,24 @@ const apps: Record<string, AppDefinition> = {
     minSize: { width: 300, height: 400 },
     singleInstance: true,
   },
+  game2048: {
+    id: "game2048",
+    name: "2048",
+    icon: null,
+    component: lazy(() => import("./game2048/Game2048")),
+    defaultRect: { x: 260, y: 70, width: 420, height: 560 },
+    minSize: { width: 360, height: 480 },
+    singleInstance: true,
+  },
+  minesweeper: {
+    id: "minesweeper",
+    name: "Minesweeper",
+    icon: null,
+    component: lazy(() => import("./minesweeper/Minesweeper")),
+    defaultRect: { x: 200, y: 50, width: 760, height: 600 },
+    minSize: { width: 360, height: 420 },
+    singleInstance: true,
+  },
 };
 
 export function getApp(id: string): AppDefinition | undefined {
