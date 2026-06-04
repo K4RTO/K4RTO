@@ -9,6 +9,7 @@ import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { ContextMenu, type MenuItem as CtxMenuItem } from "@/components/shared/ContextMenu";
 
 const TRASH_DIR = "/Users/guest/.Trash";
+const DOWNLOADS_DIR = "/Users/guest/Downloads";
 
 // --- Dock Magnification Hook ---
 function useDockMagnification(baseSize: number, maxSize: number, range: number) {
@@ -1033,11 +1034,31 @@ export function Dock({
               </div>
             );
           }
+          // Downloads — same focus-existing-or-launch policy as Trash so
+          // repeated clicks don't spawn duplicate Finder windows.
           return (
             <DockItem
               key={item.nameKey}
               name={t(item.nameKey)}
               icon={item.icon}
+              onClick={() => {
+                const existing = Array.from(wmState.windows.values()).filter(
+                  (w) =>
+                    w.appId === "finder" &&
+                    typeof w.meta?.initialPath === "string" &&
+                    (w.meta.initialPath === DOWNLOADS_DIR ||
+                      w.meta.initialPath.startsWith(`${DOWNLOADS_DIR}/`)),
+                );
+                if (existing.length > 0) {
+                  const top = existing[existing.length - 1];
+                  if (top.status === "minimized") {
+                    wmDispatch({ type: "RESTORE_WINDOW", id: top.id });
+                  }
+                  focusWindow(top.id);
+                  return;
+                }
+                onLaunchApp?.("finder", { initialPath: DOWNLOADS_DIR });
+              }}
               scale={scale}
               baseSize={BASE_SIZE}
             />

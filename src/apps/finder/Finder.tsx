@@ -278,12 +278,17 @@ export default function Finder({ windowId }: AppComponentProps) {
   const initialPath = typeof initialMeta.initialPath === "string"
     ? initialMeta.initialPath
     : "/Users/guest/Downloads";
+  // Reverse-lookup which sidebar entry corresponds to initialPath so launchers
+  // like Dock-Trash open Finder with the right sidebar row highlighted.
+  // Falls back to "downloads" — the implicit home for a fresh Finder window.
+  const initialSidebarId =
+    (Object.entries(SIDEBAR_PATHS).find(([, p]) => p === initialPath)?.[0]) ?? "downloads";
   const t = useT();
   const { lang } = useSystem();
   const fs = useFileSystemOptional();
   const { launch } = useProcesses();
 
-  const [selected, setSelected] = useState<string>("downloads");
+  const [selected, setSelected] = useState<string>(initialSidebarId);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortCol, setSortCol] = useState<"name" | "size" | "kind" | "date">("name");

@@ -359,3 +359,39 @@ html, body {
 /* Paragraph spacing — contentEditable wraps lines in <div>, give them breath. */
 .rich-editor p, .rich-editor div { margin: 0; }
 
+/* ════════════════════════════════════════════════════════════════════════
+   Wallpaper aurora blob drift — 4 named keyframes so 4 blobs don't move in sync.
+   Each keyframe writes the centering translate(-50%,-50%) and the drift offset
+   as a single `transform` declaration, so the functions compose left-to-right
+   (CSS transform functions in one declaration are applied in order — this is
+   composition, not "last one wins"). That keeps the blob center-anchored at
+   its (x%, y%) position while the drift adds a small wandering offset.
+   The drift amplitude is intentionally small (8-14%) so the wallpaper feels
+   alive without ever drawing attention to the motion itself.
+   ════════════════════════════════════════════════════════════════════════ */
+@keyframes wp-drift-0 {
+  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(8%,   -6% ) scale(1.08); }
+  100% { transform: translate(-50%, -50%) translate(-4%,  10% ) scale(0.95); }
+}
+@keyframes wp-drift-1 {
+  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(-10%, 8%  ) scale(0.92); }
+  100% { transform: translate(-50%, -50%) translate(6%,   -8% ) scale(1.10); }
+}
+@keyframes wp-drift-2 {
+  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(7%,   7%  ) scale(1.06); }
+  100% { transform: translate(-50%, -50%) translate(-9%,  -4% ) scale(0.94); }
+}
+@keyframes wp-drift-3 {
+  0%   { transform: translate(-50%, -50%) translate(0,    0   ) scale(1   ); }
+  50%  { transform: translate(-50%, -50%) translate(-6%,  -10%) scale(1.07); }
+  100% { transform: translate(-50%, -50%) translate(10%,  6%  ) scale(0.93); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Keep wallpaper static for users who request reduced motion — preserves
+     accessibility intent without losing the chosen palette's resting look. */
+  .wp-blob { animation: none !important; }
+}
+
