@@ -244,6 +244,14 @@ const translations: Record<string, TranslationEntry> = {
   "finder.ctx.getInfo":        { en: "Get Info",                  zh: "显示简介" },
   "finder.ctx.duplicate":      { en: "Duplicate",                 zh: "复制" },
   "finder.ctx.moveToTrash":    { en: "Move to Trash",             zh: "移到废纸篓" },
+  "finder.ctx.putBack":        { en: "Put Back",                  zh: "放回原位" },
+  "finder.ctx.putBackTo":      { en: "Put Back to {path}",        zh: "放回 {path}" },
+  "finder.ctx.deleteImmediately":   { en: "Delete Immediately…",    zh: "立即删除…" },
+  "finder.ctx.confirmDeleteImmediately": { en: "Delete \"{name}\" permanently? This cannot be undone.",
+                                           zh: "确定永久删除\"{name}\"？此操作无法撤销。" },
+  "finder.ctx.emptyTrash":     { en: "Empty",                     zh: "清空" },
+  "finder.ctx.confirmEmptyTrash":   { en: "Empty the trash? {n} item(s) will be permanently deleted.",
+                                       zh: "清空废纸篓？{n} 项内容将被永久删除。" },
   "finder.ctx.copy":           { en: "Copy \"{name}\"",           zh: "拷贝\"{name}\"" },
 
   // ── Notes ────────────────────────────────────────────────────────────────

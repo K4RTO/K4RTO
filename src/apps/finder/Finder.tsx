@@ -6,6 +6,7 @@ import { useT } from "@/contexts/SystemContext";
 import { ContextMenu, type MenuItem } from "@/components/shared/ContextMenu";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useProcesses } from "@/contexts/ProcessContext";
+import { useWindowManager } from "@/contexts/WindowManagerContext";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -259,7 +260,14 @@ function SpecialView({ kind, t }: { kind: "airdrop" | "network"; t: (key: string
 type ViewMode = "icons" | "list";
 interface CtxMenuState { x: number; y: number; file: FileEntry; }
 
-export default function Finder(_props: AppComponentProps) {
+export default function Finder({ windowId }: AppComponentProps) {
+  // Honor meta.initialPath so launchers (Dock trash, Spotlight, etc.) can
+  // open Finder pointed at a specific folder instead of the Downloads default.
+  const wm = useWindowManager();
+  const initialMeta = wm.state.windows.get(windowId)?.meta ?? {};
+  const initialPath = typeof initialMeta.initialPath === "string"
+    ? initialMeta.initialPath
+    : "/Users/guest/Downloads";
   const t = useT();
   const fs = useFileSystemOptional();
   const { launch } = useProcesses();
@@ -275,8 +283,8 @@ export default function Finder(_props: AppComponentProps) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Navigation
-  const [currentPath, setCurrentPath] = useState("/Users/guest/Downloads");
-  const [pathHistory, setPathHistory] = useState(["/Users/guest/Downloads"]);
+  const [currentPath, setCurrentPath] = useState(initialPath);
+  const [pathHistory, setPathHistory] = useState([initialPath]);
   const [histIdx, setHistIdx] = useState(0);
 
   // Special placeholder views (airdrop / network) — no FS path, render custom UI
@@ -413,6 +421,40 @@ export default function Finder(_props: AppComponentProps) {
     setCtxMenu({ x: e.clientX, y: e.clientY, file });
   }, []);
 
+  // Are we currently looking at the Trash? Drives which actions to surface.
+  const inTrash = currentPath === "/Users/guest/.Trash" || currentPath.startsWith("/Users/guest/.Trash/");
+
+  // ⌘+Delete moves the selected file to Trash (or, when already in .Trash,
+  // permanently deletes it). Mirrors real Finder. The deps capture
+  // selectedFile / files / inTrash so the handler always sees fresh state.
+  // Focus guard: this listener is on `document`, so without a windowId check
+  // multiple Finder windows would all fire on a single keypress. Only the
+  // currently-focused Finder window should react.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // Focused window = last entry in windowOrder (top of z-stack).
+      const order = wm.state.windowOrder;
+      const focusedId = order.length > 0 ? order[order.length - 1] : null;
+      if (focusedId !== windowId) return;
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key !== "Backspace" && e.key !== "Delete") return;
+      if (!fs || !selectedFile) return;
+      const file = files.find(f => f.name === selectedFile);
+      if (!file) return;
+      e.preventDefault();
+      if (inTrash) {
+        if (!confirm(t("finder.ctx.confirmDeleteImmediately", { name: file.name }))) return;
+        fs.remove(file.fullPath);
+      } else {
+        fs.moveToTrash(file.fullPath);
+      }
+      setSelectedFile(null);
+      loadDir(currentPath);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [fs, selectedFile, files, inTrash, t, loadDir, currentPath, wm.state.windowOrder, windowId]);
+
   const buildCtxItems = useCallback((file: FileEntry): MenuItem[] => {
     const items: MenuItem[] = [
       { label: t("finder.ctx.open"), action: () => openFile(file) },
@@ -424,21 +466,57 @@ export default function Finder(_props: AppComponentProps) {
       { separator: true },
       { label: t("finder.ctx.getInfo"), action: () => setGetInfoFile(file) },
       { separator: true },
-      { label: t("finder.ctx.duplicate"), disabled: true },
-      {
-        label: t("finder.ctx.moveToTrash"),
-        action: () => {
-          if (fs) {
+    );
+
+    if (inTrash) {
+      // Inside .Trash, "Move to Trash" makes no sense — show Put Back +
+      // Delete Immediately instead. Put Back is disabled when the origin is
+      // unknown (e.g. a manually-created file inside .Trash) or the origin
+      // is now occupied by something else.
+      const origin = fs?.getTrashOrigin(file.fullPath) ?? null;
+      const originGone = !!(origin && fs?.exists(origin));
+      items.push(
+        {
+          label: origin
+            ? t("finder.ctx.putBackTo", { path: origin })
+            : t("finder.ctx.putBack"),
+          disabled: !origin || originGone,
+          action: () => {
+            if (!fs || !origin) return;
+            fs.restoreFromTrash(file.fullPath);
+            loadDir(currentPath);
+          },
+        },
+        {
+          label: t("finder.ctx.deleteImmediately"),
+          action: () => {
+            if (!fs) return;
+            if (!confirm(t("finder.ctx.confirmDeleteImmediately", { name: file.name }))) return;
             fs.remove(file.fullPath);
             loadDir(currentPath);
-          }
+          },
         },
-      },
+      );
+    } else {
+      items.push(
+        { label: t("finder.ctx.duplicate"), disabled: true },
+        {
+          label: t("finder.ctx.moveToTrash"),
+          action: () => {
+            if (!fs) return;
+            fs.moveToTrash(file.fullPath);
+            loadDir(currentPath);
+          },
+        },
+      );
+    }
+
+    items.push(
       { separator: true },
       { label: t("finder.ctx.copy", { name: file.name }), disabled: true },
     );
     return items;
-  }, [t, openFile, fs, loadDir, currentPath]);
+  }, [t, openFile, fs, loadDir, currentPath, inTrash]);
 
   // Filter by search query first (when search bar is open) — case-insensitive
   // substring match on file name. Empty query = no filter.
@@ -581,6 +659,34 @@ export default function Finder(_props: AppComponentProps) {
               );
             })}
           </div>
+        )}
+
+        {/* Empty Trash — only visible when inside .Trash. Real macOS surfaces
+            this as a destructive primary action on the Trash window's toolbar.
+            Disabled when the trash is already empty. */}
+        {inTrash && (
+          <button
+            onClick={() => {
+              if (!fs) return;
+              const topCount = fs.readDir("/Users/guest/.Trash").length;
+              if (topCount === 0) return;
+              if (!confirm(t("finder.ctx.confirmEmptyTrash", { n: String(topCount) }))) return;
+              fs.emptyTrash();
+              loadDir(currentPath);
+              setSelectedFile(null);
+            }}
+            className="px-3 h-7 rounded-[6px] text-[12px] mr-2"
+            style={{
+              color: files.length > 0 ? "white" : "rgba(255,255,255,0.35)",
+              backgroundColor: files.length > 0 ? "rgba(255,59,48,0.85)" : "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              cursor: files.length > 0 ? "pointer" : "default",
+            }}
+            disabled={files.length === 0}
+            title={t("finder.ctx.emptyTrash")}
+          >
+            {t("finder.ctx.emptyTrash")}
+          </button>
         )}
 
         {/* View toggle */}

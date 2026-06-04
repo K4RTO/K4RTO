@@ -5,7 +5,10 @@ import Image from "next/image";
 import { useProcesses } from "@/contexts/ProcessContext";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useT } from "@/contexts/SystemContext";
+import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { ContextMenu, type MenuItem as CtxMenuItem } from "@/components/shared/ContextMenu";
+
+const TRASH_DIR = "/Users/guest/.Trash";
 
 // --- Dock Magnification Hook ---
 function useDockMagnification(baseSize: number, maxSize: number, range: number) {
@@ -677,13 +680,25 @@ const MAG_RANGE = 160;
 
 interface CtxMenuState { x: number; y: number; items: CtxMenuItem[] }
 
-export function Dock({ onLaunchApp }: { onLaunchApp?: (appId: string) => string | null }) {
+export function Dock({
+  onLaunchApp,
+}: {
+  // Widened to accept meta — trash click passes initialPath so the new Finder
+  // window opens directly at .Trash rather than the Downloads default.
+  onLaunchApp?: (appId: string, meta?: Record<string, string>) => string | null;
+}) {
   const { dockRef, scales, onMouseMove, onMouseEnter, onMouseLeave } =
     useDockMagnification(BASE_SIZE, MAX_SIZE, MAG_RANGE);
   const { getProcessesByAppId, kill } = useProcesses();
   const { state: wmState, dispatch: wmDispatch, focusWindow } = useWindowManager();
+  const fs = useFileSystemOptional();
   const t = useT();
   const [ctxMenu, setCtxMenu] = useState<CtxMenuState | null>(null);
+
+  // Trash full/empty drives a corner badge on the trash icon. Re-derived from
+  // fs state, so any moveToTrash / emptyTrash anywhere in the app updates the
+  // dock indicator without a manual subscription.
+  const trashEntryCount = fs ? fs.readDir(TRASH_DIR).length : 0;
 
   const minimizedWindows = Array.from(wmState.windows.values()).filter(
     (w) => w.status === "minimized"
@@ -782,15 +797,74 @@ export function Dock({ onLaunchApp }: { onLaunchApp?: (appId: string) => string 
           );
         })}
         <DockSeparator />
-        {folderItemDefs.map((item, i) => (
-          <DockItem
-            key={item.nameKey}
-            name={t(item.nameKey)}
-            icon={item.icon}
-            scale={getScale(dockAppItems.length + i)}
-            baseSize={BASE_SIZE}
-          />
-        ))}
+        {folderItemDefs.map((item, i) => {
+          const scale = getScale(dockAppItems.length + i);
+          if (item.nameKey === "dock.trash") {
+            const hasItems = trashEntryCount > 0;
+            return (
+              <div key={item.nameKey} style={{ position: "relative" }} data-dock-item>
+                <DockItem
+                  name={`${t(item.nameKey)}${hasItems ? ` (${trashEntryCount})` : ""}`}
+                  icon={item.icon}
+                  onClick={() => {
+                    // Match macOS: clicking Trash in the dock with an existing
+                    // Finder window pointed at .Trash focuses that window
+                    // rather than spawning a fresh one. We look for any Finder
+                    // already at TRASH_DIR (or its subdirs), focus the
+                    // top-most one, and only launch a new Finder if none found.
+                    const existing = Array.from(wmState.windows.values()).filter(
+                      (w) =>
+                        w.appId === "finder" &&
+                        typeof w.meta?.initialPath === "string" &&
+                        (w.meta.initialPath === TRASH_DIR ||
+                          w.meta.initialPath.startsWith(`${TRASH_DIR}/`)),
+                    );
+                    if (existing.length > 0) {
+                      const top = existing[existing.length - 1];
+                      if (top.status === "minimized") {
+                        wmDispatch({ type: "RESTORE_WINDOW", id: top.id });
+                      }
+                      focusWindow(top.id);
+                      return;
+                    }
+                    onLaunchApp?.("finder", { initialPath: TRASH_DIR });
+                  }}
+                  scale={scale}
+                  baseSize={BASE_SIZE}
+                />
+                {hasItems && (
+                  // Red dot badge in the upper-right corner — same affordance
+                  // macOS uses on a full trash. Positioned absolutely so it
+                  // rides along during dock magnification scaling.
+                  <span
+                    aria-hidden
+                    style={{
+                      position: "absolute",
+                      top: 2,
+                      right: 4,
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "#ff3b30",
+                      border: "1.5px solid rgba(28,28,30,0.85)",
+                      pointerEvents: "none",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
+                    }}
+                  />
+                )}
+              </div>
+            );
+          }
+          return (
+            <DockItem
+              key={item.nameKey}
+              name={t(item.nameKey)}
+              icon={item.icon}
+              scale={scale}
+              baseSize={BASE_SIZE}
+            />
+          );
+        })}
         {minimizedWindows.length > 0 && (
           <>
             <DockSeparator />

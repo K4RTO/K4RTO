@@ -24,6 +24,22 @@ const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 //     Notes seed, terminal portfolio command output)
 const LS_KEY = "vfs_state_v5";
 
+// Where trashed entries live, and a separate LS key for the trashed-path →
+// origin-path map (we can't stash origin info in FsEntry without breaking the
+// existing schema, and a parallel map is plenty simple at this scale).
+const TRASH_DIR = "/Users/guest/.Trash";
+const TRASH_ORIGINS_KEY = "vfs_trash_origins_v1";
+
+function loadTrashOrigins(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(TRASH_ORIGINS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Try to migrate an older VFS snapshot forward without nuking user-written data
  * (Notes content, TextEdit drafts, custom files in Desktop / Documents, etc).
@@ -68,6 +84,10 @@ function loadOrInit(): FsState {
       return migrated;
     }
   } catch {}
+  // Fresh-defaults path also means any leftover trash origins are dead
+  // references (their VFS counterparts don't exist any more). Clear them so
+  // the map doesn't accumulate stale entries across reset cycles.
+  try { localStorage.removeItem(TRASH_ORIGINS_KEY); } catch {}
   return buildDefaults();
 }
 
@@ -179,7 +199,15 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     (path: string) => {
       update((prev) => {
         const next = { ...prev };
-        delete next[path];
+        // Recursive delete: drop the entry itself AND every descendant. Without
+        // this, removing a folder would leave its children as orphan nodes that
+        // accumulate in localStorage forever (no UI surfaces them — they're
+        // dead weight until VFS reset). moveToTrash already handles descendants
+        // correctly; remove was the inconsistent path.
+        const prefix = path + "/";
+        for (const k of Object.keys(next)) {
+          if (k === path || k.startsWith(prefix)) delete next[k];
+        }
         return next;
       });
     },
@@ -212,6 +240,153 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     [fs]
   );
 
+  // ── Trash ──────────────────────────────────────────────────────────────────
+  // The trash sits at TRASH_DIR. We can't store origin info inside the FsEntry
+  // (no schema slot for it without breaking everything that reads .content as
+  // raw text), so origins live in a parallel localStorage map keyed by the
+  // trashed path. The map is loaded into a React state so trash operations
+  // re-render consumers, and snapshotted to LS on each mutation.
+
+  type TrashOrigins = Record<string, string>;
+  const [trashOrigins, setTrashOrigins] = useState<TrashOrigins>(loadTrashOrigins);
+
+  const persistOrigins = useCallback((map: TrashOrigins) => {
+    try { localStorage.setItem(TRASH_ORIGINS_KEY, JSON.stringify(map)); } catch {}
+  }, []);
+
+  /** Find a non-colliding name inside .Trash by appending " (2)", " (3)"… */
+  const uniqueTrashName = useCallback((state: FsState, name: string): string => {
+    const dot = name.lastIndexOf(".");
+    const stem = dot > 0 ? name.slice(0, dot) : name;
+    const ext  = dot > 0 ? name.slice(dot)    : "";
+    let candidate = name;
+    let n = 2;
+    while (state[`${TRASH_DIR}/${candidate}`]) {
+      candidate = `${stem} (${n})${ext}`;
+      n += 1;
+    }
+    return candidate;
+  }, []);
+
+  const moveToTrash = useCallback(
+    (path: string): string | null => {
+      // Refuse to trash the trash itself or things inside it (no-op + log avoidance).
+      if (path === TRASH_DIR || path.startsWith(`${TRASH_DIR}/`)) return null;
+
+      // Compute everything inside the functional setter so we always work
+      // against the freshest state (not the captured-closure snapshot). The
+      // setter's return value is the new state; we use a ref to thread the
+      // computed destPath out to the caller. React 18 batches setters but
+      // doesn't reorder them within one event handler tick, so origins +
+      // fs state land together.
+      let destPath: string | null = null;
+      update((prev) => {
+        const src = prev[path];
+        if (!src) return prev;  // entry vanished between check and apply
+        const next = { ...prev };
+        if (!next[TRASH_DIR]) next[TRASH_DIR] = makeEntry(TRASH_DIR, "dir");
+        const newName = uniqueTrashName(next, src.name);
+        destPath = `${TRASH_DIR}/${newName}`;
+        delete next[path];
+        next[destPath] = { ...src, path: destPath, name: newName, modifiedAt: Date.now() };
+        if (src.type === "dir") {
+          const prefix = path + "/";
+          for (const [oldKey, entry] of Object.entries(prev)) {
+            if (oldKey.startsWith(prefix)) {
+              const tail = oldKey.slice(path.length);  // includes leading "/"
+              const newKey = destPath + tail;
+              delete next[oldKey];
+              next[newKey] = { ...entry, path: newKey };
+            }
+          }
+        }
+        return next;
+      });
+      if (destPath) {
+        // Use the functional updater form so we don't fight a stale closure
+        // of `trashOrigins` either.
+        setTrashOrigins((prev) => {
+          const nextOrigins = { ...prev, [destPath as string]: path };
+          persistOrigins(nextOrigins);
+          return nextOrigins;
+        });
+      }
+      return destPath;
+    },
+    [update, persistOrigins, uniqueTrashName],
+  );
+
+  const restoreFromTrash = useCallback(
+    (trashedPath: string): string | null => {
+      let resolvedOrigin: string | null = null;
+      update((prev) => {
+        const origin = trashOrigins[trashedPath];
+        const entry = prev[trashedPath];
+        // Bail conditions checked against the latest state, not a captured one.
+        if (!origin || !entry) return prev;
+        if (prev[origin]) return prev;  // destination reoccupied
+        resolvedOrigin = origin;
+        const next = { ...prev };
+        const parts = origin.split("/").filter(Boolean);
+        let cur = "";
+        for (let i = 0; i < parts.length - 1; i++) {
+          cur += "/" + parts[i];
+          if (!next[cur]) next[cur] = makeEntry(cur, "dir");
+        }
+        delete next[trashedPath];
+        next[origin] = { ...entry, path: origin, name: baseName(origin), modifiedAt: Date.now() };
+        if (entry.type === "dir") {
+          const prefix = trashedPath + "/";
+          for (const [oldKey, e] of Object.entries(prev)) {
+            if (oldKey.startsWith(prefix)) {
+              const tail = oldKey.slice(trashedPath.length);
+              const newKey = origin + tail;
+              delete next[oldKey];
+              next[newKey] = { ...e, path: newKey };
+            }
+          }
+        }
+        return next;
+      });
+      if (resolvedOrigin) {
+        setTrashOrigins((prev) => {
+          const { [trashedPath]: _gone, ...rest } = prev;
+          void _gone;
+          persistOrigins(rest);
+          return rest;
+        });
+      }
+      return resolvedOrigin;
+    },
+    [update, trashOrigins, persistOrigins],
+  );
+
+  const emptyTrash = useCallback((): number => {
+    // Count top-level entries directly under .Trash (the ones a user sees in
+    // the Trash window — descendants are implicit).
+    const topLevel = Object.keys(fs).filter(
+      (p) => p.startsWith(`${TRASH_DIR}/`) && !p.slice(TRASH_DIR.length + 1).includes("/"),
+    );
+    if (topLevel.length === 0) return 0;
+    update((prev) => {
+      const next = { ...prev };
+      for (const k of Object.keys(next)) {
+        if (k.startsWith(`${TRASH_DIR}/`)) delete next[k];
+      }
+      // Re-ensure the .Trash dir itself survives
+      if (!next[TRASH_DIR]) next[TRASH_DIR] = makeEntry(TRASH_DIR, "dir");
+      return next;
+    });
+    setTrashOrigins({});
+    persistOrigins({});
+    return topLevel.length;
+  }, [fs, update, persistOrigins]);
+
+  const getTrashOrigin = useCallback(
+    (trashedPath: string): string | null => trashOrigins[trashedPath] ?? null,
+    [trashOrigins],
+  );
+
   return (
     <FileSystemContext.Provider
       value={{
@@ -223,6 +398,10 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
         exists,
         rename,
         getEntry,
+        moveToTrash,
+        restoreFromTrash,
+        emptyTrash,
+        getTrashOrigin,
       }}
     >
       {children}
