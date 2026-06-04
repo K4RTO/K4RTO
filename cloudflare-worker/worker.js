@@ -47,6 +47,67 @@ const FORWARDED_REQUEST_HEADERS = [
   "range",
 ];
 
+// Fallback UA — many sites flag empty / bot-like UAs with anti-bot challenges
+// before we even see the page. A recent Chrome UA reads as a normal browser.
+const FALLBACK_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+
+/**
+ * Anti-frame-bust JS stub injected as the first <script> in <head>. Best-effort:
+ *
+ *   1. Try to re-point window.top / window.parent / window.frameElement to the
+ *      current frame. In modern Chromium/Firefox these are non-configurable host
+ *      properties, so defineProperty throws — we swallow and move on. Pages that
+ *      catch the failure and try alternative escape techniques remain
+ *      unreachable. This works against simpler "if (top !== self)" checks where
+ *      the script doesn't notice that defineProperty failed.
+ *
+ *   2. Patch window.location.replace/assign to no-op when the target URL equals
+ *      the current URL. This is the second most common frame-bust pattern —
+ *      `window.location.replace(window.location.href)` to force a top-level
+ *      reload. Re-navigating to the SAME URL inside an iframe creates a hang loop;
+ *      noop-ing it keeps the page interactive.
+ *
+ *   3. Patch window.open with target=_top — silent ignore. Some sites use
+ *      window.open(url, '_top') as a frame-bust. We can't safely block all
+ *      window.open calls (kills legit "open in new tab" UX inside the page),
+ *      so we only block when the target is _top / _parent.
+ *
+ * Known limitations — these still escape:
+ *   - Hard-coded "top.location.href = ..." assignment when our top-override fails:
+ *     the assignment lands on the real top window and we can't intercept.
+ *   - Sites that detect proxying via cross-origin probes (e.g. Google's
+ *     window.chrome.runtime check, Cloudflare anti-bot fingerprint).
+ *   - sandbox="" iframe attribute violations on the iframe itself (we'd need
+ *     to control the iframe element on the client side too).
+ */
+const ANTI_FRAMEBUST_STUB = `<script>(function(){
+  try { Object.defineProperty(window, 'top', { get: function() { return window; }, configurable: false }); } catch (e) {}
+  try { Object.defineProperty(window, 'parent', { get: function() { return window; }, configurable: false }); } catch (e) {}
+  try { Object.defineProperty(window, 'frameElement', { get: function() { return null; }, configurable: false }); } catch (e) {}
+  try {
+    var loc = window.location;
+    var rRep = loc.replace.bind(loc);
+    var rAsg = loc.assign.bind(loc);
+    function sameAsCurrent(u) {
+      try { return new URL(u, loc.href).href === loc.href; } catch (e) { return false; }
+    }
+    loc.replace = function(u) { if (sameAsCurrent(u)) return; return rRep(u); };
+    loc.assign  = function(u) { if (sameAsCurrent(u)) return; return rAsg(u); };
+  } catch (e) {}
+  try {
+    var realOpen = window.open;
+    window.open = function(u, target) {
+      if (target === '_top' || target === '_parent') {
+        // Convert frame-bust window.open to in-place navigation, which we can
+        // intercept via our location.replace/assign overrides above.
+        try { window.location.href = u; } catch (e) {}
+        return null;
+      }
+      return realOpen.apply(window, arguments);
+    };
+  } catch (e) {}
+})();</script>`;
+
 function corsHeaders(origin) {
   return {
     "access-control-allow-origin": origin || "*",
@@ -134,17 +195,35 @@ function originFromReferer(referer) {
   try { return new URL(referer).origin; } catch { return ""; }
 }
 
-/** Inject a <base> tag so relative URLs in HTML resolve to the target's origin,
- *  not to our worker domain. */
-function injectBaseTag(html, targetUrl) {
+/** Strip `<meta http-equiv="Content-Security-Policy">` and
+ *  `<meta http-equiv="X-Frame-Options">` — the in-HTML versions of the same
+ *  headers we strip from the response. Sites often deploy both layers; the
+ *  HTTP-header strip alone misses these. */
+function stripFrameBustMetas(html) {
+  return html
+    .replace(/<meta\s+http-equiv=["']?content-security-policy["']?[^>]*>/gi, "")
+    .replace(/<meta\s+http-equiv=["']?x-frame-options["']?[^>]*>/gi, "");
+}
+
+/** Rewrite HTML: strip frame-bust metas + SRI, inject <base> + anti-frame-bust
+ *  stub at the top of <head>. The stub MUST run before any page script so it
+ *  can patch top/parent/frameElement/location/open before page code references
+ *  them. Order: <head> ... <base> ... <stub> ... rest of head. */
+function rewriteHtml(html, targetUrl) {
+  let out = stripFrameBustMetas(html);
+  // SRI prevents us from modifying scripts/styles transparently — strip it.
+  out = out.replace(/\sintegrity=["'][^"']*["']/g, "");
+  // Also strip crossorigin attributes on resource tags — they can trigger CORS
+  // failures when subresources load through proxy-injected base href.
+  out = out.replace(/\scrossorigin(=["'][^"']*["'])?/g, "");
   const base = `<base href="${targetUrl.origin}${targetUrl.pathname.replace(/\/[^/]*$/, "/")}">`;
-  // Strip subresource integrity since we may modify the response and SRI would fail.
-  const stripped = html.replace(/\sintegrity="[^"]*"/g, "");
-  // Try to inject right after <head>; fall back to prepending.
-  if (/<head[^>]*>/i.test(stripped)) {
-    return stripped.replace(/<head[^>]*>/i, m => `${m}\n${base}\n`);
+  const headInject = `\n${base}\n${ANTI_FRAMEBUST_STUB}\n`;
+  if (/<head[^>]*>/i.test(out)) {
+    return out.replace(/<head[^>]*>/i, m => `${m}${headInject}`);
   }
-  return `${base}\n${stripped}`;
+  // No <head> tag — synthesize one. Without this, the stub may be parsed but
+  // not executed before page scripts in malformed HTML.
+  return `<head>${headInject}</head>${out}`;
 }
 
 export default {
@@ -204,6 +283,13 @@ export default {
     // Set a stable Referer so the target sees a normal browsing referer (some sites
     // refuse if Referer is missing entirely).
     upstreamHeaders.set("referer", targetUrl.origin + "/");
+    // If client UA is missing or looks bot-like, swap in a recent Chrome UA.
+    // Anti-bot systems (Cloudflare, Akamai) flag empty / "fetch"-style UAs before
+    // they even check page rules.
+    const clientUA = (upstreamHeaders.get("user-agent") || "").toLowerCase();
+    if (!clientUA || /^(curl|wget|node|python|java|fetch|bot|crawler)/.test(clientUA)) {
+      upstreamHeaders.set("user-agent", FALLBACK_UA);
+    }
 
     // Manual redirect handling — re-validate every Location to prevent SSRF via
     // redirect to private addresses (DNS rebinding mitigation).
@@ -262,8 +348,9 @@ export default {
 
     const contentType = upstream.headers.get("content-type") || "";
 
-    // HTML responses: inject <base> so relative URLs (img/css/js) load directly from
-    // the original origin instead of trying to load from the worker domain.
+    // HTML responses: strip frame-bust metas + SRI, inject <base> + anti-frame-
+    // bust JS stub so relative URLs resolve correctly AND common frame-bust
+    // patterns (top.location, parent.location, window.open(_top)) are defanged.
     if (contentType.toLowerCase().includes("text/html")) {
       let html;
       try {
@@ -271,7 +358,7 @@ export default {
       } catch (e) {
         return htmlError(502, "Failed to read response body", e.message, requestOrigin);
       }
-      const rewritten = injectBaseTag(html, targetUrl);
+      const rewritten = rewriteHtml(html, targetUrl);
       // Set content-length to the new byte length so the iframe parses correctly
       respHeaders.delete("content-length");
       respHeaders.delete("content-encoding"); // upstream may have been gzipped; we send plain
