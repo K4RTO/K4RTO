@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { Readability } from "@mozilla/readability";
+import DOMPurify from "dompurify";
 import type { AppComponentProps } from "@/apps/registry";
 import { useT } from "@/contexts/SystemContext";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
+import { ReaderView, type ReaderArticle } from "@/apps/browser/ReaderView";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -753,6 +756,77 @@ export default function Browser(_props: AppComponentProps) {
   // "loaded thing"; per-tab keying would needlessly miss cache on duplicates.
   const loadedUrlsRef = useRef<Set<string>>(new Set());
 
+  // Reader Mode state. When `readerArticle` is non-null, an overlay covers the
+  // iframe and presents the distilled article. Closing the overlay just clears
+  // the state — the iframe was never unmounted, so the original page is still
+  // right there underneath.
+  const [readerArticle, setReaderArticle] = useState<ReaderArticle | null>(null);
+  const [readerLoading, setReaderLoading] = useState(false);
+  const [readerError, setReaderError] = useState<string | null>(null);
+
+  /** Fetch the current URL through our worker proxy, run Readability on the
+   *  parsed document, sanitize the resulting HTML with DOMPurify, and stash
+   *  it for the ReaderView overlay. Bails gracefully if no extractable
+   *  article was found (most homepage / search-result pages — Readability
+   *  returns null when content density is too low). */
+  const enterReaderMode = useCallback(async () => {
+    if (!url) return;
+    setReaderLoading(true);
+    setReaderError(null);
+    try {
+      // Always go through the proxy — same CORS/XFO situation as the iframe.
+      const proxied = viaProxy(url);
+      const res = await fetch(proxied, { credentials: "omit" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const html = await res.text();
+      // Parse in an isolated DOMParser document so its scripts don't execute.
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      // Readability mutates the document; pass a clone to be safe.
+      const docClone = doc.cloneNode(true) as Document;
+      // Inject a <base> so relative img/href in the article resolve correctly
+      // when we render its HTML elsewhere.
+      try {
+        const base = docClone.createElement("base");
+        base.setAttribute("href", new URL(url).origin + "/");
+        docClone.head?.insertBefore(base, docClone.head.firstChild);
+      } catch { /* ignore */ }
+      const parsed = new Readability(docClone).parse();
+      if (!parsed || !parsed.content) {
+        setReaderError("not-readable");
+        setReaderLoading(false);
+        return;
+      }
+      // Sanitize before we render via dangerouslySetInnerHTML. ADD_ATTR lets
+      // typical responsive-image attrs survive (lazy loaders, srcset).
+      const cleanContent = DOMPurify.sanitize(parsed.content, {
+        ADD_ATTR: ["loading", "decoding", "srcset", "sizes"],
+        // Strip <script>, <style>, on* handlers, javascript: URLs by default —
+        // DOMPurify's safe defaults are what we want here.
+      });
+      setReaderArticle({
+        title: parsed.title || url,
+        byline: parsed.byline ?? null,
+        excerpt: parsed.excerpt ?? null,
+        content: cleanContent,
+        textContent: parsed.textContent ?? "",
+        length: parsed.length ?? 0,
+        siteName: parsed.siteName ?? null,
+        url,
+      });
+      trackEvent("browser_reader_opened", { host: hostOf(url), length: parsed.length ?? 0 });
+    } catch (e) {
+      setReaderError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setReaderLoading(false);
+    }
+  }, [url]);
+
+  const exitReaderMode = useCallback(() => {
+    setReaderArticle(null);
+    setReaderError(null);
+    setReaderLoading(false);
+  }, []);
+
   // Decide embed mode on URL change (also fires when switching tabs)
   useEffect(() => {
     if (!url) { setMode("start"); return; }
@@ -1218,11 +1292,30 @@ export default function Browser(_props: AppComponentProps) {
 
         {/* Right actions */}
         <div className="flex items-center gap-0.5">
+          {/* Reader Mode — extracts the page's main article via Readability and
+              displays it in a clean overlay. Disabled when there's no URL or
+              the page is still loading. The spinner replaces the icon while
+              the fetch+parse is in flight. */}
           <button
+            onClick={enterReaderMode}
+            disabled={!url || mode !== "embedded" || readerLoading || !!readerArticle}
             className="w-8 h-8 rounded-md flex items-center justify-center"
-            style={{ color: "rgba(255,255,255,0.35)" }}
-            title={t("browser.readerNotAvailable")} aria-label={t("browser.readerMode")} disabled
-          ><ReaderIcon /></button>
+            style={{
+              color: url && mode === "embedded" && !readerArticle
+                ? "rgba(255,255,255,0.7)"
+                : "rgba(255,255,255,0.3)",
+              cursor: url && mode === "embedded" && !readerArticle ? "pointer" : "default",
+            }}
+            title={readerArticle ? t("browser.reader.alreadyOpen") : t("browser.reader.enter")}
+            aria-label={t("browser.reader.enter")}
+            onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; }}
+          >
+            {readerLoading ? (
+              <div className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
+                style={{ borderColor: "rgba(255,255,255,0.18)", borderTopColor: "rgba(255,255,255,0.7)" }} />
+            ) : <ReaderIcon />}
+          </button>
           <button
             className="w-8 h-8 rounded-md flex items-center justify-center"
             style={{ color: "rgba(255,255,255,0.35)" }}
@@ -1322,8 +1415,45 @@ export default function Browser(_props: AppComponentProps) {
           </div>
         )}
 
-        {(mode === "blocked" || mode === "timeout") && url && (
+        {(mode === "blocked" || mode === "timeout") && url && !readerArticle && (
           <ExternalPreviewCard url={url} t={t} reason={mode === "blocked" ? "blocked" : "timeout"} />
+        )}
+
+        {/* Reader Mode overlay — sits above the iframe so closing it brings the
+            original page right back (no reload, since the iframe was never
+            unmounted). Article content is already DOMPurify-sanitized in
+            enterReaderMode before being handed to ReaderView. */}
+        {readerArticle && (
+          <ReaderView article={readerArticle} onClose={exitReaderMode} t={t} />
+        )}
+
+        {/* Reader Mode failure toast — surfaces when Readability couldn't find
+            an article (homepages, search results) or the proxy fetch failed. */}
+        {readerError && !readerArticle && (
+          <div
+            className="absolute left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-[12px] pointer-events-auto"
+            style={{
+              bottom: 20,
+              backgroundColor: "rgba(40,40,42,0.95)",
+              color: "rgba(255,255,255,0.85)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+              animation: "fadeIn 0.18s ease",
+              zIndex: 10,
+            }}
+            role="alert"
+          >
+            <span style={{ marginRight: 12 }}>
+              {readerError === "not-readable"
+                ? t("browser.reader.notReadable")
+                : t("browser.reader.failed")}
+            </span>
+            <button
+              onClick={() => setReaderError(null)}
+              style={{ color: "rgba(255,255,255,0.55)", fontSize: 14 }}
+              aria-label={t("common.close")}
+            >×</button>
+          </div>
         )}
       </div>
     </div>

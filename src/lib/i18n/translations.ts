@@ -377,6 +377,17 @@ const translations: Record<string, TranslationEntry> = {
   "browser.share":             { en: "Share",                     zh: "分享" },
   "browser.readerMode":        { en: "Show Reader",               zh: "显示阅读器" },
   "browser.readerNotAvailable":{ en: "Reader not available",      zh: "阅读器不可用" },
+  "browser.reader.enter":      { en: "Show Reader View",          zh: "显示阅读视图" },
+  "browser.reader.exit":       { en: "Exit Reader",               zh: "退出阅读" },
+  "browser.reader.alreadyOpen":{ en: "Reader is open",            zh: "阅读器已打开" },
+  "browser.reader.notReadable":{ en: "No article found on this page", zh: "未找到可阅读的正文" },
+  "browser.reader.failed":     { en: "Couldn't load article",     zh: "无法加载文章" },
+  "browser.reader.fontSmaller":{ en: "Smaller text",              zh: "减小字号" },
+  "browser.reader.fontLarger": { en: "Larger text",               zh: "增大字号" },
+  "browser.reader.theme.light":{ en: "Light",                     zh: "亮色" },
+  "browser.reader.theme.sepia":{ en: "Sepia",                     zh: "暖色" },
+  "browser.reader.theme.dark": { en: "Dark",                      zh: "暗色" },
+  "common.close":              { en: "Close",                     zh: "关闭" },
 
   // History
   "browser.history":           { en: "History",                   zh: "历史记录" },
