@@ -162,9 +162,10 @@ export function Wallpaper() {
             filter: "blur(36px)",
             mixBlendMode: palette.blend,
             // Each blob picks one of 4 keyframes so motion isn't perfectly synced.
-            // 100-130s cycles feel like an ambient slow tide; the per-blob delay
-            // (now jittered) lets blobs sharing a keyframe stay independent.
-            animation: `wp-drift-${b.drift} ${100 + b.drift * 10}s ease-in-out infinite alternate`,
+            // 70-94s cycles — fast enough that motion is noticeable within
+            // 10-15s of looking, slow enough that nothing demands attention.
+            // Previous 100-130s read as "is this even moving?" to most users.
+            animation: `wp-drift-${b.drift} ${70 + b.drift * 8}s ease-in-out infinite alternate`,
             animationDelay: b.delay ? `-${b.delay}s` : undefined,
             willChange: "transform",
             pointerEvents: "none",

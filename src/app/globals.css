@@ -397,14 +397,16 @@ html, body {
 /* Wallpaper-level hue + brightness drift — a single long cycle layered on top
    of per-blob motion so the entire scene seems to breathe color rather than
    just slide around. Applied to the stage container, so the filter affects
-   blob children too. ±18deg hue keeps each palette recognizable (deep navy
-   stays navy, just leans warmer/cooler over a 3-minute cycle). */
+   blob children too. ±22deg hue keeps each palette recognizable (deep navy
+   stays navy, just leans warmer/cooler) while being more visible than the
+   previous ±18deg. 110s cycle (was 180s) so the color shift is perceptible
+   within a minute or two rather than barely. */
 @keyframes wp-stage-shift {
   0%   { filter: hue-rotate(0deg)   brightness(1   ) saturate(1   ); }
-  50%  { filter: hue-rotate(18deg)  brightness(1.05) saturate(1.08); }
-  100% { filter: hue-rotate(-15deg) brightness(0.96) saturate(0.95); }
+  50%  { filter: hue-rotate(22deg)  brightness(1.06) saturate(1.10); }
+  100% { filter: hue-rotate(-18deg) brightness(0.95) saturate(0.93); }
 }
-.wp-stage { animation: wp-stage-shift 180s ease-in-out infinite alternate; }
+.wp-stage { animation: wp-stage-shift 110s ease-in-out infinite alternate; }
 
 @media (prefers-reduced-motion: reduce) {
   /* Keep wallpaper static for users who request reduced motion — preserves
