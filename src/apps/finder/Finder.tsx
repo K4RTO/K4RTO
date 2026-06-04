@@ -759,7 +759,7 @@ export default function Finder({ windowId }: AppComponentProps) {
             className="w-8 h-8 rounded-full flex items-center justify-center"
             style={{ color: "rgba(255,255,255,0.7)", backgroundColor: "rgba(255,255,255,0.07)" }}
             title={t("finder.searchPlaceholder")}
-            aria-label="Search"
+            aria-label={t("finder.searchPlaceholder")}
           >
             <SearchIcon />
           </button>

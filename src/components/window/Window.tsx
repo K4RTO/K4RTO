@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { useProcesses } from "@/contexts/ProcessContext";
+import { useT } from "@/contexts/SystemContext";
+import { getApp } from "@/apps/registry";
 import type { WindowState } from "@/lib/window/types";
 
 // --- Traffic Light Buttons ---
@@ -135,7 +137,20 @@ export function Window({
 }) {
   const { dispatch, focusWindow, closeWindow } = useWindowManager();
   const { getProcessByWindowId, kill } = useProcesses();
+  const t = useT();
   const titleBarRef = useRef<HTMLDivElement>(null);
+
+  // Localize the title bar text. Apps that haven't customized their title
+  // (Calculator, Settings, Clock, etc.) carry windowState.title === the
+  // registry's English app.name; for those we substitute the dock i18n key
+  // so the title bar matches the dock label. Apps that DID call SET_TITLE
+  // with something dynamic (Preview "Resume.pdf (中)", VSCode filename,
+  // Finder folder name) keep their explicit title untouched.
+  const registryApp = getApp(windowState.appId);
+  const isUntouchedTitle = registryApp ? windowState.title === registryApp.name : false;
+  const displayTitle = isUntouchedTitle
+    ? (t(`dock.${windowState.appId}`) || windowState.title)
+    : windowState.title;
   const [isNew, setIsNew] = useState(true);
   const [isMinimizing, setIsMinimizing] = useState(false);
   // Close animation flag — when true, the window plays a fade+scale-down
@@ -352,7 +367,7 @@ export function Window({
         />
         <span className="flex-1 text-center text-[13px] font-medium truncate pointer-events-none"
           style={{ color: "rgba(255,255,255,0.85)" }}>
-          {windowState.title}
+          {displayTitle}
         </span>
         <div className="w-[52px]" />
       </div>

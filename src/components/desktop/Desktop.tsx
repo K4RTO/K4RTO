@@ -13,7 +13,7 @@ import {
 } from "@/contexts/WindowManagerContext";
 import { ProcessProvider, useProcesses } from "@/contexts/ProcessContext";
 import { FileSystemProvider } from "@/contexts/FileSystemContext";
-import { SystemProvider, useSystem } from "@/contexts/SystemContext";
+import { SystemProvider, useSystem, useT } from "@/contexts/SystemContext";
 import { getApp } from "@/apps/registry";
 import { AboutThisMac } from "@/components/desktop/AboutThisMac";
 import { LoginScreen } from "@/components/desktop/LoginScreen";
@@ -37,6 +37,7 @@ function DesktopContent() {
   const { state, dispatch, closeWindow } = useWindowManager();
   const { launch, kill, getProcessByWindowId } = useProcesses();
   const { lang, setLang } = useSystem();
+  const t = useT();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
   const [missionControlOpen, setMissionControlOpen] = useState(false);
@@ -73,8 +74,14 @@ function DesktopContent() {
     ? getProcessByWindowId(focusedWindowId)
     : null;
   const focusedApp = focusedProcess ? getApp(focusedProcess.appId) : null;
-  const activeAppName = focusedApp?.name ?? "Finder";
+  // Prefer the localized dock name (dock.<appId>) so the menubar app indicator
+  // matches the dock label. Fall back to the registry's English name if the
+  // app isn't dock-registered (shouldn't happen for known apps), and "Finder"
+  // when no window is focused (matches macOS behavior).
   const activeAppId = focusedProcess?.appId ?? null;
+  const activeAppName = activeAppId
+    ? t(`dock.${activeAppId}`) || focusedApp?.name || "Finder"
+    : t("dock.finder");
 
   // Keyboard shortcuts
   useEffect(() => {
