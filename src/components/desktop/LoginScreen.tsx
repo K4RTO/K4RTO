@@ -50,7 +50,11 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
     function onKey(e: KeyboardEvent) {
       // Ignore modifier-only presses (Cmd, Shift, etc) — those are accidental
       // when the user is just resting fingers on the keyboard.
-      if (["Shift", "Meta", "Control", "Alt", "CapsLock"].includes(e.key)) return;
+      // Modifier keys and Tab are excluded:
+      //  - Modifiers fire while the user is "resting fingers" on the keyboard
+      //  - Tab is the screen-reader navigation key; unlocking on it would make
+      //    keyboard exploration of the lock surface impossible.
+      if (["Shift", "Meta", "Control", "Alt", "CapsLock", "Tab"].includes(e.key)) return;
       if (!closing) handleUnlock();
     }
     document.addEventListener("keydown", onKey);
@@ -129,13 +133,18 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
       {/* Center-low: avatar + name + Enter button.
           The container catches the click — anywhere outside the Enter button
           itself also dismisses the lock (full-screen catcher is on the root
-          element below). */}
-      <div className="absolute inset-x-0 flex flex-col items-center">
+          element below). top: 55vh sits this stack just below the vertical
+          midline, leaving room for the clock at top: 12vh above. */}
+      <div className="absolute inset-x-0 flex flex-col items-center" style={{ top: "55vh" }}>
         {/* Avatar — uses the K4RTO mark from public/. Wrapped in a circular
             clip so the square JPG renders as a round avatar like macOS users. */}
         <button
           type="button"
-          onClick={handleUnlock}
+          // stopPropagation prevents the root-div onClick from also firing
+          // on the same synchronous tick — without it, the React state guard
+          // in handleUnlock won't catch the second call (state updates are
+          // async, so `closing` is still false during bubble).
+          onClick={(e) => { e.stopPropagation(); handleUnlock(); }}
           className="flex items-center justify-center cursor-pointer"
           style={{
             width: 88,
@@ -180,7 +189,8 @@ export function LoginScreen({ onUnlock }: LoginScreenProps) {
             no password. Wide enough to feel like a CTA, not a small accent. */}
         <button
           type="button"
-          onClick={handleUnlock}
+          // stopPropagation — see avatar button above.
+          onClick={(e) => { e.stopPropagation(); handleUnlock(); }}
           style={{
             marginTop: 24,
             height: 34,
