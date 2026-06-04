@@ -199,6 +199,13 @@ const translations: Record<string, TranslationEntry> = {
   "launchpad.searchPlaceholder": { en: "Search",                  zh: "搜索" },
   "launchpad.noResults":       { en: "No matching apps",          zh: "没有匹配的应用" },
 
+  // ── Mission Control ─────────────────────────────────────────────────────
+  "dock.missionControl":       { en: "Mission Control",           zh: "调度中心" },
+  "missionControl.empty":      { en: "No open windows",           zh: "没有打开的窗口" },
+  "missionControl.count":      { en: "{n} window(s) open",        zh: "已打开 {n} 个窗口" },
+  "missionControl.emptyHint":  { en: "Open an app from the Dock or Launchpad to see it here",
+                                 zh: "从程序坞或启动台打开应用后，这里会显示对应窗口" },
+
   // ── Login Screen ─────────────────────────────────────────────────────────
   "login.enter":               { en: "Enter",                     zh: "进入" },
   "login.hint":                { en: "Click anywhere or press any key to continue",

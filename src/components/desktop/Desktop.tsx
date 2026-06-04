@@ -18,6 +18,7 @@ import { getApp } from "@/apps/registry";
 import { AboutThisMac } from "@/components/desktop/AboutThisMac";
 import { LoginScreen } from "@/components/desktop/LoginScreen";
 import { Launchpad } from "@/components/desktop/Launchpad";
+import { MissionControl } from "@/components/desktop/MissionControl";
 
 const LOGIN_SESSION_KEY = "k4rto_unlocked";
 
@@ -38,6 +39,7 @@ function DesktopContent() {
   const { lang, setLang } = useSystem();
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
+  const [missionControlOpen, setMissionControlOpen] = useState(false);
   const [showAboutThisMac, setShowAboutThisMac] = useState(false);
 
   // Lock screen — shown once per browser session. We start `locked = false` to
@@ -79,10 +81,24 @@ function DesktopContent() {
     function onKeyDown(e: KeyboardEvent) {
       // F4 opens Launchpad. Closing is handled inside Launchpad itself (so
       // it can run the exit animation cleanly); we only fire the open path
-      // here when it isn't already showing.
+      // here when it isn't already showing. Mutually exclusive with
+      // Mission Control — if MC is open, dismiss it first (no animation;
+      // Launchpad's open animation covers the gap cleanly).
       if (e.key === "F4") {
         e.preventDefault();
+        setMissionControlOpen(false);
         setLaunchpadOpen((open) => open ? open : true);
+        return;
+      }
+      // F3 opens Mission Control. Same mutual-exclusion treatment.
+      // Caveat: real macOS intercepts F3 at the OS level for the system
+      // Mission Control, so this key won't reach the browser there. The
+      // Dock now carries a Mission Control icon as the reliable trigger;
+      // F3 is best-effort for Linux/Windows.
+      if (e.key === "F3") {
+        e.preventDefault();
+        setLaunchpadOpen(false);
+        setMissionControlOpen((open) => open ? open : true);
         return;
       }
       if (e.metaKey && (e.key === " ")) {
@@ -159,7 +175,14 @@ function DesktopContent() {
 
       <Dock
         onLaunchApp={launch}
-        onShowLaunchpad={() => setLaunchpadOpen(true)}
+        onShowLaunchpad={() => {
+          setMissionControlOpen(false);
+          setLaunchpadOpen(true);
+        }}
+        onShowMissionControl={() => {
+          setLaunchpadOpen(false);
+          setMissionControlOpen(true);
+        }}
       />
 
       {/* About This Mac */}
@@ -179,6 +202,12 @@ function DesktopContent() {
           onClose={() => setLaunchpadOpen(false)}
           onLaunchApp={launch}
         />
+      )}
+
+      {/* Mission Control — full-screen window-tile grid. Same z-tier as
+          Launchpad (they're mutually exclusive in practice). */}
+      {missionControlOpen && (
+        <MissionControl onClose={() => setMissionControlOpen(false)} />
       )}
 
       {/* Lock screen — sits above everything until unlocked */}

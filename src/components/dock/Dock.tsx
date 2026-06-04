@@ -558,6 +558,29 @@ function WordIcon() {
   );
 }
 
+function MissionControlIconDock() {
+  // Three overlapping rounded rectangles meant to evoke "all windows fanned
+  // out" — the visual cue real macOS Mission Control uses on its icon.
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="mc-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3b3f47" stopOpacity="0.95" />
+          <stop offset="1" stopColor="#1c1f24" stopOpacity="0.95" />
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="40" height="40" rx="9" fill="url(#mc-bg)" />
+      {/* Three window tiles, back-most first */}
+      <rect x="9"  y="9"  width="22" height="14" rx="2.2"
+            fill="rgba(255,255,255,0.32)" stroke="rgba(255,255,255,0.18)" strokeWidth="0.5" />
+      <rect x="13" y="14" width="18" height="13" rx="2"
+            fill="rgba(255,255,255,0.55)" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
+      <rect x="8"  y="19" width="20" height="13" rx="2"
+            fill="rgba(255,255,255,0.78)" stroke="rgba(255,255,255,0.35)" strokeWidth="0.5" />
+    </svg>
+  );
+}
+
 function LaunchpadIconDock() {
   // 4×4 grid of small rounded squares on a translucent silver background —
   // mirrors macOS's Launchpad icon (rocket-on-grid in older versions, plain
@@ -716,6 +739,7 @@ interface CtxMenuState { x: number; y: number; items: CtxMenuItem[] }
 export function Dock({
   onLaunchApp,
   onShowLaunchpad,
+  onShowMissionControl,
 }: {
   // Widened to accept meta — trash click passes initialPath so the new Finder
   // window opens directly at .Trash rather than the Downloads default.
@@ -724,6 +748,9 @@ export function Dock({
    *  (no window / process), it's a system surface, so it lives outside the
    *  appId launch flow. */
   onShowLaunchpad?: () => void;
+  /** Open the Mission Control window-tile overlay. macOS intercepts F3
+   *  system-side, so a clickable Dock entry is the reliable trigger. */
+  onShowMissionControl?: () => void;
 }) {
   const { dockRef, scales, onMouseMove, onMouseEnter, onMouseLeave } =
     useDockMagnification(BASE_SIZE, MAX_SIZE, MAG_RANGE);
@@ -791,11 +818,13 @@ export function Dock({
     [getProcessesByAppId, kill, onLaunchApp, t, wmState, wmDispatch, focusWindow]
   );
 
-  // Launchpad is a system-level overlay (not an app process), so it doesn't
-  // count toward app items. It still occupies one slot in the dock for the
-  // magnification scale calc.
+  // Launchpad and Mission Control are system-level overlays (not app
+  // processes), so they don't count toward app items. Each occupies one
+  // slot in the dock for the magnification scale calc.
   const launchpadSlot = onShowLaunchpad ? 1 : 0;
-  const totalPermanentItems = dockAppItems.length + launchpadSlot + folderItemDefs.length;
+  const missionControlSlot = onShowMissionControl ? 1 : 0;
+  const systemSlots = launchpadSlot + missionControlSlot;
+  const totalPermanentItems = dockAppItems.length + systemSlots + folderItemDefs.length;
 
   return (
     <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[9998]">
@@ -838,8 +867,10 @@ export function Dock({
             />
           );
         })}
-        {/* Launchpad — the rocket-on-grid system button. Sits at the end of
-            the app strip, just before the folder separator, matching macOS. */}
+        {/* System overlays — Launchpad + Mission Control. Sit at the end of
+            the app strip, just before the folder separator, matching macOS.
+            These are essential triggers on macOS where F3/F4 are intercepted
+            by the OS before they can reach the browser. */}
         {onShowLaunchpad && (
           <DockItem
             name={t("dock.launchpad")}
@@ -849,9 +880,18 @@ export function Dock({
             baseSize={BASE_SIZE}
           />
         )}
+        {onShowMissionControl && (
+          <DockItem
+            name={t("dock.missionControl")}
+            svgIcon={<MissionControlIconDock />}
+            onClick={() => onShowMissionControl()}
+            scale={getScale(dockAppItems.length + launchpadSlot)}
+            baseSize={BASE_SIZE}
+          />
+        )}
         <DockSeparator />
         {folderItemDefs.map((item, i) => {
-          const scale = getScale(dockAppItems.length + launchpadSlot + i);
+          const scale = getScale(dockAppItems.length + systemSlots + i);
           if (item.nameKey === "dock.trash") {
             const hasItems = trashEntryCount > 0;
             return (
