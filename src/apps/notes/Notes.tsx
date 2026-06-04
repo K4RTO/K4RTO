@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback, useRef, useImperativeHandle, forwardRef } from "react";
+import type { RefObject } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useT, useSystem } from "@/contexts/SystemContext";
@@ -276,6 +277,190 @@ Want the full story? Email k4rtol@163.com.`,
   },
 ];
 
+// ── Rich-text editor ─────────────────────────────────────────────────────
+//
+// We use contentEditable + document.execCommand. execCommand is deprecated but
+// it's still the only cross-browser path to bold/italic/list formatting that
+// fits in <100 lines — the modern alternative is a 50KB editor library
+// (Lexical, Tiptap, ProseMirror) which isn't worth shipping for a portfolio.
+//
+// Storage shape: HTML string. Pre-existing plain-text content renders fine
+// inside contentEditable (newlines are preserved via `white-space: pre-wrap`).
+// Pinned (sample) notes pass `readOnly` and the editor disables contentEditable.
+
+/**
+ * Allowlist-based HTML sanitizer for contentEditable round-trip.
+ *
+ * Threat model: a user pastes hostile HTML into a note (containing e.g.
+ * `<img src=x onerror=alert(1)>` or `<script>...`). That payload survives
+ * to localStorage. On a later mount we innerHTML it back — at which point
+ * the payload fires. Even though the attacker would have to first
+ * persuade the user to paste their content, this is a known XSS surface
+ * for any contentEditable-backed note app, so we filter aggressively.
+ *
+ * What we strip:
+ *   - <script>, <iframe>, <object>, <embed>, <link>, <style>, <meta>, <svg>
+ *     (svg can host onload, foreignObject can host arbitrary HTML)
+ *   - All on* event-handler attributes (onerror, onclick, …)
+ *   - javascript: and data: URLs in href / src
+ *
+ * What survives:
+ *   - The execCommand output we care about: b, strong, i, em, u, br, div, p,
+ *     ul, ol, li, h1, h2, h3, span, a — plus any inline style attribute
+ *     (which Chrome/Safari emit for execCommand's bold/italic on some platforms)
+ *
+ * This is a denylist; a real sanitizer (DOMPurify) would be allowlist-based.
+ * Good-enough for a portfolio's note app — we never load notes from other
+ * users, only the current visitor's own input.
+ */
+function sanitizeHtml(s: string): string {
+  if (!s) return "";
+  let out = s;
+  // Block-element tags (with content) — fully strip including children.
+  out = out.replace(/<(script|iframe|object|embed|style|svg|math|foreignObject)\b[\s\S]*?<\/\1>/gi, "");
+  // Self-closing / void hostile tags.
+  out = out.replace(/<(script|iframe|object|embed|link|meta|style|svg|math|foreignObject)\b[^>]*\/?>/gi, "");
+  // Strip every on* event-handler attribute regardless of quoting style.
+  out = out.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, "");
+  // Neutralize javascript: / data: in href/src.
+  out = out.replace(/\s(href|src)\s*=\s*"(?:\s*)(?:javascript|data|vbscript):[^"]*"/gi, " $1=\"#\"");
+  out = out.replace(/\s(href|src)\s*=\s*'(?:\s*)(?:javascript|data|vbscript):[^']*'/gi, " $1='#'");
+  out = out.replace(/\s(href|src)\s*=\s*(?:javascript|data|vbscript):[^\s>]*/gi, " $1=\"#\"");
+  return out;
+}
+
+interface RichEditorProps {
+  /** Initial HTML or plain text. Treated as innerHTML on mount (after sanitize). */
+  initialHtml: string;
+  readOnly: boolean;
+  onChange: (html: string) => void;
+  placeholder: string;
+}
+
+const RichEditor = forwardRef<HTMLDivElement, RichEditorProps>(
+  function RichEditor({ initialHtml, readOnly, onChange, placeholder }, ref) {
+    const localRef = useRef<HTMLDivElement>(null);
+    // Stash the latest onChange in a ref so we don't have to put it in the
+    // useEffect deps below (which would re-run setHtml on every parent
+    // re-render and clobber the user's caret position).
+    const onChangeRef = useRef(onChange);
+    useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
+    // Set innerHTML exactly once per mount, after sanitizing. Switching notes
+    // remounts via `key={note.id + lang}` on the parent, which is intentional.
+    useEffect(() => {
+      const el = localRef.current;
+      if (!el) return;
+      el.innerHTML = sanitizeHtml(initialHtml);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useImperativeHandle(ref, () => localRef.current as HTMLDivElement, []);
+
+    // Intercept paste — drop HTML and insert as plain text. This is the
+    // primary mitigation against the "user pastes hostile HTML" vector;
+    // the sanitizer above is belt-and-suspenders for content that somehow
+    // gets in another way (e.g. drag-and-drop).
+    const onPaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const text = e.clipboardData.getData("text/plain");
+      // execCommand insertText respects current caret + selection.
+      document.execCommand("insertText", false, text);
+    }, []);
+
+    return (
+      <div
+        ref={localRef}
+        contentEditable={!readOnly}
+        suppressContentEditableWarning
+        onInput={(e) => onChangeRef.current((e.currentTarget as HTMLDivElement).innerHTML)}
+        onPaste={onPaste}
+        data-placeholder={placeholder}
+        className="flex-1 px-6 pb-6 outline-none rich-editor"
+        style={{
+          fontSize: 14,
+          lineHeight: 1.6,
+          color: "rgba(255,255,255,0.92)",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif",
+          cursor: readOnly ? "default" : "text",
+          whiteSpace: "pre-wrap",
+          overflowY: "auto",
+        }}
+        spellCheck={false}
+      />
+    );
+  },
+);
+
+/** Run a document.execCommand on the current selection. Wrapped so callers
+ *  don't have to remember to refocus the editor first — without focus, the
+ *  command runs against the wrong target and silently no-ops. */
+function execFormat(editor: HTMLDivElement | null, command: string, value?: string) {
+  if (!editor) return;
+  editor.focus();
+  document.execCommand(command, false, value);
+}
+
+interface FormatToolbarProps {
+  editorRef: RefObject<HTMLDivElement | null>;
+  disabled: boolean;
+  pinnedLabel: string | null;
+  t: (key: string, vars?: Record<string, string>) => string;
+}
+
+function FormatToolbar({ editorRef, disabled, pinnedLabel, t }: FormatToolbarProps) {
+  const btnStyle: React.CSSProperties = {
+    color: disabled ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    minWidth: 28,
+    height: 26,
+    cursor: disabled ? "default" : "pointer",
+  };
+  // onMouseDown (not onClick) so the editor doesn't lose focus when the
+  // button is pressed — execCommand on a blurred editor is a no-op.
+  function run(cmd: string, value?: string) {
+    return (e: React.MouseEvent) => {
+      if (disabled) return;
+      e.preventDefault();
+      execFormat(editorRef.current, cmd, value);
+    };
+  }
+  type ToolButton = { label: string; cmd: string; value?: string; title: string };
+  const buttons: ToolButton[] = [
+    { label: "B",   cmd: "bold",          title: t("notes.fmt.bold") },
+    { label: "I",   cmd: "italic",        title: t("notes.fmt.italic") },
+    { label: "U",   cmd: "underline",     title: t("notes.fmt.underline") },
+    { label: "H1",  cmd: "formatBlock", value: "<h1>", title: t("notes.fmt.h1") },
+    { label: "H2",  cmd: "formatBlock", value: "<h2>", title: t("notes.fmt.h2") },
+    { label: "•",   cmd: "insertUnorderedList", title: t("notes.fmt.bulletList") },
+    { label: "1.",  cmd: "insertOrderedList",   title: t("notes.fmt.numberedList") },
+  ];
+  return (
+    <div className="flex items-center gap-1 px-4 py-2 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      {buttons.map((b, idx) => (
+        <Fragment key={b.cmd + b.label}>
+          {(idx === 3 || idx === 5) && (
+            <div className="w-px h-4 mx-1" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+          )}
+          <button
+            type="button"
+            onMouseDown={run(b.cmd, b.value)}
+            title={b.title}
+            disabled={disabled}
+            className="flex items-center justify-center px-2 py-1 rounded hover:bg-white/5"
+            style={{ ...btnStyle, fontStyle: b.cmd === "italic" ? "italic" : undefined, fontWeight: b.cmd === "bold" ? 800 : 500, textDecoration: b.cmd === "underline" ? "underline" : undefined }}
+          >
+            {b.label}
+          </button>
+        </Fragment>
+      ))}
+      {pinnedLabel && (
+        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginLeft: 8 }}>{pinnedLabel}</span>
+      )}
+    </div>
+  );
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function fmtDate(ts: number, lang: "en" | "zh"): string {
@@ -296,6 +481,9 @@ export default function Notes(_props: AppComponentProps) {
   const { lang } = useSystem();
   const [notes, setNotes] = useState<Note[]>(SAMPLES);
   const [selId, setSelId] = useState<string | null>("about-me");
+  // Ref passed to RichEditor so the FormatToolbar can run execCommand against
+  // the right element. Reset implicitly when the editor remounts (note switch).
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!fs) return;
@@ -452,21 +640,14 @@ export default function Notes(_props: AppComponentProps) {
       <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: "#1e1e1e" }}>
         {sel ? (
           <>
-            {/* Toolbar */}
-            <div className="flex items-center gap-1 px-4 py-2 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-              {[["B", "bold"], ["I", "italic"], ["U", "underline"]].map(([l]) => (
-                <button key={l} className="flex items-center justify-center px-2 py-1 rounded hover:bg-white/5" style={{ ...dim, fontSize: 13 }}>{l}</button>
-              ))}
-              <div className="w-px h-4 mx-1" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
-              <button className="flex items-center justify-center px-2 py-1 rounded hover:bg-white/5" style={dim}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
-              </button>
-              {sel.pinned && (
-                <span style={{ ...dim, fontSize: 11, marginLeft: 8 }}>
-                  {t("notes.portfolio.protected")}
-                </span>
-              )}
-            </div>
+            {/* Toolbar — format buttons run document.execCommand on the
+                editor's selection. Disabled for pinned notes. */}
+            <FormatToolbar
+              editorRef={editorRef}
+              disabled={!!sel.pinned}
+              pinnedLabel={sel.pinned ? t("notes.portfolio.protected") : null}
+              t={t}
+            />
             {/* Title */}
             <div className="px-6 pt-5 pb-1 flex-shrink-0">
               <input type="text" value={readLang(sel.title, lang)} onChange={e => updateNote("title", e.target.value)}
@@ -481,11 +662,16 @@ export default function Notes(_props: AppComponentProps) {
                 )}
               </span>
             </div>
-            <textarea value={readLang(sel.content, lang)} onChange={e => updateNote("content", e.target.value)}
+            {/* Rich-text body. key forces remount when switching notes / lang
+                so the editor picks up the new initial content. */}
+            <RichEditor
+              key={`${sel.id}:${lang}`}
+              ref={editorRef}
+              initialHtml={readLang(sel.content, lang)}
               readOnly={!!sel.pinned}
-              className="flex-1 px-6 pb-6 bg-transparent outline-none border-none resize-none"
-              style={{ ...normal, fontSize: 14, lineHeight: "1.6", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif", cursor: sel.pinned ? "default" : "text" }}
-              placeholder={t("notes.editor.content")} spellCheck={false} />
+              onChange={(html) => updateNote("content", html)}
+              placeholder={t("notes.editor.content")}
+            />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center"><span style={{ ...dim, fontSize: 14 }}>{t("notes.selectNote")}</span></div>

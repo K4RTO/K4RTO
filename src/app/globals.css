@@ -324,3 +324,38 @@ html, body {
   transform: scale(0.9);
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   Rich-text editor (Notes)
+   contentEditable doesn't render its own placeholder, and Tailwind's reset
+   strips list markers — so we restore both manually here.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+
+/* Restore list bullets / numbers — Tailwind's preflight set list-style: none */
+.rich-editor ul {
+  list-style: disc;
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+.rich-editor ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+.rich-editor li {
+  margin: 0.15em 0;
+}
+
+/* Heading sizes — Tailwind also resets these to inherit. */
+.rich-editor h1 { font-size: 1.5em; font-weight: 700; margin: 0.5em 0 0.3em; }
+.rich-editor h2 { font-size: 1.25em; font-weight: 700; margin: 0.4em 0 0.25em; }
+.rich-editor h3 { font-size: 1.1em; font-weight: 600; margin: 0.4em 0 0.2em; }
+
+/* Paragraph spacing — contentEditable wraps lines in <div>, give them breath. */
+.rich-editor p, .rich-editor div { margin: 0; }
+

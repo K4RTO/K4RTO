@@ -526,6 +526,9 @@ const translations: Record<string, TranslationEntry> = {
   "browser.bookmark.remove":   { en: "Remove bookmark",           zh: "移除书签" },
   "browser.bookmark.renamePrompt": { en: "Rename bookmark:",      zh: "重命名书签：" },
   "browser.bookmark.renameHint":   { en: "Double-click to rename", zh: "双击重命名" },
+  "browser.history.searchPlaceholder": { en: "Search history", zh: "搜索历史记录" },
+  "browser.history.noMatches": { en: "No matches in history",     zh: "历史记录中没有匹配项" },
+  "browser.history.more":      { en: "+{n} more match(es)",       zh: "还有 {n} 条匹配" },
 
   // ── i18n sweep: Preview ────────────────────────────────────────────────
   "preview.resumeLanguageGroup": { en: "Resume language",         zh: "简历语言" },
@@ -552,6 +555,13 @@ const translations: Record<string, TranslationEntry> = {
     en: "Portfolio notes are protected and can't be deleted. Create your own note first, then delete that.",
     zh: "作品集笔记受保护，无法删除。你可以先创建一个自己的笔记，然后再删除它。",
   },
+  "notes.fmt.bold":            { en: "Bold",                      zh: "加粗" },
+  "notes.fmt.italic":          { en: "Italic",                    zh: "斜体" },
+  "notes.fmt.underline":       { en: "Underline",                 zh: "下划线" },
+  "notes.fmt.h1":              { en: "Heading 1",                 zh: "一级标题" },
+  "notes.fmt.h2":              { en: "Heading 2",                 zh: "二级标题" },
+  "notes.fmt.bulletList":      { en: "Bullet list",               zh: "项目列表" },
+  "notes.fmt.numberedList":    { en: "Numbered list",             zh: "编号列表" },
 
   // ── i18n sweep: TextEdit ───────────────────────────────────────────────
   "textedit.defaultFilename":  { en: "Untitled.txt",              zh: "未命名.txt" },

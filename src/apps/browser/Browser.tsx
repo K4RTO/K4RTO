@@ -248,6 +248,138 @@ interface StartPageProps {
   t: (key: string, vars?: Record<string, string>) => string;
 }
 
+/**
+ * History section with built-in substring search.
+ *
+ * Without a filter, shows up to 5 most-recent entries (matches the prior
+ * UX). Typing in the search input expands the visible window to 12 results
+ * AND filters by case-insensitive substring of either the URL or the host.
+ * Hosting it as its own component keeps the StartPage render clean and
+ * isolates the search state to where it's used.
+ */
+function HistorySection({
+  recents,
+  onNavigate,
+  onClearHistory,
+  t,
+}: {
+  recents: string[];
+  onNavigate: (url: string) => void;
+  onClearHistory: () => void;
+  t: (key: string, vars?: Record<string, string>) => string;
+}) {
+  const [query, setQuery] = useState("");
+  const sectionTitle: React.CSSProperties = {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    marginBottom: 12,
+  };
+
+  if (recents.length === 0) {
+    return (
+      <>
+        <div style={sectionTitle}>{t("browser.history")}</div>
+        <div style={{ marginBottom: 32, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+          {t("browser.noHistory")}
+        </div>
+      </>
+    );
+  }
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? recents.filter((u) => u.toLowerCase().includes(q) || hostOf(u).toLowerCase().includes(q))
+    : recents;
+  // Without a search query, show 5 (compact glance); when searching, show
+  // more so users can scan further back without scrolling the page.
+  const visible = filtered.slice(0, q ? 12 : 5);
+
+  return (
+    <>
+      <div style={{ ...sectionTitle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span>{t("browser.history")}</span>
+        <button
+          onClick={onClearHistory}
+          style={{
+            fontSize: 11,
+            color: "rgba(255,255,255,0.55)",
+            textTransform: "none",
+            letterSpacing: 0,
+            fontWeight: 500,
+            padding: "3px 10px",
+            borderRadius: 6,
+            backgroundColor: "rgba(255,255,255,0.06)",
+          }}
+          aria-label={t("browser.clearHistory")}
+        >
+          {t("browser.clearHistory")}
+        </button>
+      </div>
+      {/* Search input — small, fits next to the section title visually but on
+          its own row so even short widths don't collapse the layout. */}
+      <div
+        className="flex items-center gap-2 px-3 mb-3"
+        style={{
+          height: 32,
+          borderRadius: 8,
+          background: "rgba(255,255,255,0.05)",
+          border: "0.5px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5" strokeLinecap="round">
+          <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("browser.history.searchPlaceholder")}
+          className="flex-1 bg-transparent outline-none border-none text-[12px]"
+          style={{ color: "rgba(255,255,255,0.88)", minWidth: 0 }}
+          aria-label={t("browser.history.searchPlaceholder")}
+        />
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, lineHeight: 1, padding: "0 4px" }}
+            aria-label={t("spotlight.clearQuery")}
+          >
+            ×
+          </button>
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 32 }}>
+        {visible.length === 0 ? (
+          <div style={{ padding: "12px 8px", fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+            {t("browser.history.noMatches")}
+          </div>
+        ) : (
+          visible.map((u, i) => (
+            <button
+              key={`${u}-${i}`}
+              onClick={() => onNavigate(u)}
+              className="flex items-center gap-2.5 px-2 py-1.5 rounded text-left"
+              style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, transition: "background-color 0.12s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; }}
+            >
+              <FaviconImage url={u} size={14} label={hostOf(u)} />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u}</span>
+            </button>
+          ))
+        )}
+        {q && filtered.length > visible.length && (
+          <div style={{ padding: "6px 8px", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+            {t("browser.history.more", { n: String(filtered.length - visible.length) })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 function StartPage({ onNavigate, recents, onClearHistory, userBookmarks, onRemoveBookmark, onRenameBookmark, t }: StartPageProps) {
   const sectionTitle: React.CSSProperties = {
     color: "rgba(255,255,255,0.45)",
@@ -410,52 +542,13 @@ function StartPage({ onNavigate, recents, onClearHistory, userBookmarks, onRemov
         ))}
       </div>
 
-      {/* Recents from history */}
-      {recents.length > 0 ? (
-        <>
-          <div style={{ ...sectionTitle, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span>{t("browser.history")}</span>
-            <button
-              onClick={onClearHistory}
-              style={{
-                fontSize: 11,
-                color: "rgba(255,255,255,0.55)",
-                textTransform: "none",
-                letterSpacing: 0,
-                fontWeight: 500,
-                padding: "3px 10px",
-                borderRadius: 6,
-                backgroundColor: "rgba(255,255,255,0.06)",
-              }}
-              aria-label={t("browser.clearHistory")}
-            >
-              {t("browser.clearHistory")}
-            </button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 32 }}>
-            {recents.slice(0, 5).map((u, i) => (
-              <button
-                key={`${u}-${i}`}
-                onClick={() => onNavigate(u)}
-                className="flex items-center gap-2.5 px-2 py-1.5 rounded text-left"
-                style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, transition: "background-color 0.12s ease" }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"; }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; }}
-              >
-                <FaviconImage url={u} size={14} label={hostOf(u)} />
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <div style={sectionTitle}>{t("browser.history")}</div>
-          <div style={{ marginBottom: 32, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
-            {t("browser.noHistory")}
-          </div>
-        </>
-      )}
+      {/* Recents from history — searchable */}
+      <HistorySection
+        recents={recents}
+        onNavigate={onNavigate}
+        onClearHistory={onClearHistory}
+        t={t}
+      />
 
       {/* Privacy Report */}
       <div style={sectionTitle}>{t("browser.privacyReport")}</div>
