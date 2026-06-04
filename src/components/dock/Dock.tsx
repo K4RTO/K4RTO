@@ -578,6 +578,29 @@ function Game2048Icon() {
   );
 }
 
+function SnakeIcon() {
+  // Stylized snake forming an "S" curve with a food dot. Green palette
+  // echoes the game's GitHub-dark color scheme.
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="40" height="40" rx="9" fill="#0f1419" />
+      {/* Snake body — curving path */}
+      <path
+        d="M 8 14 L 18 14 L 18 22 L 26 22 L 26 30 L 32 30"
+        stroke="#238636"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      {/* Head — brighter green */}
+      <circle cx="32" cy="30" r="3" fill="#3fb950" />
+      {/* Food dot */}
+      <circle cx="10" cy="30" r="2.2" fill="#f85149" />
+    </svg>
+  );
+}
+
 function MinesweeperIcon() {
   // Single bomb on the classic gray cell — the universal minesweeper signifier.
   // See Game2048Icon for the 100%/viewBox sizing rationale.
@@ -763,6 +786,7 @@ export const dockAppItems: DockAppItem[] = [
   { nameKey: "dock.music",      svgIcon: <SpotifyDockIcon />, appId: "music" },
   { nameKey: "dock.game2048",   svgIcon: <Game2048Icon />,    appId: "game2048" },
   { nameKey: "dock.minesweeper",svgIcon: <MinesweeperIcon />, appId: "minesweeper" },
+  { nameKey: "dock.snake",      svgIcon: <SnakeIcon />,       appId: "snake" },
 ];
 
 const folderItemDefs = [

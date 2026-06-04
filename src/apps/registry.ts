@@ -146,6 +146,15 @@ const apps: Record<string, AppDefinition> = {
     minSize: { width: 360, height: 420 },
     singleInstance: true,
   },
+  snake: {
+    id: "snake",
+    name: "Snake",
+    icon: null,
+    component: lazy(() => import("./snake/Snake")),
+    defaultRect: { x: 280, y: 80, width: 480, height: 620 },
+    minSize: { width: 380, height: 500 },
+    singleInstance: true,
+  },
 };
 
 export function getApp(id: string): AppDefinition | undefined {

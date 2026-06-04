@@ -286,6 +286,7 @@ export default function Minesweeper(_props: AppComponentProps) {
         <LedReadout value={minesRemaining} />
         <button
           onClick={newGame}
+          className="ms-smiley-press"
           style={{
             fontSize: 22,
             width: 36,
@@ -294,6 +295,7 @@ export default function Minesweeper(_props: AppComponentProps) {
             border: "2px outset #fff",
             cursor: "pointer",
             lineHeight: 1,
+            transition: "transform 0.06s ease-out",
           }}
           title={t("minesweeper.newGame")}
           aria-label={t("minesweeper.newGame")}
@@ -392,10 +394,23 @@ function CellButton({ cell, size, onReveal, onFlag }: CellButtonProps) {
     content = "🚩";
   }
 
+  // Two animation hooks:
+  //  - ms-cell-up   : unrevealed cells lift slightly on hover (chunky tactile feel)
+  //  - ms-cell-reveal: cells that JUST became revealed flash briefly yellow
+  //    before settling to gray; key change on `revealed` would restart the
+  //    animation, but since the cell is the same React element, the class
+  //    addition on toggle is enough — CSS animations run once per class apply.
+  const className = !cell.revealed
+    ? "ms-cell-up"
+    : !cell.mine
+      ? "ms-cell-reveal"
+      : undefined;
+
   return (
     <button
       onClick={onReveal}
       onContextMenu={(e) => { e.preventDefault(); onFlag(); }}
+      className={className}
       style={{
         width: size,
         height: size,

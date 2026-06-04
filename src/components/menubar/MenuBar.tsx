@@ -21,6 +21,7 @@ const APP_NAME_KEYS: Record<string, string> = {
   music: "dock.music",
   game2048: "dock.game2048",
   minesweeper: "dock.minesweeper",
+  snake: "dock.snake",
 };
 
 // --- Dispatch a custom event to communicate with Finder (legacy bus) ---

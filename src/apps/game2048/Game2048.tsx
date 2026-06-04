@@ -62,28 +62,35 @@ function emptyCells(b: Board): [number, number][] {
   return out;
 }
 
-function spawnTile(b: Board): Board {
+/** Spawn a 2 (90%) or 4 (10%) in a random empty cell. Returns the new board
+ *  AND the {r,c} of the just-spawned tile so the render layer can target it
+ *  for a scale-in animation. */
+function spawnTile(b: Board): { board: Board; spawned: { r: number; c: number } | null } {
   const cells = emptyCells(b);
-  if (cells.length === 0) return b;
+  if (cells.length === 0) return { board: b, spawned: null };
   const [r, c] = cells[Math.floor(Math.random() * cells.length)];
   const next = clone(b);
   next[r][c] = Math.random() < 0.9 ? 2 : 4;
-  return next;
+  return { board: next, spawned: { r, c } };
 }
 
 function initialBoard(): Board {
-  return spawnTile(spawnTile(emptyBoard()));
+  const a = spawnTile(emptyBoard()).board;
+  return spawnTile(a).board;
 }
 
-/** Slide + merge a single row leftward. Returns the new row and the score
- *  gained from this row's merges. */
-function slideRow(row: number[]): { row: number[]; gained: number } {
+/** Slide + merge a single row leftward. Returns the new row, the score
+ *  gained, and the indices in the OUTPUT row that received a merge this
+ *  step — the render layer pops those cells to draw attention. */
+function slideRow(row: number[]): { row: number[]; gained: number; mergedAt: number[] } {
   const compact = row.filter((v) => v !== 0);
   const merged: number[] = [];
+  const mergedAt: number[] = [];
   let gained = 0;
   for (let i = 0; i < compact.length; i++) {
     if (i + 1 < compact.length && compact[i] === compact[i + 1]) {
       const m = compact[i] * 2;
+      mergedAt.push(merged.length);
       merged.push(m);
       gained += m;
       i++;
@@ -92,36 +99,58 @@ function slideRow(row: number[]): { row: number[]; gained: number } {
     }
   }
   while (merged.length < SIZE) merged.push(0);
-  return { row: merged, gained };
+  return { row: merged, gained, mergedAt };
 }
 
 /** Generic move — rotate the board so that the requested direction becomes
- *  "left", slide each row, then rotate back. */
-function move(b: Board, dir: Direction): { board: Board; gained: number; changed: boolean } {
+ *  "left", slide each row, then rotate back. Returns the final board, score
+ *  gained, whether anything changed, AND the set of cells (in the FINAL
+ *  orientation) that absorbed a merge — used for the pop animation. */
+function move(b: Board, dir: Direction): {
+  board: Board;
+  gained: number;
+  changed: boolean;
+  mergedCells: Set<string>;
+} {
   let work = clone(b);
-  // Rotate so that we always slide left
+  // Rotate so that we always slide left.
   if (dir === "up") work = rotateLeft(work);
   else if (dir === "down") work = rotateRight(work);
   else if (dir === "right") work = work.map((r) => r.slice().reverse());
 
   let gained = 0;
+  // Per-row merge indices in the rotated/reversed frame. We translate these
+  // back into the final-orientation (r,c) keys below.
+  const perRowMergeIndices: number[][] = [];
   const next: Board = work.map((row) => {
     const r = slideRow(row);
     gained += r.gained;
+    perRowMergeIndices.push(r.mergedAt);
     return r.row;
   });
 
-  if (dir === "up") {
-    return { board: rotateRight(next), gained, changed: !boardsEqual(b, rotateRight(next)) };
+  // Translate (rotatedRow, rotatedCol) → final (r,c) based on the direction.
+  function key(r: number, c: number): string { return `${r},${c}`; }
+  const mergedCells = new Set<string>();
+  for (let r = 0; r < SIZE; r++) {
+    for (const c of perRowMergeIndices[r]) {
+      // After the row-level slide, the row index is r and col is c in `next`
+      // (left-slide frame). Undo whichever transform we applied above.
+      let fr = r, fc = c;
+      if (dir === "right") fc = SIZE - 1 - c;
+      else if (dir === "up") { fr = c; fc = SIZE - 1 - r; }       // inverse of rotateLeft
+      else if (dir === "down") { fr = SIZE - 1 - c; fc = r; }     // inverse of rotateRight
+      mergedCells.add(key(fr, fc));
+    }
   }
-  if (dir === "down") {
-    return { board: rotateLeft(next), gained, changed: !boardsEqual(b, rotateLeft(next)) };
-  }
-  if (dir === "right") {
-    const reversed = next.map((r) => r.slice().reverse());
-    return { board: reversed, gained, changed: !boardsEqual(b, reversed) };
-  }
-  return { board: next, gained, changed: !boardsEqual(b, next) };
+
+  let finalBoard: Board;
+  if (dir === "up") finalBoard = rotateRight(next);
+  else if (dir === "down") finalBoard = rotateLeft(next);
+  else if (dir === "right") finalBoard = next.map((r) => r.slice().reverse());
+  else finalBoard = next;
+
+  return { board: finalBoard, gained, changed: !boardsEqual(b, finalBoard), mergedCells };
 }
 
 function rotateLeft(b: Board): Board {
@@ -182,37 +211,58 @@ export default function Game2048(_props: AppComponentProps) {
     setKeepPlaying(false);
   }, []);
 
-  // Apply a move. Reflects in board + score + status; persists new best to LS.
-  // Uses functional setters throughout so rapid keypresses (key-repeat) don't
-  // miss best-score updates due to a stale `best` closure inside the nested
-  // setState updater.
+  // ── Animation state ──────────────────────────────────────────────────
+  // Cells that just spawned (scale-in) and cells that just absorbed a merge
+  // (pop). Cleared on a short timer so the animation only plays once per move.
+  const [spawnedCells, setSpawnedCells] = useState<Set<string>>(new Set());
+  const [mergedCells, setMergedCells] = useState<Set<string>>(new Set());
+  const animClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (animClearTimerRef.current) clearTimeout(animClearTimerRef.current); }, []);
+
+  // Track the current board in a ref so `apply` can read the latest committed
+  // state without making setBoard's functional updater do the heavy lifting.
+  // This lets us keep ALL side effects (scoring, animation stamps, status
+  // transitions, the LS write) OUTSIDE the updater — which React's contract
+  // requires updaters to be pure.
+  const boardRef = useRef(board);
+  useEffect(() => { boardRef.current = board; }, [board]);
+
   const apply = useCallback(
     (dir: Direction) => {
       if (status === "over") return;
-      setBoard((prev) => {
-        const result = move(prev, dir);
-        if (!result.changed) return prev;
-        const next = spawnTile(result.board);
-        setScore((s) => {
-          const newScore = s + result.gained;
-          // Functional setBest — always reads the latest committed `best`,
-          // not a captured-closure snapshot from when `apply` was built.
-          setBest((prevBest) => {
-            if (newScore > prevBest) {
-              try { localStorage.setItem(STORAGE_KEY, String(newScore)); } catch {}
-              return newScore;
-            }
-            return prevBest;
-          });
-          return newScore;
+      // Compute the move against the latest board (read via ref, not closure).
+      const result = move(boardRef.current, dir);
+      if (!result.changed) return;
+      const spawn = spawnTile(result.board);
+      const next = spawn.board;
+
+      // Single state commit per logical move — board, score, best, animation
+      // markers, and status all happen here in sequence, no nesting.
+      setBoard(next);
+      setScore((s) => {
+        const newScore = s + result.gained;
+        setBest((prevBest) => {
+          if (newScore > prevBest) {
+            try { localStorage.setItem(STORAGE_KEY, String(newScore)); } catch {}
+            return newScore;
+          }
+          return prevBest;
         });
-        if (!keepPlaying && status === "playing" && hasWon(next)) {
-          setStatus("won");
-        } else if (!hasAnyMove(next)) {
-          setStatus("over");
-        }
-        return next;
+        return newScore;
       });
+      setSpawnedCells(spawn.spawned ? new Set([`${spawn.spawned.r},${spawn.spawned.c}`]) : new Set());
+      setMergedCells(result.mergedCells);
+      if (animClearTimerRef.current) clearTimeout(animClearTimerRef.current);
+      animClearTimerRef.current = setTimeout(() => {
+        setSpawnedCells(new Set());
+        setMergedCells(new Set());
+      }, 280);
+
+      if (!keepPlaying && status === "playing" && hasWon(next)) {
+        setStatus("won");
+      } else if (!hasAnyMove(next)) {
+        setStatus("over");
+      }
     },
     [status, keepPlaying],
   );
@@ -330,9 +380,16 @@ export default function Game2048(_props: AppComponentProps) {
           {tiles.map(({ r, c, v }) => {
             const color = tileColor(v);
             const fs = v >= 1024 ? 22 : v >= 128 ? 26 : v >= 16 ? 30 : 34;
+            const cellKey = `${r},${c}`;
+            const isSpawn = spawnedCells.has(cellKey);
+            const isMerge = mergedCells.has(cellKey);
             return (
               <div
                 key={`${r}-${c}`}
+                // Spawn / merge both target the SAME animation slot; merge
+                // takes precedence (a merged-into cell can never also be a
+                // spawn target in the same tick).
+                className={isMerge ? "tile-pop" : isSpawn ? "tile-spawn" : undefined}
                 style={{
                   background: color.bg,
                   color: color.fg,
