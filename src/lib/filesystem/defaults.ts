@@ -71,7 +71,31 @@ export function buildDefaults(): FsState {
       "/Users/guest/Documents/README.md",
       "# macOS Virtual Desktop\n\nBuilt with Next.js 15 + React 19.\n",
     ],
-    ["/Users/guest/Desktop/Untitled.txt", ""],
+    // Desktop entries — these are what the user sees the moment the lock
+    // screen lifts. Keep them few and concrete: a real resume, a short
+    // welcome, and one obvious next click.
+    [
+      "/Users/guest/Desktop/Resume.pdf",
+      "__public:K4RTO/Resume.pdf",
+    ],
+    [
+      "/Users/guest/Desktop/Welcome.md",
+      `# Hi — welcome to K4RTO
+
+This is a macOS-style desktop running entirely in your browser. Everything
+you see is React + Tailwind + a tiny IndexedDB-backed file system.
+
+A few things worth a click:
+
+- **Resume.pdf** (right here on the desktop) — opens in Preview, EN/中 toggle in the top bar.
+- **Code** in the Dock — VSCode with Shiki-highlighted snippets of the actual source running this site.
+- **Safari** — Bing/Wikipedia/GitHub work; routed through a Cloudflare Worker that strips iframe headers.
+- **⌘ + Space** for Spotlight — try "resume", "github", or any filename.
+- **F4** to open Launchpad — every app in one grid.
+
+Have a poke around. Nothing on this desktop will break if you click it.
+`,
+    ],
     ["/Users/guest/Documents/Notes/Hello.txt", "Hello, World!\n"],
     ["/Users/guest/K4RTO/Resume.pdf", "__public:K4RTO/Resume.pdf"],
     ["/Users/guest/K4RTO/cat.png",    "__public:K4RTO/cat.png"],

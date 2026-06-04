@@ -22,7 +22,9 @@ const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 // v4: added README.zh.md (Chinese version) to K4RTO/Source/
 // v5: identity scrub — removed real name from any UI text (login screen,
 //     Notes seed, terminal portfolio command output)
-const LS_KEY = "vfs_state_v5";
+// v6: seeded /Users/guest/Desktop with Resume.pdf + Welcome.md (replacing
+//     the empty Untitled.txt) so the desktop isn't blank on first reveal
+const LS_KEY = "vfs_state_v6";
 
 // Where trashed entries live, and a separate LS key for the trashed-path →
 // origin-path map (we can't stash origin info in FsEntry without breaking the
@@ -51,7 +53,18 @@ function loadTrashOrigins(): Record<string, string> {
  * Returns null if there's nothing to migrate from.
  */
 function migrateFromOlder(): FsState | null {
-  const legacyKeys = ["vfs_state_v3"];   // only do controlled bumps; older deltas were bigger
+  // Each new version reads from the previous, preserving user data and only
+  // overlaying the freshly-seeded entries (portfolio source samples in v4,
+  // desktop welcome files in v6, etc).
+  const legacyKeys = ["vfs_state_v5", "vfs_state_v4", "vfs_state_v3"];
+  // Paths whose freshly-built content should always replace whatever was on
+  // disk (so updates to a seeded file reach existing visitors). User-created
+  // files outside these prefixes are preserved as-is.
+  const SEEDED_PREFIXES = [
+    PORTFOLIO_SOURCE_ROOT,
+    "/Users/guest/Desktop/Resume.pdf",
+    "/Users/guest/Desktop/Welcome.md",
+  ];
   for (const key of legacyKeys) {
     const raw = localStorage.getItem(key);
     if (!raw) continue;
@@ -60,7 +73,7 @@ function migrateFromOlder(): FsState | null {
       const fresh = buildDefaults();
       const overlay = Object.fromEntries(
         Object.entries(fresh).filter(([k]) =>
-          k === PORTFOLIO_SOURCE_ROOT || k.startsWith(`${PORTFOLIO_SOURCE_ROOT}/`),
+          SEEDED_PREFIXES.some((p) => k === p || k.startsWith(`${p}/`)),
         ),
       );
       return { ...prior, ...overlay };

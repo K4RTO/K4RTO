@@ -180,6 +180,8 @@ const translations: Record<string, TranslationEntry> = {
   "desktop.trash.empty":       { en: "Empty Trash\u2026",         zh: "清倒废纸篓\u2026" },
   "desktop.macintoshHd":       { en: "Macintosh HD",              zh: "Macintosh HD" },
   "desktop.trash":             { en: "Trash",                     zh: "废纸篓" },
+  "desktop.file.open":         { en: "Open",                      zh: "打开" },
+  "desktop.file.showInFinder": { en: "Show in Finder",            zh: "在 Finder 中显示" },
 
   // ── Spotlight ────────────────────────────────────────────────────────────
   "spotlight.placeholder":     { en: "Spotlight Search",          zh: "Spotlight 搜索" },
