@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>严晗 — 简历</title>
+<link rel="stylesheet" href="resume.css" />
+</head>
+<body>
+
+<div class="r-name">严晗</div>
+<div class="r-contact">电话: +86 18019239175&nbsp;|&nbsp;邮箱: k4rtol@163.com&nbsp;|&nbsp;微信号: K4RTOL</div>
+
+<!-- ── 教育背景 ─────────────────────────────────────────────────────── -->
+<div class="r-section">教育背景</div>
+
+<div class="r-subsection">
+  澳大利亚国立大学(ANU)硕士 &nbsp;<span class="r-meta">QS 34 — Master of Computing</span>
+</div>
+<div class="r-courses">专业课程: 计算机视觉, 计算机图形, 游戏开发, (统计)机器学习, 高级算法, SQL 数据库等.</div>
+
+<div class="r-subsection">
+  东华大学 211 本科 &nbsp;<span class="r-meta">— 功能材料</span>
+</div>
+
+<!-- ── 项目经历 ─────────────────────────────────────────────────────── -->
+<div class="r-section">项目经历 (<a class="r-link" href="https://k4rto.com/">https://k4rto.com/</a>)</div>
+
+<!-- NEW: 智能识别中枢 -->
+<div class="r-project">
+  <div class="r-project-title">智能识别中枢 — 海关报关单自动 OCR 与结构化提取系统 (Python / Vision-LLM)</div>
+  <div class="r-role-label">职责与贡献:</div>
+  <ul class="r-bullets">
+    <li><b>双路径 OCR 架构:</b> 主路径 qwen3-vl-plus 整页 OCR + LLM 字段合并; DocLayout-YOLO + PaddleOCR-VL-1.5 本地兜底, 保证 API 不可用时仍可服务.</li>
+    <li><b>多 GPU 集群调度:</b> vLLM 多实例 + Redis 状态总线 + SSE 实时推送 GPU 利用率与告警, 支持多文档批量并发.</li>
+    <li><b>全链路 MLOps:</b> MLflow 实验追踪 + 人工复核闭环 + 持续微调, 模型迭代有据可循.</li>
+    <li><b>技术栈:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
+  </ul>
+</div>
+
+<!-- NEW: AURA Multi-Agent -->
+<div class="r-project">
+  <div class="r-project-title">AURA — 企业级多智能体协作平台 (Python / SvelteFlow)</div>
+  <div class="r-role-label">职责与贡献:</div>
+  <ul class="r-bullets">
+    <li><b>蓝图编排引擎:</b> 基于 SvelteFlow 的可视化 DAG 编辑器, 把业务 SOP 画成可复用的智能体工作流, 支持并行分发、限速、版本快照与回放.</li>
+    <li><b>多场景适配:</b> 会议(实时转写 + 纪要自动派发)、项目(蓝图执行 + RAG 归档)、管理(权限分组 + 全链路审计)三类组织工作的统一承载面.</li>
+    <li><b>实时协作内核:</b> Socket.IO + Redis pub/sub + Yjs 协同编辑, 支撑多人同屏多 Agent 并行任务.</li>
+    <li><b>技术栈:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow · Open WebUI 深度定制.</li>
+  </ul>
+</div>
+
+<!-- EXISTING: 人体跌落 -->
+<div class="r-project">
+  <div class="r-project-title">人体跌落姿态检测与声音预警系统 (Python) 与西澳公司合作项目</div>
+  <div class="r-role-label">职责与贡献:</div>
+  <ul class="r-bullets">
+    <li><b>视觉算法开发:</b> 通过定制 YOLOv7 模型实现人体关键点的实时检测和姿态分析, 优化算法结构, 精准识别跌倒状态.</li>
+    <li><b>项目管理 (PM):</b> 负责项目整体规划与模块分工, 利用 Jira 实现团队任务跟踪和进度管理, 确保开发过程高效透明.</li>
+  </ul>
+  <div class="r-highlight"><b>项目亮点:</b> 本项目受邀在澳大利亚国立大学 <b>Techlauncher</b> 活动中展示.</div>
+  <div class="r-highlight"><b>项目详情:</b> <a class="r-link" href="https://k4rto.com/">CAM_FALL Project</a></div>
+</div>
+
+<!-- EXISTING: 游戏引擎 -->
+<div class="r-project">
+  <div class="r-project-title">游戏引擎功能开发 (C++)</div>
+  <div class="r-role-label">职责与贡献:</div>
+  <ul class="r-bullets">
+    <li><b>后处理渲染 - Color Grading:</b> 使用 Look-Up Table (LUT) 在 fragment shader 中实现灵活的色彩调整, 显著提升画面效果.</li>
+    <li><b>物理系统优化:</b> 实现了角色跳跃的空中控制和墙壁碰撞, 增强角色与环境的交互真实性.</li>
+    <li><b>工具链开发:</b> 利用 Piccolo 引擎的反射系统, 支持属性动态显示和编辑, 实现数据驱动设计, 提升引擎的灵活性和可扩展性.</li>
+  </ul>
+</div>
+
+<!-- EXISTING: Vulkan 草地 -->
+<div class="r-project">
+  <div class="r-project-title">基于 Vulkan 的 C++ 草地物理渲染 (C++)</div>
+  <div class="r-role-label">职责与贡献:</div>
+  <ul class="r-bullets">
+    <li><b>草叶物理模拟:</b> 使用着色器动态生成草叶几何, 并基于贝塞尔曲线定义形状, 实现自然的受力恢复效果.</li>
+    <li><b>多种风力效果:</b> 设计并实现了直升机风、自定义自然风及强风的动态模拟, 增强渲染环境的真实感.</li>
+    <li><b>渲染优化:</b> 使用基于距离的剔除算法和视锥剔除技术, 优化渲染性能, 有效降低计算负载.</li>
+  </ul>
+</div>
+
+<!-- EXISTING: GoodGame -->
+<div class="r-project">
+  <div class="r-project-title">GoodGame 社交媒体应用 (Java/Android)</div>
+  <div class="r-role-label">职责与贡献:</div>
+  <ul class="r-bullets">
+    <li><b>数据持久化与同步:</b> 使用 Firebase Firestore 设计数据访问层, 实现用户数据的安全存储和快速检索.</li>
+    <li><b>实时同步与监听:</b> 通过 Firestore 事件监听实现多用户实时同步, 确保聊天和状态信息的即时更新.</li>
+    <li><b>高级搜索功能:</b> 支持多字段、多条件的复杂查询, 优化用户搜索体验.</li>
+    <li><b>自定义 UI 组件:</b> 设计并实现了卡片视图、可扩展列表等, 提升用户界面的美观性和易用性.</li>
+  </ul>
+</div>
+
+<!-- ── 实习与工作经历 ────────────────────────────────────────────── -->
+<div class="r-section">实习与工作经历</div>
+
+<div class="r-work-header">
+  <span>字节跳动 ｜ 前端游戏开发助理</span>
+  <span class="r-date">2020.08 - 2020.10</span>
+</div>
+<div class="r-work-body">
+  <ul>
+    <li>使用 Cocos Creator 开发触控小游戏, 负责界面和关卡设计, 并撰写游戏策划文档.</li>
+  </ul>
+</div>
+
+<div class="r-work-header">
+  <span>上海拜伦文化传媒有限公司 ｜ 产品经理</span>
+  <span class="r-date">2022.09 - 2022.12</span>
+</div>
+<div class="r-work-body">
+  <ul>
+    <li><b>阿里云栖大会项目:</b> 主导云栖大会 AR 导航和云小宝消消乐小游戏设计及产品文档撰写.</li>
+    <li><b>上海地铁桂林路项目:</b> 负责地铁站法制文化墙内容及 AR 互动游戏设计.</li>
+  </ul>
+</div>
+
+<div class="r-work-header">
+  <span>上海零境互娱 - 上海灵动互娱 ｜ 产品经理</span>
+  <span class="r-date">2021.03 - 2022.08</span>
+</div>
+<div class="r-work-body">
+  <p>负责公司微信小游戏数据运营, 帮助团队改善游戏用户体验, 提高留存等关键指标.</p>
+  <p><b>参与项目:</b></p>
+  <ul>
+    <li><b>《救世小镇》:</b> 通过微信优选, 用户总计 300W, 留存从 15% 提高至 27%, 三月合计收益 50W.</li>
+    <li><b>《迷你世界星河漂流》:</b> 迷你玩官方授权 IP, 单日日活最高 50W, 各渠道月收益稳定合计 10W.</li>
+    <li><b>《生存边境》《迷你冰川》《少侠好剑》:</b> 提升用户留存率并优化关键指标.</li>
+  </ul>
+  <p style="margin-top:6pt;"><b>灵境绿洲 X 百度希壤 X 风雨筑 — 《元宇宙过大年》春节活动:</b></p>
+  <ul>
+    <li>负责灵境绿洲与风雨筑发布会活动策划, 以及发布会 PPT 制作.</li>
+    <li>负责设计《元宇宙过大年》活动中项目产品原型设计、撰写产品文档、管理项目的研发进度.</li>
+    <li>负责预热活动方案设计, 在预热活动上线两天之内, 预约人数已超过 2W.</li>
+    <li>春节活动期间上万人参与, 活动共计三天, 奖池共计 100 万.</li>
+  </ul>
+  <p style="margin-top:4pt;">该活动成为百度希壤元宇宙官方优秀案例, 并且作为国内第一个元宇宙方面的大型活动案例.</p>
+</div>
+
+</body>
+</html>

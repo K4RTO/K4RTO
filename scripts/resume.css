@@ -1,0 +1,221 @@
+/* Resume PDF stylesheet — mimics the layout of the original Resume.pdf
+ * (sans-serif body, centered title, section bars, bullet items). Pixel-
+ * level identity is not the goal; visual rhythm is. ~85% match expected.
+ *
+ * Tuned for A4 single-column print via `playwright pdf`. The @page rule
+ * sets the printable area; we use absolute mm units throughout so PDF
+ * sizing is deterministic.
+ */
+
+@page {
+  size: A4;
+  /* Trimmed from 18/16 → 14/14 so the EN variant (English runs ~30% longer
+     than Chinese) collapses from 3 pages with 4 orphan lines back to 2. */
+  margin: 14mm 14mm 14mm 14mm;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  /* Chinese-first font stack. Falls back to system Helvetica-class fonts
+   * for the English variant so neither variant looks "off". */
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+               "Noto Sans CJK SC", "Source Han Sans SC",
+               -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+               Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+  /* 10pt body — tightens enough for the EN variant to fit on 2 pages while
+     staying comfortably above the "too small to read" 9pt floor. */
+  font-size: 10pt;
+  line-height: 1.42;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.r-name {
+  text-align: center;
+  font-size: 18pt;
+  font-weight: 700;
+  margin-bottom: 4pt;
+  letter-spacing: 0.5pt;
+}
+
+.r-contact {
+  text-align: center;
+  font-size: 10pt;
+  color: #333;
+  margin-bottom: 14pt;
+}
+
+/* ── Section title (教育背景 / 项目经历 / 实习与工作经历) ──────────── */
+
+.r-section {
+  font-size: 11pt;
+  font-weight: 700;
+  border-bottom: 1pt solid #1a1a1a;
+  padding-bottom: 2pt;
+  /* Trimmed 16/8 → 12/6 to recover vertical density across the whole CV. */
+  margin-top: 12pt;
+  margin-bottom: 6pt;
+}
+
+.r-section:first-of-type {
+  margin-top: 8pt;
+}
+
+/* ── Subsection (school / project name / company line) ─────────────── */
+
+.r-subsection {
+  font-weight: 700;
+  font-size: 10.5pt;
+  margin-top: 8pt;
+  margin-bottom: 2pt;
+}
+
+.r-subsection .r-meta {
+  font-weight: 400;
+  color: #333;
+}
+
+.r-subsection .r-date {
+  float: right;
+  font-weight: 700;
+  font-size: 10.5pt;
+}
+
+.r-courses {
+  margin-left: 14pt;
+  margin-bottom: 4pt;
+  color: #1a1a1a;
+}
+
+/* ── Project entry (• Title with bullet) ───────────────────────────── */
+
+.r-project {
+  margin-top: 7pt;
+}
+
+.r-project-title {
+  font-weight: 700;
+  font-size: 10.5pt;
+  position: relative;
+  padding-left: 14pt;
+}
+
+.r-project-title::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  font-size: 14pt;
+  line-height: 1;
+  top: -1pt;
+}
+
+.r-role-label {
+  margin-top: 3pt;
+  margin-left: 14pt;
+  font-weight: 700;
+}
+
+/* ── Bullet items inside a project ─────────────────────────────────── */
+
+.r-bullets {
+  margin-left: 22pt;
+  list-style: none;
+}
+
+.r-bullets li {
+  position: relative;
+  padding-left: 10pt;
+  margin-top: 2pt;
+  /* Hanging indent so wrapped lines align under the text, not the bullet */
+  text-indent: 0;
+}
+
+.r-bullets li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #1a1a1a;
+}
+
+.r-bullets li b,
+.r-bullets li strong {
+  font-weight: 700;
+}
+
+/* ── Highlight / details footnote rows ─────────────────────────────── */
+
+.r-highlight {
+  margin-left: 22pt;
+  margin-top: 2pt;
+}
+
+.r-highlight b { font-weight: 700; }
+
+.r-link {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-decoration-thickness: 0.4pt;
+}
+
+/* ── Work experience compact layout ────────────────────────────────── */
+
+.r-work-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-weight: 700;
+  font-size: 10.5pt;
+  margin-top: 8pt;
+}
+
+.r-work-header .r-date {
+  font-weight: 700;
+}
+
+.r-work-body {
+  margin-left: 14pt;
+  margin-top: 2pt;
+  line-height: 1.38;
+}
+
+.r-work-body p {
+  margin-top: 2pt;
+}
+
+.r-work-body ul {
+  list-style: none;
+}
+
+.r-work-body li {
+  position: relative;
+  padding-left: 10pt;
+  margin-top: 2pt;
+}
+
+.r-work-body li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+}
+
+/* ── Page break helpers ────────────────────────────────────────────── */
+
+.page-break {
+  break-before: page;
+}
+
+/* Prevent orphans/widows in print */
+h1, h2, h3, .r-section, .r-subsection, .r-project-title {
+  break-after: avoid-page;
+}
+.r-project, .r-work-header {
+  break-inside: avoid-page;
+}

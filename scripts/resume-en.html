@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Han Yan — Resume</title>
+<link rel="stylesheet" href="resume.css" />
+</head>
+<body>
+
+<div class="r-name">Han Yan</div>
+<div class="r-contact">Phone: +86 18019239175&nbsp;|&nbsp;Email: k4rtol@163.com&nbsp;|&nbsp;WeChat: K4RTOL</div>
+
+<!-- ── Education ────────────────────────────────────────────────────── -->
+<div class="r-section">Education</div>
+
+<div class="r-subsection">
+  Australian National University (ANU) &nbsp;<span class="r-meta">QS #34 — Master of Computing</span>
+</div>
+<div class="r-courses">Key courses: Computer Vision, Computer Graphics, Game Development, (Statistical) Machine Learning, Advanced Algorithms, SQL Databases.</div>
+
+<div class="r-subsection">
+  Donghua University (211) &nbsp;<span class="r-meta">— Bachelor of Functional Materials</span>
+</div>
+
+<!-- ── Projects ─────────────────────────────────────────────────────── -->
+<div class="r-section">Projects (<a class="r-link" href="https://k4rto.com/">https://k4rto.com/</a>)</div>
+
+<!-- NEW: Smart OCR Hub -->
+<div class="r-project">
+  <div class="r-project-title">Smart OCR Hub — Customs Declaration Auto-Recognition &amp; Structured Extraction (Python / Vision-LLM)</div>
+  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
+  <ul class="r-bullets">
+    <li><b>Dual-path OCR architecture:</b> primary path runs qwen3-vl-plus full-page OCR + LLM field merging; DocLayout-YOLO + PaddleOCR-VL-1.5 serves as local fallback so the service stays up when the API is unreachable.</li>
+    <li><b>Multi-GPU cluster scheduling:</b> vLLM instances + Redis state bus + SSE for live GPU utilization and alert push, supporting batch-concurrent multi-document processing.</li>
+    <li><b>End-to-end MLOps:</b> MLflow experiment tracking + human review loop + continuous fine-tuning, giving every model iteration an audit trail.</li>
+    <li><b>Stack:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
+  </ul>
+</div>
+
+<!-- NEW: AURA Multi-Agent -->
+<div class="r-project">
+  <div class="r-project-title">AURA — Enterprise Multi-Agent Collaboration Platform (Python / SvelteFlow)</div>
+  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
+  <ul class="r-bullets">
+    <li><b>Blueprint orchestration engine:</b> visual DAG editor built on SvelteFlow turns SOPs into reusable agent workflows, with parallel dispatch, rate-limiting, version snapshots, and replay.</li>
+    <li><b>Multi-scenario adaptation:</b> a unified surface for meetings (live transcription + auto-dispatched minutes), projects (blueprint execution + RAG archival), and management (permission grouping + full audit trail).</li>
+    <li><b>Real-time collaboration core:</b> Socket.IO + Redis pub/sub + Yjs collaborative editing, supporting multi-user multi-Agent parallel tasks on a single screen.</li>
+    <li><b>Stack:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow · Open WebUI deep customization.</li>
+  </ul>
+</div>
+
+<!-- EXISTING: Fall detection -->
+<div class="r-project">
+  <div class="r-project-title">Human Fall Pose Detection &amp; Audio Alert System (Python) — Joint project with a Western Australia company</div>
+  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
+  <ul class="r-bullets">
+    <li><b>Vision algorithm development:</b> customized YOLOv7 model for real-time human keypoint detection and pose analysis; structural optimization for accurate fall recognition.</li>
+    <li><b>Project Management (PM):</b> led project planning and module assignment, using Jira for team task tracking and progress visibility.</li>
+  </ul>
+  <div class="r-highlight"><b>Highlight:</b> Presented at the ANU <b>Techlauncher</b> showcase.</div>
+  <div class="r-highlight"><b>Details:</b> <a class="r-link" href="https://k4rto.com/">CAM_FALL Project</a></div>
+</div>
+
+<!-- EXISTING: Game engine -->
+<div class="r-project">
+  <div class="r-project-title">Game Engine Feature Development (C++)</div>
+  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
+  <ul class="r-bullets">
+    <li><b>Post-processing — Color Grading:</b> implemented flexible color grading via Look-Up Table (LUT) in the fragment shader, noticeably improving image quality.</li>
+    <li><b>Physics system improvements:</b> in-air control for character jumps and wall collisions, enhancing character–environment interaction realism.</li>
+    <li><b>Toolchain development:</b> leveraged the Piccolo engine's reflection system for dynamic property display/editing, enabling data-driven design and improving engine flexibility.</li>
+  </ul>
+</div>
+
+<!-- EXISTING: Grass rendering -->
+<div class="r-project">
+  <div class="r-project-title">Vulkan-based C++ Grass Physics Rendering (C++)</div>
+  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
+  <ul class="r-bullets">
+    <li><b>Grass-blade physics:</b> shader-generated geometry with Bézier-curve shape, producing natural recovery under force.</li>
+    <li><b>Multiple wind effects:</b> helicopter wind, custom natural wind, and strong wind simulations, increasing scene realism.</li>
+    <li><b>Rendering optimization:</b> distance-based culling + frustum culling, reducing compute load.</li>
+  </ul>
+</div>
+
+<!-- EXISTING: GoodGame -->
+<div class="r-project">
+  <div class="r-project-title">GoodGame Social Media App (Java/Android)</div>
+  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
+  <ul class="r-bullets">
+    <li><b>Persistence &amp; sync:</b> Firebase Firestore data access layer with safe, fast user-data storage.</li>
+    <li><b>Real-time sync:</b> Firestore listeners for multi-user real-time sync, ensuring instant chat / status updates.</li>
+    <li><b>Advanced search:</b> multi-field, multi-condition queries to improve search UX.</li>
+    <li><b>Custom UI components:</b> card view, expandable list, etc., improving visual quality and usability.</li>
+  </ul>
+</div>
+
+<!-- ── Internships & Work Experience ──────────────────────────────── -->
+<div class="r-section">Internships &amp; Work Experience</div>
+
+<div class="r-work-header">
+  <span>ByteDance ｜ Junior Front-end Game Developer</span>
+  <span class="r-date">2020.08 - 2020.10</span>
+</div>
+<div class="r-work-body">
+  <ul>
+    <li>Built touch-based mini-games with Cocos Creator; owned UI/level design and authored game-design documents.</li>
+  </ul>
+</div>
+
+<div class="r-work-header">
+  <span>Shanghai Byron Culture Media Co. ｜ Product Manager</span>
+  <span class="r-date">2022.09 - 2022.12</span>
+</div>
+<div class="r-work-body">
+  <ul>
+    <li><b>Aliyun Apsara Conference:</b> led AR navigation and "Cloud Mascot" match-3 mini-game design and product documentation.</li>
+    <li><b>Shanghai Metro Guilin Road project:</b> owned the legal-culture wall content and AR interactive game design.</li>
+  </ul>
+</div>
+
+<div class="r-work-header">
+  <span>Shanghai Lingjing Hudong / Shanghai Lingdong Hudong ｜ Product Manager</span>
+  <span class="r-date">2021.03 - 2022.08</span>
+</div>
+<div class="r-work-body">
+  <p>Owned WeChat mini-game data operations, driving UX improvements and retention.</p>
+  <p><b>Featured projects:</b></p>
+  <ul>
+    <li><b>Rescue Town:</b> via WeChat Optimized Channel — 3M total users, retention from 15% → 27%, 500K three-month revenue.</li>
+    <li><b>Mini World Stellar Drift:</b> Mini World official-licensed IP — peak DAU 500K, ~100K monthly revenue across channels.</li>
+    <li><b>Survival Frontier · Mini Glacier · Young Knight:</b> retention and key-metric improvements.</li>
+  </ul>
+  <p style="margin-top:6pt;"><b>Lingjing Oasis × Baidu Xirang × FengYuZhu — "Metaverse Spring Festival" event:</b></p>
+  <ul>
+    <li>Owned launch event planning for Lingjing Oasis × FengYuZhu, including the launch deck.</li>
+    <li>Designed product prototypes, wrote product documentation, and managed R&amp;D progress for the "Metaverse Spring Festival" project.</li>
+    <li>Designed the warm-up campaign: 20K+ pre-registrations within 48 hours of launch.</li>
+    <li>Three-day campaign reached 10K+ participants, total prize pool 1M — became Baidu Xirang's officially featured case and China's first large-scale metaverse event.</li>
+  </ul>
+</div>
+
+</body>
+</html>
