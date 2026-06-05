@@ -4,7 +4,7 @@ import { useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { useProcesses } from "@/contexts/ProcessContext";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
-import { useT } from "@/contexts/SystemContext";
+import { useT, useSystem } from "@/contexts/SystemContext";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { ContextMenu, type MenuItem as CtxMenuItem } from "@/components/shared/ContextMenu";
 
@@ -418,8 +418,12 @@ function CalculatorIcon() {
 }
 
 function CalendarIcon() {
+  // Weekday label follows the current UI lang (zh users want 周四 not THU).
+  // Date number is locale-independent (1-31).
+  const { lang } = useSystem();
   const now = new Date();
-  const day = now.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
+  const day = now.toLocaleDateString(locale, { weekday: "short" }).toUpperCase();
   const date = now.getDate();
   return (
     <div style={{ width: "100%", height: "100%", borderRadius: "22%", overflow: "hidden", position: "relative" }}>

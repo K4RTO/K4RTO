@@ -59,16 +59,31 @@ function sanitize(parsed: Partial<SystemState>): Partial<SystemState> {
   return out;
 }
 
+/** Pick a default UI language from the user's browser/system locale on the
+ *  very first visit. After the user chooses a language manually (Settings
+ *  toggle) it persists to localStorage and the auto-detect no longer runs. */
+function detectInitialLang(): Lang {
+  if (typeof navigator === "undefined") return DEFAULTS.lang;
+  const nav = navigator.language || (navigator.languages && navigator.languages[0]) || "";
+  // BCP 47: "zh", "zh-CN", "zh-Hans-CN", "zh-TW" — all start with "zh".
+  // Everything else falls back to English (broadest fit for "rest of world").
+  return /^zh\b/i.test(nav) ? "zh" : "en";
+}
+
 function loadFromStorage(): SystemState {
   if (typeof window === "undefined") return DEFAULTS;
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return DEFAULTS;
+    if (!raw) {
+      // First visit — seed lang from the browser locale so a Chinese-system
+      // user sees Chinese UI without having to find the toggle.
+      return { ...DEFAULTS, lang: detectInitialLang() };
+    }
     const parsed = JSON.parse(raw) as Partial<SystemState>;
     // Merge with defaults so a missing or invalid key falls back instead of crashing
     return { ...DEFAULTS, ...sanitize(parsed) };
   } catch {
-    return DEFAULTS;
+    return { ...DEFAULTS, lang: detectInitialLang() };
   }
 }
 

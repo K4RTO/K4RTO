@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { AppComponentProps } from "@/apps/registry";
-import { useT } from "@/contexts/SystemContext";
+import { useT, useSystem } from "@/contexts/SystemContext";
 
 interface CityConfig {
   key: string;
@@ -21,8 +21,11 @@ const CITIES: CityConfig[] = [
   { key: "paris",      tz: "Europe/Paris",         labelKey: "clock.paris",      subtitleKey: "clock.sub.paris" },
 ];
 
-function getTimeInTz(tz: string) {
+function getTimeInTz(tz: string, locale: string) {
   const now = new Date();
+  // Hand parts always parsed from a fixed numeric format ("en-US" 24h) so
+  // the hour/minute/second math is locale-independent. Only the display
+  // strings below use the user's locale.
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: tz, hour: "numeric", minute: "2-digit", second: "2-digit", hour12: false,
   }).formatToParts(now);
@@ -30,15 +33,18 @@ function getTimeInTz(tz: string) {
   const m = parseInt(parts.find(p => p.type === "minute")?.value ?? "0");
   const s = parseInt(parts.find(p => p.type === "second")?.value ?? "0");
 
-  const timeStr = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true,
+  // 12h vs 24h follows the locale (zh-CN → 24h, en-US → 12h with AM/PM)
+  // which matches what a user from each region naturally expects.
+  const timeStr = new Intl.DateTimeFormat(locale, {
+    timeZone: tz, hour: "numeric", minute: "2-digit",
   }).format(now);
 
-  const dateStr = new Intl.DateTimeFormat("en-US", {
+  const dateStr = new Intl.DateTimeFormat(locale, {
     timeZone: tz, weekday: "short", month: "short", day: "numeric",
   }).format(now);
 
-  // day offset vs local
+  // Day offset vs the user's local day — kept in en-CA (YYYY-MM-DD ISO) for
+  // simple Date() reparsing arithmetic. Locale-independent on purpose.
   const localDate = new Date().toLocaleDateString("en-CA");
   const tzDate = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(now);
   const diff = new Date(tzDate).getDate() - new Date(localDate).getDate();
@@ -105,7 +111,9 @@ function AnalogClock({ h, m, s, id }: { h: number; m: number; s: number; id: str
 
 export default function Clock(_props: AppComponentProps) {
   const t = useT();
-  const [tick, setTick] = useState(0);
+  const { lang } = useSystem();
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setTick(v => v + 1), 1000);
@@ -142,7 +150,7 @@ export default function Clock(_props: AppComponentProps) {
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}
       >
         {CITIES.map((city) => {
-          const { h, m, s, timeStr, dateStr, diff } = getTimeInTz(city.tz);
+          const { h, m, s, timeStr, dateStr, diff } = getTimeInTz(city.tz, locale);
           const isNight = h < 6 || h >= 20;
 
           return (

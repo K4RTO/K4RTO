@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import type { AppComponentProps } from "@/apps/registry";
-import { useT } from "@/contexts/SystemContext";
+import { useT, useSystem } from "@/contexts/SystemContext";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
 
 /** Event model — keep it simple. ISO date (YYYY-MM-DD) keys avoid any
@@ -55,6 +55,11 @@ function buildGrid(y: number, m: number): Cell[] {
 
 export default function Calendar(_props: AppComponentProps) {
   const t = useT();
+  const { lang } = useSystem();
+  // Status bar date string follows the UI lang so a zh user sees a Chinese-
+  // formatted date instead of "Thursday, June 4". Date itself is in the
+  // user's system timezone — JS Date is always local-tz by default.
+  const dateLocale = lang === "zh" ? "zh-CN" : "en-US";
   const today = new Date();
   const td = today.getDate(), tm = today.getMonth(), ty = today.getFullYear();
 
@@ -149,8 +154,8 @@ export default function Calendar(_props: AppComponentProps) {
   const miniGrid = buildGrid(my, mm);
 
   const selStr = sel
-    ? new Date(sel.year, sel.month, sel.day).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
-    : new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    ? new Date(sel.year, sel.month, sel.day).toLocaleDateString(dateLocale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    : new Date().toLocaleDateString(dateLocale, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: "#1c1c1e", color: "white", animation: "fadeIn 0.2s ease" }}>
