@@ -219,3 +219,12 @@ h1, h2, h3, .r-section, .r-subsection, .r-project-title {
 .r-project, .r-work-header {
   break-inside: avoid-page;
 }
+
+/* A whole job entry (header + body containing nested projects) must not split
+   across pages — otherwise readers see "AURA" on page 2 with no employer
+   context above it and mistake it for a standalone project under the next
+   employer. Force the entire block to ride down to the next page if it can't
+   fit on the current one. */
+.r-job {
+  break-inside: avoid-page;
+}

@@ -14,7 +14,7 @@
 <div class="r-section">教育背景</div>
 
 <div class="r-subsection">
-  澳大利亚国立大学(ANU)硕士 &nbsp;<span class="r-meta">QS 34 — Master of Computing</span>
+  澳大利亚国立大学(ANU)硕士 &nbsp;<span class="r-meta">QS 34 — Master of Computing &nbsp;·&nbsp; 机器学习专业</span>
 </div>
 <div class="r-courses">专业课程: 计算机视觉, 计算机图形, 游戏开发, (统计)机器学习, 高级算法, SQL 数据库等.</div>
 
@@ -24,30 +24,6 @@
 
 <!-- ── 项目经历 ─────────────────────────────────────────────────────── -->
 <div class="r-section">项目经历 (<a class="r-link" href="https://k4rto.com/">https://k4rto.com/</a>)</div>
-
-<!-- NEW: 智能识别中枢 -->
-<div class="r-project">
-  <div class="r-project-title">智能识别中枢 — 海关报关单自动 OCR 与结构化提取系统 (Python / Vision-LLM)</div>
-  <div class="r-role-label">职责与贡献:</div>
-  <ul class="r-bullets">
-    <li><b>双路径 OCR 架构:</b> 主路径 qwen3-vl-plus 整页 OCR + LLM 字段合并; DocLayout-YOLO + PaddleOCR-VL-1.5 本地兜底, 保证 API 不可用时仍可服务.</li>
-    <li><b>多 GPU 集群调度:</b> vLLM 多实例 + Redis 状态总线 + SSE 实时推送 GPU 利用率与告警, 支持多文档批量并发.</li>
-    <li><b>全链路 MLOps:</b> MLflow 实验追踪 + 人工复核闭环 + 持续微调, 模型迭代有据可循.</li>
-    <li><b>技术栈:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
-  </ul>
-</div>
-
-<!-- NEW: AURA Multi-Agent -->
-<div class="r-project">
-  <div class="r-project-title">AURA — 企业级多智能体协作平台 (Python / SvelteFlow)</div>
-  <div class="r-role-label">职责与贡献:</div>
-  <ul class="r-bullets">
-    <li><b>蓝图编排引擎:</b> 基于 SvelteFlow 的可视化 DAG 编辑器, 把业务 SOP 画成可复用的智能体工作流, 支持并行分发、限速、版本快照与回放.</li>
-    <li><b>多场景适配:</b> 会议(实时转写 + 纪要自动派发)、项目(蓝图执行 + RAG 归档)、管理(权限分组 + 全链路审计)三类组织工作的统一承载面.</li>
-    <li><b>实时协作内核:</b> Socket.IO + Redis pub/sub + Yjs 协同编辑, 支撑多人同屏多 Agent 并行任务.</li>
-    <li><b>技术栈:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow · Open WebUI 深度定制.</li>
-  </ul>
-</div>
 
 <!-- EXISTING: 人体跌落 -->
 <div class="r-project">
@@ -59,17 +35,6 @@
   </ul>
   <div class="r-highlight"><b>项目亮点:</b> 本项目受邀在澳大利亚国立大学 <b>Techlauncher</b> 活动中展示.</div>
   <div class="r-highlight"><b>项目详情:</b> <a class="r-link" href="https://k4rto.com/">CAM_FALL Project</a></div>
-</div>
-
-<!-- EXISTING: 游戏引擎 -->
-<div class="r-project">
-  <div class="r-project-title">游戏引擎功能开发 (C++)</div>
-  <div class="r-role-label">职责与贡献:</div>
-  <ul class="r-bullets">
-    <li><b>后处理渲染 - Color Grading:</b> 使用 Look-Up Table (LUT) 在 fragment shader 中实现灵活的色彩调整, 显著提升画面效果.</li>
-    <li><b>物理系统优化:</b> 实现了角色跳跃的空中控制和墙壁碰撞, 增强角色与环境的交互真实性.</li>
-    <li><b>工具链开发:</b> 利用 Piccolo 引擎的反射系统, 支持属性动态显示和编辑, 实现数据驱动设计, 提升引擎的灵活性和可扩展性.</li>
-  </ul>
 </div>
 
 <!-- EXISTING: Vulkan 草地 -->
@@ -97,6 +62,36 @@
 
 <!-- ── 实习与工作经历 ────────────────────────────────────────────── -->
 <div class="r-section">实习与工作经历</div>
+
+<!-- NEW: 海晨股份 — 2 个新项目作为子条目, wrapped in .r-job to keep
+     the whole employer block on one page (so readers don't see AURA on a
+     new page with no employer context above it). -->
+<div class="r-job">
+  <div class="r-work-header">
+    <span>海晨股份 ｜ 机器学习 / AI 研究员</span>
+    <span class="r-date">2024.04 - 至今</span>
+  </div>
+  <div class="r-work-body">
+    <div class="r-project" style="margin-top:4pt;">
+      <div class="r-project-title">智能识别中枢 — 联想集团海关报关系统 (Python / Vision-LLM)</div>
+      <ul class="r-bullets">
+        <li><b>双路径 OCR 架构:</b> 主路径 qwen3-vl-plus 整页 OCR + LLM 字段合并; DocLayout-YOLO + PaddleOCR-VL-1.5 本地兜底, 保证 API 不可用时仍可服务.</li>
+        <li><b>多 GPU 集群调度:</b> vLLM 多实例 + Redis 状态总线 + SSE 实时推送 GPU 利用率与告警, 支持多文档批量并发.</li>
+        <li><b>全链路 MLOps:</b> MLflow 实验追踪 + 人工复核闭环 + 持续微调, 模型迭代有据可循.</li>
+        <li><b>技术栈:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
+      </ul>
+    </div>
+    <div class="r-project" style="margin-top:6pt;">
+      <div class="r-project-title">AURA — 企业级多智能体协作平台 (Python / SvelteFlow)</div>
+      <ul class="r-bullets">
+        <li><b>蓝图编排引擎:</b> 基于 SvelteFlow 的可视化 DAG 编辑器, 把业务 SOP 画成可复用的智能体工作流, 支持并行分发、限速、版本快照与回放.</li>
+        <li><b>多场景适配:</b> 会议(实时转写 + 纪要自动派发)、项目(蓝图执行 + RAG 归档)、管理(权限分组 + 全链路审计)三类组织工作的统一承载面.</li>
+        <li><b>实时协作内核:</b> Socket.IO + Redis pub/sub + Yjs 协同编辑, 支撑多人同屏多 Agent 并行任务.</li>
+        <li><b>技术栈:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow · Open WebUI 深度定制.</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
 <div class="r-work-header">
   <span>字节跳动 ｜ 前端游戏开发助理</span>

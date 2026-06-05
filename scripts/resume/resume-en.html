@@ -14,7 +14,7 @@
 <div class="r-section">Education</div>
 
 <div class="r-subsection">
-  Australian National University (ANU) &nbsp;<span class="r-meta">QS #34 — Master of Computing</span>
+  Australian National University (ANU) &nbsp;<span class="r-meta">QS #34 — Master of Computing &nbsp;·&nbsp; ML Specialization</span>
 </div>
 <div class="r-courses">Key courses: Computer Vision, Computer Graphics, Game Development, (Statistical) Machine Learning, Advanced Algorithms, SQL Databases.</div>
 
@@ -24,30 +24,6 @@
 
 <!-- ── Projects ─────────────────────────────────────────────────────── -->
 <div class="r-section">Projects (<a class="r-link" href="https://k4rto.com/">https://k4rto.com/</a>)</div>
-
-<!-- NEW: Smart OCR Hub -->
-<div class="r-project">
-  <div class="r-project-title">Smart OCR Hub — Customs Declaration Auto-Recognition &amp; Structured Extraction (Python / Vision-LLM)</div>
-  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
-  <ul class="r-bullets">
-    <li><b>Dual-path OCR architecture:</b> primary path runs qwen3-vl-plus full-page OCR + LLM field merging; DocLayout-YOLO + PaddleOCR-VL-1.5 serves as local fallback so the service stays up when the API is unreachable.</li>
-    <li><b>Multi-GPU cluster scheduling:</b> vLLM instances + Redis state bus + SSE for live GPU utilization and alert push, supporting batch-concurrent multi-document processing.</li>
-    <li><b>End-to-end MLOps:</b> MLflow experiment tracking + human review loop + continuous fine-tuning, giving every model iteration an audit trail.</li>
-    <li><b>Stack:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
-  </ul>
-</div>
-
-<!-- NEW: AURA Multi-Agent -->
-<div class="r-project">
-  <div class="r-project-title">AURA — Enterprise Multi-Agent Collaboration Platform (Python / SvelteFlow)</div>
-  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
-  <ul class="r-bullets">
-    <li><b>Blueprint orchestration engine:</b> visual DAG editor built on SvelteFlow turns SOPs into reusable agent workflows, with parallel dispatch, rate-limiting, version snapshots, and replay.</li>
-    <li><b>Multi-scenario adaptation:</b> a unified surface for meetings (live transcription + auto-dispatched minutes), projects (blueprint execution + RAG archival), and management (permission grouping + full audit trail).</li>
-    <li><b>Real-time collaboration core:</b> Socket.IO + Redis pub/sub + Yjs collaborative editing, supporting multi-user multi-Agent parallel tasks on a single screen.</li>
-    <li><b>Stack:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow · Open WebUI deep customization.</li>
-  </ul>
-</div>
 
 <!-- EXISTING: Fall detection -->
 <div class="r-project">
@@ -59,17 +35,6 @@
   </ul>
   <div class="r-highlight"><b>Highlight:</b> Presented at the ANU <b>Techlauncher</b> showcase.</div>
   <div class="r-highlight"><b>Details:</b> <a class="r-link" href="https://k4rto.com/">CAM_FALL Project</a></div>
-</div>
-
-<!-- EXISTING: Game engine -->
-<div class="r-project">
-  <div class="r-project-title">Game Engine Feature Development (C++)</div>
-  <div class="r-role-label">Responsibilities &amp; Contributions:</div>
-  <ul class="r-bullets">
-    <li><b>Post-processing — Color Grading:</b> implemented flexible color grading via Look-Up Table (LUT) in the fragment shader, noticeably improving image quality.</li>
-    <li><b>Physics system improvements:</b> in-air control for character jumps and wall collisions, enhancing character–environment interaction realism.</li>
-    <li><b>Toolchain development:</b> leveraged the Piccolo engine's reflection system for dynamic property display/editing, enabling data-driven design and improving engine flexibility.</li>
-  </ul>
 </div>
 
 <!-- EXISTING: Grass rendering -->
@@ -97,6 +62,36 @@
 
 <!-- ── Internships & Work Experience ──────────────────────────────── -->
 <div class="r-section">Internships &amp; Work Experience</div>
+
+<!-- NEW: Hichains — 2 new projects as sub-bullets, wrapped in .r-job to keep
+     the whole employer block on one page (so readers don't see AURA on a
+     new page with no employer context above it). -->
+<div class="r-job">
+  <div class="r-work-header">
+    <span>Hichains ｜ ML / AI Researcher</span>
+    <span class="r-date">2024.04 - Present</span>
+  </div>
+  <div class="r-work-body">
+    <div class="r-project" style="margin-top:4pt;">
+      <div class="r-project-title">Smart OCR Hub — Lenovo Customs Declaration System (Python / Vision-LLM)</div>
+      <ul class="r-bullets">
+        <li><b>Dual-path OCR architecture:</b> primary path runs qwen3-vl-plus full-page OCR + LLM field merging; DocLayout-YOLO + PaddleOCR-VL-1.5 serves as local fallback so the service stays up when the API is unreachable.</li>
+        <li><b>Multi-GPU cluster scheduling:</b> vLLM instances + Redis state bus + SSE for live GPU utilization and alert push, supporting batch-concurrent multi-document processing.</li>
+        <li><b>End-to-end MLOps:</b> MLflow experiment tracking + human review loop + continuous fine-tuning, giving every model iteration an audit trail.</li>
+        <li><b>Stack:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
+      </ul>
+    </div>
+    <div class="r-project" style="margin-top:6pt;">
+      <div class="r-project-title">AURA — Enterprise Multi-Agent Collaboration Platform (Python / SvelteFlow)</div>
+      <ul class="r-bullets">
+        <li><b>Blueprint orchestration engine:</b> visual DAG editor built on SvelteFlow turns SOPs into reusable agent workflows, with parallel dispatch, rate-limiting, version snapshots, and replay.</li>
+        <li><b>Multi-scenario adaptation:</b> a unified surface for meetings (live transcription + auto-dispatched minutes), projects (blueprint execution + RAG archival), and management (permission grouping + full audit trail).</li>
+        <li><b>Real-time collaboration core:</b> Socket.IO + Redis pub/sub + Yjs collaborative editing, supporting multi-user multi-Agent parallel tasks on a single screen.</li>
+        <li><b>Stack:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow · Open WebUI deep customization.</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
 <div class="r-work-header">
   <span>ByteDance ｜ Junior Front-end Game Developer</span>
