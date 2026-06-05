@@ -10,9 +10,10 @@ import { COLORS } from "./types";
 
 // ── Static content (from Resume) ──────────────────────────────────────────
 
-// Personal identifiers (real name, phone) deliberately omitted from the public
-// portfolio — visitors are introduced as "K4RTO" only. The actual resume PDF
-// has the full details for anyone who clicks through.
+// Personal identifiers (real name, phone, wechat) deliberately omitted from
+// the public portfolio — visitors are introduced as "K4RTO" only, with email
+// as the only direct contact channel. The downloadable resume PDF has the
+// full details for anyone who clicks through and is genuinely interested.
 const BIO = {
   name: "K4RTO",
   title: {
@@ -21,7 +22,6 @@ const BIO = {
   },
   location: { en: "Shanghai · ANU Master of Computing", zh: "上海 · 澳国立 (ANU) 计算机硕士" },
   email: "k4rtol@163.com",
-  wechat: "K4RTOL",
   website: "https://k4rto.com/",
   github: "https://github.com/K4RTO",
   linkedin: "https://www.linkedin.com/in/K4RTO/",
@@ -157,7 +157,6 @@ export const portfolioCommands: Command[] = [
       ctx.println("");
       printTable(ctx, [
         [ctx.lang === "zh" ? "邮箱" : "Email",     BIO.email],
-        [ctx.lang === "zh" ? "微信" : "WeChat",    BIO.wechat],
         [ctx.lang === "zh" ? "位置" : "Location",  BIO.location[ctx.lang]],
         ["GitHub",                                 BIO.github],
         ["LinkedIn",                               BIO.linkedin],
@@ -239,7 +238,6 @@ export const portfolioCommands: Command[] = [
       ctx.println("");
       printTable(ctx, [
         ["Email",     BIO.email],
-        ["WeChat",    BIO.wechat],
         ["GitHub",    BIO.github],
         ["LinkedIn",  BIO.linkedin],
         ["Website",   BIO.website],

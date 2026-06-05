@@ -63,9 +63,8 @@ What I value:
 A mix of low-level engineering rigor and product instinct. I like problems where shaders meet user retention.
 
 How to reach me:
-Email   k4rtol@163.com
-WeChat  K4RTOL
-GitHub  https://github.com/K4RTO
+Email    k4rtol@163.com
+GitHub   https://github.com/K4RTO
 LinkedIn https://www.linkedin.com/in/K4RTO/
 
 Try Terminal → 'whoami' for a faster version.`,
@@ -84,7 +83,6 @@ Try Terminal → 'whoami' for a faster version.`,
 
 联系方式：
 邮箱     k4rtol@163.com
-微信     K4RTOL
 GitHub   https://github.com/K4RTO
 LinkedIn https://www.linkedin.com/in/K4RTO/
 
