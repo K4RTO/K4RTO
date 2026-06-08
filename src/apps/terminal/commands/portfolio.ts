@@ -17,8 +17,8 @@ import { COLORS } from "./types";
 const BIO = {
   name: "K4RTO",
   title: {
-    en: "Graphics / Game Engine Engineer · Computer Vision · Product",
-    zh: "图形 / 游戏引擎工程师 · 计算机视觉 · 产品经理",
+    en: "ML / AI Agent Researcher · C++ Game Engine",
+    zh: "机器学习 / AI Agent 研究员 · C++ 游戏引擎",
   },
   location: { en: "Shanghai · ANU Master of Computing", zh: "上海 · 澳国立 (ANU) 计算机硕士" },
   email: "k4rtol@163.com",
@@ -26,8 +26,8 @@ const BIO = {
   github: "https://github.com/K4RTO",
   linkedin: "https://www.linkedin.com/in/K4RTO/",
   tagline: {
-    en: "Game-engine + CV engineer who shipped a metaverse event to 20K+ users.",
-    zh: "游戏引擎 + 计算机视觉工程师，做过国内首个元宇宙大型活动。",
+    en: "Researcher building enterprise AI agents and customs OCR systems; also writes Vulkan / C++ graphics for game engines.",
+    zh: "在做企业级 AI Agent 平台和报关单 OCR 系统；业余写 Vulkan / C++ 游戏引擎渲染。",
   },
 };
 
@@ -45,73 +45,52 @@ const EDUCATION = [
 ];
 
 const SKILLS: Array<{ category: { en: string; zh: string }; items: string[] }> = [
-  { category: { en: "Languages",       zh: "语言" },       items: ["C++", "Python", "Java", "JavaScript", "TypeScript"] },
-  { category: { en: "Graphics / GPU",  zh: "图形 / GPU" },  items: ["Vulkan", "GLSL", "LUT color grading", "Bezier curves", "Frustum culling"] },
-  { category: { en: "Game Engines",    zh: "游戏引擎" },    items: ["Piccolo (reflection)", "Cocos Creator", "Unity (basics)"] },
-  { category: { en: "Computer Vision", zh: "计算机视觉" }, items: ["YOLOv7", "Keypoint detection", "Pose analysis", "Real-time inference"] },
-  { category: { en: "Mobile / Web",    zh: "移动 / Web" },  items: ["Android", "Firebase Firestore", "Next.js 15", "React 19", "Tailwind 4"] },
-  { category: { en: "Product / PM",    zh: "产品 / 运营" }, items: ["Jira", "Retention analytics", "AR design", "Prototype docs", "PRD writing"] },
+  { category: { en: "Languages",       zh: "语言" },       items: ["Python", "C++", "TypeScript", "JavaScript"] },
+  { category: { en: "ML / AI Agents",  zh: "机器学习 / AI Agent" }, items: ["vLLM", "Vision-LLM (qwen-vl)", "RAG", "Fine-tuning", "MLflow", "DAG orchestration"] },
+  { category: { en: "Computer Vision", zh: "计算机视觉" }, items: ["YOLOv7", "Keypoint detection", "Pose analysis", "OCR pipelines", "Real-time inference"] },
+  { category: { en: "Graphics / GPU",  zh: "图形 / GPU" }, items: ["Vulkan", "GLSL", "Piccolo engine", "LUT color grading", "Bezier curves", "Frustum culling"] },
+  { category: { en: "Backend / Infra", zh: "后端 / 基础设施" }, items: ["FastAPI", "PostgreSQL", "SQLAlchemy 2.0", "Redis", "Docker", "Alembic"] },
+  { category: { en: "Web",             zh: "Web" },         items: ["SvelteKit 5", "Next.js 15", "React 19", "Tailwind 4"] },
 ];
 
-// Real case studies from resume — pick the most quantified ones
+// Two anchor case studies — what I'm actually doing now (Hichains / Lenovo)
+// and what proves the graphics side (ANU capstone). Anything older was
+// trimmed per K4RTO's request — focus over breadth.
 const WHY_HIRE = [
   {
-    en: "I shipped the first major metaverse event in China.",
-    zh: "我做过国内第一个元宇宙大型活动。",
+    en: "I'm building enterprise AI agents and a Vision-LLM customs OCR system in production.",
+    zh: "我正在做企业级多智能体平台和落地中的报关单 OCR 系统。",
     detail: {
-      en: "Lingjing Oasis × Baidu Xirang × Fengyuzhu — \"Metaverse Spring Festival\" event. Led product design, prototype, and dev schedule. 20K+ pre-registered users in 2 days; 3-day event ran with a ¥1M prize pool. Featured as Baidu Xirang's official showcase case.",
-      zh: "灵境绿洲 × 百度希壤 × 风雨筑 —《元宇宙过大年》。负责产品原型设计、PRD 撰写、研发进度管理。预热 2 天预约 2W+，三天活动累计奖池 100W。成为百度希壤元宇宙官方优秀案例。",
-    },
-  },
-  {
-    en: "I moved a game's 30-day retention from 15% → 27% (+80%).",
-    zh: "我把一款游戏的 30 日留存从 15% 拉到 27%（+80%）。",
-    detail: {
-      en: "《Save the Town》 — WeChat mini-game data ops at Lingdong Interactive. Iterated user flow + onboarding + loop design over 3 months. 3M total users via WeChat optimization, ¥500K cumulative revenue.",
-      zh: "《救世小镇》— 灵动互娱微信小游戏数据运营。3 个月迭代新手引导 + 主循环 + 留存钩子。通过微信优选累计 300W 用户，三月合计营收 50W。",
+      en: "At Hichains (2025.04 – present): two flagship systems. AURA, an enterprise multi-agent collaboration platform with a visual DAG blueprint engine, on-prem RAG, and built-in fine-tuning pipelines — data never leaves the customer's perimeter. Smart OCR Hub, a Vision-LLM customs declaration pipeline serving Lenovo, with multi-GPU scheduling, MLOps audit trails, and human-review loops.",
+      zh: "海晨股份（2025.04 至今）：两个旗舰系统。AURA — 企业级多智能体协作平台，可视化 DAG 蓝图引擎 + 私有 RAG + 内置微调流水线，数据不出企业边界。智能识别中枢 — 服务联想集团的 Vision-LLM 报关单 OCR 流水线，多 GPU 调度 + 全链路 MLOps + 人工复核闭环。",
     },
   },
   {
     en: "I built a real-time fall-detection CV system that ANU showcased.",
     zh: "我做了 ANU 拿出去展示的实时跌倒检测系统。",
     detail: {
-      en: "Custom YOLOv7 for keypoint detection + pose analysis in Python. Real-time inference for elderly fall alerts. Partnership with a Western Australia firm. Featured at ANU Techlauncher showcase. PM-ed the team via Jira.",
-      zh: "定制 YOLOv7 做人体关键点 + 跌倒姿态分析，Python 实现实时推理。与西澳公司合作的老年人跌倒预警系统。受邀澳国立 Techlauncher 活动展示。用 Jira 管理团队任务。",
+      en: "ANU Techlauncher capstone (2024.02 – 2024.11): custom YOLOv7 for keypoint detection + pose analysis in Python. Real-time inference for elderly fall alerts. Partnership with a Western Australia firm. Featured at the ANU Techlauncher showcase. PM-ed the team via Jira.",
+      zh: "澳国立 Techlauncher 在校项目（2024.02 – 2024.11）：定制 YOLOv7 做人体关键点 + 跌倒姿态分析，Python 实时推理。与西澳公司合作的老年人跌倒预警系统。受邀 ANU Techlauncher 活动展示。用 Jira 管理团队任务。",
     },
   },
 ];
 
-// Real projects from resume — for `projects` command
+// Real projects — kept aligned with the slimmed-down resume.
 const REAL_PROJECTS = [
+  {
+    name: "Smart OCR Hub",
+    tag: "ML · Vision-LLM · vLLM · FastAPI",
+    desc: { en: "Lenovo customs-declaration OCR. Dual-path: Vision-LLM primary + on-prem CV fallback. Multi-GPU scheduling, end-to-end MLOps loop.", zh: "联想集团报关单 OCR。双路径：视觉语言模型主路径 + 本地 CV 兜底。多 GPU 调度，全链路 MLOps。" },
+  },
+  {
+    name: "AURA Multi-Agent Platform",
+    tag: "AI Agent · DAG · RAG · CRDT",
+    desc: { en: "Enterprise multi-agent collaboration. Visual DAG blueprint engine, on-prem RAG, fine-tuning pipeline, WebSocket+CRDT real-time co-edit.", zh: "企业级多智能体协作平台。可视化 DAG 蓝图引擎 + 本地 RAG + 微调流水线 + WebSocket+CRDT 协同编辑。" },
+  },
   {
     name: "CAM_FALL",
     tag: "Computer Vision · Python · YOLOv7",
     desc: { en: "Real-time fall detection + audio alert. Partnership w/ WA firm. ANU Techlauncher showcase.", zh: "实时跌倒检测 + 声音预警。与西澳公司合作。澳国立 Techlauncher 展示。" },
-  },
-  {
-    name: "Game Engine Extensions",
-    tag: "Graphics · C++ · Piccolo Engine",
-    desc: { en: "Color-grading LUT in fragment shader; air-control jump + wall collision; reflection-driven editor properties.", zh: "Fragment shader 里 LUT 色彩调整；跳跃空中控制 + 墙壁碰撞；基于反射系统的属性编辑器。" },
-  },
-  {
-    name: "Vulkan Grass Renderer",
-    tag: "Graphics · C++ · Vulkan",
-    desc: { en: "Bezier-curve grass blades with physics restoration; helicopter / natural / strong wind sim; distance + frustum culling.", zh: "贝塞尔曲线草叶 + 受力恢复物理；直升机风 / 自然风 / 强风模拟；距离剔除 + 视锥剔除优化。" },
-  },
-  {
-    name: "GoodGame",
-    tag: "Android · Java · Firebase",
-    desc: { en: "Social app with Firestore-backed real-time sync, multi-field search, custom card UI.", zh: "社交媒体 app。Firestore 实时数据同步 + 多字段搜索 + 自定义卡片 UI 组件。" },
-  },
-  {
-    name: "Metaverse Spring Festival",
-    tag: "Product · AR · Metaverse",
-    desc: { en: "Lingjing Oasis × Baidu Xirang × Fengyuzhu. 20K+ pre-reg in 2 days. ¥1M prize. Baidu official showcase.", zh: "灵境绿洲 × 百度希壤 × 风雨筑。预热 2 天预约 2W+，三天奖池 100W。百度希壤官方优秀案例。" },
-  },
-  {
-    name: "Aliyun Yunqi AR",
-    tag: "Product · AR · Mini-game",
-    desc: { en: "Aliyun Yunqi Conference AR navigation + Yunxiaobao match-3 mini-game. Product design + docs.", zh: "阿里云栖大会 AR 导航 + 云小宝消消乐小游戏。产品设计 + PRD。" },
   },
   {
     name: "K4RTO Portfolio",
