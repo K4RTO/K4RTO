@@ -120,6 +120,12 @@ const translations: Record<string, TranslationEntry> = {
   "music.viz.wave":            { en: "Wave",                      zh: "波形" },
   "music.viz.off":             { en: "Off",                       zh: "关闭" },
   "music.viz.show":            { en: "Show Vibe Visualizer",      zh: "显示氛围可视化" },
+  "music.capture.btn":         { en: "Capture",                   zh: "实时" },
+  "music.capture.start":       { en: "Share a tab with audio for real-time analysis", zh: "选择 Tab 并勾选共享音频以启用实时分析" },
+  "music.capture.stop":        { en: "Stop live capture",         zh: "停止实时分析" },
+  "music.capture.liveLabel":   { en: "LIVE — analysing shared tab audio", zh: "实时 — 正在分析共享 Tab 音频" },
+  "music.capture.hintNoAudio": { en: "No audio in shared stream — pick a tab + check 'Share tab audio'.", zh: "共享流里没有音频 — 选择 Tab + 勾选\"共享标签页音频\"。" },
+  "music.capture.unsupported": { en: "Tab-audio capture not supported in this browser.", zh: "此浏览器不支持 Tab 音频捕获。" },
 
   // ── Menu bar labels ──────────────────────────────────────────────────────
   "menubar.file":              { en: "File",                      zh: "文件" },
