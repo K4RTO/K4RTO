@@ -39,245 +39,11 @@ function writeLang(prev: LangText, lang: "en" | "zh", value: string): LangText {
 
 // ── Portfolio sample notes — sourced from K4RTO's Resume ──────────────────
 
-const NOW = Date.now();
-const DAY = 86400000;
-
-const SAMPLES: Note[] = [
-  {
-    id: "about-me",
-    pinned: true,
-    modifiedAt: NOW - 60_000,
-    title: { en: "About Me", zh: "关于我" },
-    content: {
-      en: `K4RTO
-
-Graphics / game-engine engineer with a Master of Computing from the Australian National University (QS #34) and a Bachelor's in Functional Materials from Donghua University (Project 211).
-
-What I actually do:
-• Build real-time computer vision systems (custom YOLOv7 keypoint detection)
-• Write game-engine code in C++ (Vulkan grass renderer, Piccolo engine extensions)
-• Ship metaverse / AR products at scale (Baidu Xirang × Lingjing Oasis Spring Festival event — 20K+ pre-registered, Baidu official showcase)
-• Operate WeChat mini-game data (Save the Town: 3M users, retention 15% → 27%)
-
-What I value:
-A mix of low-level engineering rigor and product instinct. I like problems where shaders meet user retention.
-
-How to reach me:
-Email    k4rtol@163.com
-GitHub   https://github.com/K4RTO
-LinkedIn https://www.linkedin.com/in/K4RTO/
-
-Try Terminal → 'whoami' for a faster version.`,
-      zh: `K4RTO
-
-澳大利亚国立大学计算机硕士（QS 第 34），东华大学 211 本科功能材料。
-
-我做什么：
-• 实时计算机视觉系统（定制 YOLOv7 人体关键点检测）
-• C++ 游戏引擎开发（Vulkan 草地物理渲染、Piccolo 引擎反射系统扩展）
-• 元宇宙 / AR 产品（百度希壤 × 灵境绿洲《元宇宙过大年》，2W+ 预约，百度官方优秀案例）
-• 微信小游戏数据运营（《救世小镇》300W 用户，留存 15% → 27%）
-
-我看重什么：
-低层工程能力 + 产品直觉的结合。我喜欢"shader 碰到留存率"这种问题。
-
-联系方式：
-邮箱     k4rtol@163.com
-GitHub   https://github.com/K4RTO
-LinkedIn https://www.linkedin.com/in/K4RTO/
-
-打开 Terminal 输入 'whoami' 看更快的版本。`,
-    },
-  },
-
-  {
-    id: "tech-stack",
-    pinned: true,
-    modifiedAt: NOW - 2 * 60_000,
-    title: { en: "Tech Stack", zh: "技术栈" },
-    content: {
-      en: `My toolbelt, grouped by use:
-
-LANGUAGES (daily)
-  C++ · Python · TypeScript · Java · JavaScript
-
-GRAPHICS / GPU
-  Vulkan · GLSL shaders · LUT color grading
-  Bezier-curve geometry · Frustum / distance culling
-
-GAME ENGINES
-  Piccolo (reflection-driven editor)
-  Cocos Creator (WeChat mini-games)
-  Unity (basics)
-
-COMPUTER VISION
-  YOLOv7 (custom training)
-  Keypoint detection · Pose analysis
-  Real-time inference pipelines
-
-MOBILE / WEB
-  Android · Firebase Firestore
-  Next.js 15 · React 19 · Tailwind 4
-
-PRODUCT / OPS
-  Jira · Retention analytics
-  AR design · Prototype / PRD writing
-  Metaverse event production
-
-Honesty note:
-"Daily" means I've shipped production code in it. Less-frequent stacks (Rust / Go / Unreal / WebGPU) are open to learn for the right role.`,
-      zh: `按用途分组的工具箱：
-
-语言（日用）
-  C++ · Python · TypeScript · Java · JavaScript
-
-图形 / GPU
-  Vulkan · GLSL 着色器 · LUT 色彩调整
-  贝塞尔曲线几何 · 视锥剔除 / 距离剔除
-
-游戏引擎
-  Piccolo（反射驱动编辑器）
-  Cocos Creator（微信小游戏）
-  Unity（基础）
-
-计算机视觉
-  YOLOv7（定制训练）
-  人体关键点检测 · 姿态分析
-  实时推理 pipeline
-
-移动 / Web
-  Android · Firebase Firestore
-  Next.js 15 · React 19 · Tailwind 4
-
-产品 / 运营
-  Jira · 留存数据分析
-  AR 设计 · 产品原型 / PRD 撰写
-  元宇宙活动策划
-
-诚实说明：
-"日用"是指我上过生产代码。其他栈（Rust / Go / Unreal / WebGPU）对的岗位都愿意现学。`,
-    },
-  },
-
-  {
-    id: "working-style",
-    pinned: true,
-    modifiedAt: NOW - 3 * 60_000,
-    title: { en: "Working Style", zh: "工作风格" },
-    content: {
-      en: `Collaboration
-  • Async by default — written specs over impromptu calls
-  • Sync for ambiguity / debugging / kickoffs
-  • Comfort zone is small focused teams (3–6 people)
-
-Code reviews
-  • I give them seriously. Expect line-level comments.
-  • Same for receiving — I want the reviewer to catch what I missed,
-    not nod through.
-
-Ownership
-  • From spec writing → shipping → on-call.
-  • I dislike "thrown over the wall" handoffs.
-
-Learning
-  • I read source code more than tutorials.
-  • Best learning happens during real shipping pressure.
-
-What I don't do well
-  • Meetings without an agenda.
-  • Sprawling MVPs that never ship.
-
-When I'm at my best
-  • A specific problem, clear constraints, freedom on implementation.`,
-      zh: `协作
-  • 默认 async — 文档化的 spec 优于临时拉会
-  • 模糊 / 调试 / 启动期改用 sync
-  • 最舒适的是 3-6 人小而专注的团队
-
-代码审查
-  • 给的认真，会有行级评论
-  • 收的也是 — 想让 reviewer 抓到我漏的，而不是过水流程
-
-负责制
-  • 从写 spec → 上线 → on-call 全包
-  • 不喜欢"扔过墙"式交接
-
-学习
-  • 读源码比读教程多
-  • 真正学到东西的时候都是上线压力下
-
-我做不好的
-  • 没 agenda 的会议
-  • 一直 MVP 不上线的项目
-
-我状态最好的时候
-  • 具体的问题 + 明确的约束 + 实现自由`,
-    },
-  },
-
-  {
-    id: "why-hire-me",
-    pinned: true,
-    modifiedAt: NOW - 4 * 60_000,
-    title: { en: "Why Hire Me", zh: "为什么雇我" },
-    content: {
-      en: `Three concrete reasons:
-
-1. I shipped the first major metaverse event in China.
-   Lingjing Oasis × Baidu Xirang × Fengyuzhu — "Metaverse Spring Festival".
-   Led product design, prototype, and dev schedule.
-   20K+ pre-registered users in 2 days.
-   3-day event with a ¥1M prize pool.
-   Featured as Baidu Xirang's official showcase case.
-
-2. I moved a game's 30-day retention from 15% → 27% (+80%).
-   《Save the Town》 at Lingdong Interactive.
-   Iterated user flow + onboarding + retention hooks over 3 months.
-   3M total users via WeChat optimization channel.
-   ¥500K cumulative revenue.
-
-3. I built a real-time fall-detection CV system that ANU showcased.
-   Custom YOLOv7 for keypoint + pose analysis in Python.
-   Partnership with a Western Australia firm.
-   Featured at the ANU Techlauncher event.
-   PM-ed the team via Jira while writing the model code.
-
-Pattern across these:
-  Multi-disciplinary — graphics, ML, product, ops.
-  Quantified outcomes — not "I worked on X".
-  Stuff people actually saw — Baidu showcase, ANU showcase, 3M users.
-
-Want the full story? Email k4rtol@163.com.`,
-      zh: `三条具体理由：
-
-1. 我做过国内第一个元宇宙大型活动。
-   灵境绿洲 × 百度希壤 × 风雨筑《元宇宙过大年》。
-   负责产品原型设计、PRD 撰写、研发进度管理。
-   预热 2 天预约 2W+ 用户。
-   三天活动，奖池累计 100W。
-   成为百度希壤元宇宙官方优秀案例。
-
-2. 我把一款游戏 30 日留存从 15% 拉到 27%（+80%）。
-   灵动互娱《救世小镇》。
-   3 个月迭代新手引导 + 主循环 + 留存钩子。
-   通过微信优选累计 300W 用户。
-   三月营收 50W。
-
-3. 我做了 ANU 拿出去展示的实时跌倒检测系统。
-   Python 定制 YOLOv7 做人体关键点 + 姿态分析。
-   与西澳公司合作。
-   受邀澳国立 Techlauncher 活动展示。
-   一边写模型，一边用 Jira 管团队。
-
-这三件事的共同点：
-  跨学科 — 图形、ML、产品、运营。
-  可量化的结果 — 不是"参与过 X"。
-  外人看得见 — 百度展示、ANU 展示、300W 用户。
-
-想了解细节？发邮件 k4rtol@163.com。`,
-    },
-  },
-];
+// Empty by default — no preset portfolio notes. Users start with a blank
+// Notes app and can create their own. (Previously seeded About Me / Tech
+// Stack / Working Style / Why Hire Me — removed per K4RTO's request as
+// those duplicated content already on the live portfolio + resume.)
+const SAMPLES: Note[] = [];
 
 // ── Rich-text editor ─────────────────────────────────────────────────────
 //
@@ -465,10 +231,12 @@ function FormatToolbar({ editorRef, disabled, pinnedLabel, t }: FormatToolbarPro
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+const DAY_MS = 86_400_000;
+
 function fmtDate(ts: number, lang: "en" | "zh"): string {
   const diff = Date.now() - ts;
-  if (diff < DAY) return lang === "zh" ? "今天" : "Today";
-  if (diff < 2 * DAY) return lang === "zh" ? "昨天" : "Yesterday";
+  if (diff < DAY_MS) return lang === "zh" ? "今天" : "Today";
+  if (diff < 2 * DAY_MS) return lang === "zh" ? "昨天" : "Yesterday";
   const locale = lang === "zh" ? "zh-CN" : "en-US";
   return new Date(ts).toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
@@ -482,7 +250,9 @@ export default function Notes(_props: AppComponentProps) {
   const t = useT();
   const { lang } = useSystem();
   const [notes, setNotes] = useState<Note[]>(SAMPLES);
-  const [selId, setSelId] = useState<string | null>("about-me");
+  // No default selection — preset notes were removed; the user is expected
+  // to either start typing a new note or pick one from the (initially empty) list.
+  const [selId, setSelId] = useState<string | null>(null);
   // Ref passed to RichEditor so the FormatToolbar can run execCommand against
   // the right element. Reset implicitly when the editor remounts (note switch).
   const editorRef = useRef<HTMLDivElement>(null);
