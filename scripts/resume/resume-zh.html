@@ -33,21 +33,22 @@
   </div>
   <div class="r-work-body">
     <div class="r-project" style="margin-top:4pt;">
-      <div class="r-project-title">智能识别中枢 — 联想集团海关报关系统 (Python / Vision-LLM)</div>
+      <div class="r-project-title">智能识别中枢 — <b>联想集团</b>海关报关自动识别系统</div>
       <ul class="r-bullets">
-        <li><b>双路径 OCR 架构:</b> 主路径 qwen3-vl-plus 整页 OCR + LLM 字段合并; DocLayout-YOLO + PaddleOCR-VL-1.5 本地兜底, 保证 API 不可用时仍可服务.</li>
-        <li><b>多 GPU 集群调度:</b> vLLM 多实例 + Redis 状态总线 + SSE 实时推送 GPU 利用率与告警, 支持多文档批量并发.</li>
-        <li><b>全链路 MLOps:</b> MLflow 实验追踪 + 人工复核闭环 + 持续微调, 模型迭代有据可循.</li>
-        <li><b>技术栈:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
+        <li><b>端到端 OCR 流水线:</b> 视觉语言模型整页 OCR + LLM 字段合并主路径, 本地 CV 模型兜底, 保障 API 故障时业务连续.</li>
+        <li><b>多 GPU 推理集群:</b> 实时调度 + GPU 利用率/告警监测, 支持多文档批量并发处理.</li>
+        <li><b>全链路 MLOps:</b> 实验追踪 + 人工复核闭环 + 持续微调, 模型每次迭代都可追溯.</li>
+        <li><b>技术栈:</b> Python · FastAPI · vLLM · Redis · PostgreSQL · MLflow · SvelteKit.</li>
       </ul>
     </div>
     <div class="r-project" style="margin-top:6pt;">
-      <div class="r-project-title">AURA — 企业级多智能体协作平台 (Python / SvelteFlow)</div>
+      <div class="r-project-title">AURA — <b>企业级</b>多智能体协作平台</div>
       <ul class="r-bullets">
-        <li><b>蓝图编排引擎:</b> 基于 SvelteFlow 的可视化 DAG 编辑器, 把业务 SOP 画成可复用的智能体工作流, 支持并行分发、限速、版本快照与回放.</li>
-        <li><b>多场景适配:</b> 会议(实时转写 + 纪要自动派发)、项目(蓝图执行 + RAG 归档)、管理(权限分组 + 全链路审计)三类组织工作的统一承载面.</li>
-        <li><b>实时协作内核:</b> Socket.IO + Redis pub/sub + Yjs 协同编辑, 支撑多人同屏多 Agent 并行任务.</li>
-        <li><b>技术栈:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow.</li>
+        <li><b>蓝图编排引擎:</b> 可视化 DAG 编辑器, 把业务 SOP 画成可复用的智能体工作流, 支持并行分发、限速、版本快照与回放.</li>
+        <li><b>RAG 知识库 + 自部署:</b> 企业私有数据本地化, 检索增强问答 + 文档归档, 数据不出企业边界.</li>
+        <li><b>微调与后训练:</b> 内置训练流水线, 让业务专属模型在企业内部沉淀和持续演进.</li>
+        <li><b>实时协作内核:</b> WebSocket + CRDT 协同编辑, 支撑多人同屏多 Agent 并行任务.</li>
+        <li><b>技术栈:</b> Python · FastAPI · SQLAlchemy 2.0 · PostgreSQL · SvelteKit 5 · MLflow.</li>
       </ul>
     </div>
   </div>

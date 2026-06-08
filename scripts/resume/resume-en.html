@@ -34,21 +34,22 @@
   </div>
   <div class="r-work-body">
     <div class="r-project" style="margin-top:4pt;">
-      <div class="r-project-title">Smart OCR Hub — Lenovo Customs Declaration System (Python / Vision-LLM)</div>
+      <div class="r-project-title">Smart OCR Hub — <b>Lenovo</b> Customs Declaration Auto-Recognition</div>
       <ul class="r-bullets">
-        <li><b>Dual-path OCR architecture:</b> primary path runs qwen3-vl-plus full-page OCR + LLM field merging; DocLayout-YOLO + PaddleOCR-VL-1.5 serves as local fallback so the service stays up when the API is unreachable.</li>
-        <li><b>Multi-GPU cluster scheduling:</b> vLLM instances + Redis state bus + SSE for live GPU utilization and alert push, supporting batch-concurrent multi-document processing.</li>
-        <li><b>End-to-end MLOps:</b> MLflow experiment tracking + human review loop + continuous fine-tuning, giving every model iteration an audit trail.</li>
-        <li><b>Stack:</b> FastAPI · SvelteKit · PostgreSQL · Redis · vLLM · MLflow.</li>
+        <li><b>End-to-end OCR pipeline:</b> Vision-Language Model primary path with LLM field merging; on-prem CV model as fallback for resilience when the upstream API is unreachable.</li>
+        <li><b>Multi-GPU inference cluster:</b> real-time scheduling + GPU utilisation / alert monitoring, supporting batch-concurrent multi-document processing.</li>
+        <li><b>End-to-end MLOps:</b> experiment tracking + human-review loop + continuous fine-tuning, giving every model iteration an audit trail.</li>
+        <li><b>Stack:</b> Python · FastAPI · vLLM · Redis · PostgreSQL · MLflow · SvelteKit.</li>
       </ul>
     </div>
     <div class="r-project" style="margin-top:6pt;">
-      <div class="r-project-title">AURA — Enterprise Multi-Agent Collaboration Platform (Python / SvelteFlow)</div>
+      <div class="r-project-title">AURA — <b>Enterprise-grade</b> Multi-Agent Collaboration Platform</div>
       <ul class="r-bullets">
-        <li><b>Blueprint orchestration engine:</b> visual DAG editor built on SvelteFlow turns SOPs into reusable agent workflows, with parallel dispatch, rate-limiting, version snapshots, and replay.</li>
-        <li><b>Multi-scenario adaptation:</b> a unified surface for meetings (live transcription + auto-dispatched minutes), projects (blueprint execution + RAG archival), and management (permission grouping + full audit trail).</li>
-        <li><b>Real-time collaboration core:</b> Socket.IO + Redis pub/sub + Yjs collaborative editing, supporting multi-user multi-Agent parallel tasks on a single screen.</li>
-        <li><b>Stack:</b> FastAPI · SQLAlchemy 2.0 · PostgreSQL · Alembic · SvelteKit 5 · MLflow.</li>
+        <li><b>Blueprint orchestration engine:</b> visual DAG editor turns SOPs into reusable agent workflows with parallel dispatch, rate-limiting, version snapshots, and replay.</li>
+        <li><b>RAG + self-hosted private data:</b> retrieval-augmented Q&amp;A over a private knowledge base, deployed inside the customer's perimeter — data never leaves the org.</li>
+        <li><b>Fine-tuning &amp; post-training:</b> built-in training pipeline so business-specific models accrete and continuously evolve inside the organisation.</li>
+        <li><b>Real-time collaboration core:</b> WebSocket + CRDT collaborative editing, supporting multi-user multi-Agent parallel tasks on a single screen.</li>
+        <li><b>Stack:</b> Python · FastAPI · SQLAlchemy 2.0 · PostgreSQL · SvelteKit 5 · MLflow.</li>
       </ul>
     </div>
   </div>
