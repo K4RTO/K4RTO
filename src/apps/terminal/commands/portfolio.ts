@@ -34,20 +34,22 @@ const BIO = {
 const EDUCATION = [
   {
     school: { en: "Australian National University (ANU)", zh: "澳大利亚国立大学 (ANU)" },
-    degree: { en: "Master of Computing · QS #34", zh: "计算机硕士 · QS 第 34" },
+    degree: { en: "Master of Computing · QS #34 · ML Specialization", zh: "计算机硕士 · QS 第 34 · 机器学习专业" },
+    period: "2023.02 - 2024.11",
     detail: { en: "Computer Vision, Graphics, Game Dev, ML, Advanced Algorithms, SQL", zh: "计算机视觉、图形学、游戏开发、机器学习、高级算法、SQL 数据库" },
   },
   {
     school: { en: "Donghua University (Project 211)", zh: "东华大学 (211)" },
     degree: { en: "B.S. Functional Materials", zh: "本科 · 功能材料" },
+    period: "",
     detail: { en: "", zh: "" },
   },
 ];
 
 const SKILLS: Array<{ category: { en: string; zh: string }; items: string[] }> = [
   { category: { en: "Languages",       zh: "语言" },       items: ["Python", "C++", "TypeScript", "JavaScript"] },
-  { category: { en: "ML / AI Agents",  zh: "机器学习 / AI Agent" }, items: ["vLLM", "Vision-LLM (qwen-vl)", "RAG", "Fine-tuning", "MLflow", "DAG orchestration"] },
-  { category: { en: "Computer Vision", zh: "计算机视觉" }, items: ["YOLOv7", "Keypoint detection", "Pose analysis", "OCR pipelines", "Real-time inference"] },
+  { category: { en: "ML / AI Agents",  zh: "机器学习 / AI Agent" }, items: ["Vision-LLM", "RAG", "Fine-tuning", "Post-training", "vLLM", "MLflow", "DAG orchestration"] },
+  { category: { en: "Computer Vision", zh: "计算机视觉" }, items: ["Keypoint detection", "Pose analysis", "OCR pipelines", "Real-time inference"] },
   { category: { en: "Graphics / GPU",  zh: "图形 / GPU" }, items: ["Vulkan", "GLSL", "Piccolo engine", "LUT color grading", "Bezier curves", "Frustum culling"] },
   { category: { en: "Backend / Infra", zh: "后端 / 基础设施" }, items: ["FastAPI", "PostgreSQL", "SQLAlchemy 2.0", "Redis", "Docker", "Alembic"] },
   { category: { en: "Web",             zh: "Web" },         items: ["SvelteKit 5", "Next.js 15", "React 19", "Tailwind 4"] },
@@ -79,18 +81,18 @@ const WHY_HIRE = [
 const REAL_PROJECTS = [
   {
     name: "Smart OCR Hub",
-    tag: "ML · Vision-LLM · vLLM · FastAPI",
-    desc: { en: "Lenovo customs-declaration OCR. Dual-path: Vision-LLM primary + on-prem CV fallback. Multi-GPU scheduling, end-to-end MLOps loop.", zh: "联想集团报关单 OCR。双路径：视觉语言模型主路径 + 本地 CV 兜底。多 GPU 调度，全链路 MLOps。" },
+    tag: "Lenovo · ML · Vision-LLM · MLOps",
+    desc: { en: "End-to-end OCR + structured-extraction pipeline for Lenovo's customs declaration workflow. Vision-LLM primary with on-prem CV fallback; multi-GPU inference + audited MLOps loop with human review and continuous fine-tuning.", zh: "为联想集团海关报关流程构建的端到端 OCR 与结构化提取流水线。视觉语言模型主路径 + 本地 CV 兜底，多 GPU 推理 + 全链路 MLOps 闭环（人工复核 + 持续微调）。" },
   },
   {
     name: "AURA Multi-Agent Platform",
-    tag: "AI Agent · DAG · RAG · CRDT",
-    desc: { en: "Enterprise multi-agent collaboration. Visual DAG blueprint engine, on-prem RAG, fine-tuning pipeline, WebSocket+CRDT real-time co-edit.", zh: "企业级多智能体协作平台。可视化 DAG 蓝图引擎 + 本地 RAG + 微调流水线 + WebSocket+CRDT 协同编辑。" },
+    tag: "Enterprise · DAG · RAG · Fine-tuning · CRDT",
+    desc: { en: "Enterprise-grade multi-agent collaboration platform. Visual DAG blueprint editor, RAG over self-hosted private data, fine-tuning and post-training pipelines, WebSocket + CRDT real-time co-editing.", zh: "企业级多智能体协作平台。可视化 DAG 蓝图编辑器 + 私有数据自部署 RAG + 微调与后训练流水线 + WebSocket+CRDT 实时协同编辑。" },
   },
   {
     name: "CAM_FALL",
-    tag: "Computer Vision · Python · YOLOv7",
-    desc: { en: "Real-time fall detection + audio alert. Partnership w/ WA firm. ANU Techlauncher showcase.", zh: "实时跌倒检测 + 声音预警。与西澳公司合作。澳国立 Techlauncher 展示。" },
+    tag: "Computer Vision · Python · ANU Techlauncher",
+    desc: { en: "Real-time human fall detection + audio alert. Partnership with a Western Australia firm. Presented at the ANU Techlauncher showcase.", zh: "实时跌倒检测 + 声音预警。与西澳公司合作。受邀澳国立 Techlauncher 展示。" },
   },
   {
     name: "K4RTO Portfolio",
@@ -161,6 +163,7 @@ export const portfolioCommands: Command[] = [
         ctx.print({ segs: [
           { text: "  • ", color: COLORS.dim },
           { text: e.school[ctx.lang], color: COLORS.success },
+          ...(e.period ? [{ text: "   " + e.period, color: COLORS.dim }] : []),
         ]});
         ctx.println("    " + e.degree[ctx.lang], COLORS.text);
         if (e.detail[ctx.lang]) ctx.println("    " + e.detail[ctx.lang], COLORS.dim);

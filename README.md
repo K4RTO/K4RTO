@@ -21,9 +21,9 @@
 
 ### 🧪 Recent academic work
 
-**ANU Master of Computing** (QS #34) · *ML Specialization* · Feb 2024 – Nov 2024
+**ANU Master of Computing** (QS #34) · *ML Specialization* · Feb 2023 – Nov 2024
 
-ANU Techlauncher Capstone: real-time fall-detection CV system in partnership with a Western Australia industry client. Custom YOLOv7 keypoint detection + pose analysis; presented at the ANU Techlauncher showcase.
+ANU Techlauncher Capstone (Feb 2024 – Nov 2024): real-time human fall-detection CV system in partnership with a Western Australia industry client. Keypoint detection + pose analysis; presented at the ANU Techlauncher showcase.
 
 ### 🧰 Tech I reach for
 
