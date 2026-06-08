@@ -44,14 +44,28 @@ ANU Techlauncher Capstone: real-time fall-detection CV system in partnership wit
 
 ### 📊 GitHub stats
 
+[![Followers](https://img.shields.io/github/followers/K4RTO?label=Followers&style=for-the-badge&color=181717&logo=github)](https://github.com/K4RTO)
+[![Stars](https://img.shields.io/github/stars/K4RTO?label=Total%20Stars&style=for-the-badge&color=181717&logo=github)](https://github.com/K4RTO?tab=repositories)
+[![Profile views](https://komarev.com/ghpvc/?username=K4RTO&style=for-the-badge&color=181717&label=Profile+views)](https://github.com/K4RTO)
+
 <table>
   <tr>
-    <td><img src="https://github-readme-stats.vercel.app/api?username=K4RTO&show_icons=true&theme=tokyonight&hide_border=true&include_all_commits=true&count_private=true" alt="K4RTO GitHub stats" /></td>
-    <td><img src="https://github-readme-streak-stats.herokuapp.com/?user=K4RTO&theme=tokyonight&hide_border=true" alt="K4RTO streak" /></td>
+    <td>
+      <a href="https://github.com/anuraghazra/github-readme-stats">
+        <img src="https://github-readme-stats.vercel.app/api?username=K4RTO&show_icons=true&theme=tokyonight&hide_border=true&include_all_commits=true&count_private=true&cache_seconds=86400" alt="K4RTO GitHub stats" />
+      </a>
+    </td>
+    <td>
+      <a href="https://github.com/DenverCoder1/github-readme-streak-stats">
+        <img src="https://github-readme-streak-stats.herokuapp.com/?user=K4RTO&theme=tokyonight&hide_border=true" alt="K4RTO streak" />
+      </a>
+    </td>
   </tr>
 </table>
 
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=K4RTO&layout=compact&theme=tokyonight&hide_border=true&hide=html,css,scss" alt="Top languages" />
+<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=K4RTO&layout=compact&theme=tokyonight&hide_border=true&hide=html,css,scss&cache_seconds=86400" alt="Top languages" />
+
+<sub>The stats / top-langs cards above are served by the public `github-readme-stats.vercel.app` instance, which occasionally rate-limits or 503s. Hard-refresh in a few minutes if you see broken images — the shields.io badges always work.</sub>
 
 ### 🌐 About this repo
 
