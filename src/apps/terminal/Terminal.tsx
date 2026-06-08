@@ -146,7 +146,7 @@ export default function Terminal({ windowId, processId: _pid }: AppComponentProp
     : `Last login: ${now.toDateString()} ${now.toTimeString().slice(0, 8)} on ttys000`;
   const welcomeLine: Line = {
     segs: [
-      { text: lang === "zh" ? "输入 'help' 看可用命令，'whoami' 看我是谁，'why' 看为什么雇我。" : "Type 'help' for commands, 'whoami' for intro, 'why' for the hire pitch.", color: COLORS.dim },
+      { text: lang === "zh" ? "输入 'help' 看可用命令，'resume' 打开简历。" : "Type 'help' for commands, 'resume' to open the CV.", color: COLORS.dim },
     ],
   };
 
