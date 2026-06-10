@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import Image from "next/image";
 import { ContextMenu, type MenuItem } from "@/components/shared/ContextMenu";
 import { useT } from "@/contexts/SystemContext";
@@ -11,14 +11,13 @@ import { withBase } from "@/lib/paths";
 // VFS entry on the desktop. Renders an extension label badge so PDF / TXT /
 // MD etc. are distinguishable at a glance.
 //
-// Module-level counter so each <DocumentIcon> instance gets a globally-unique
-// gradient id. Repeating `id="docGrad"` across instances would violate the
-// SVG/HTML spec (browsers use the *first* matching def), and any future
-// per-icon gradient tweak would silently fail.
-let docIconCounter = 0;
-
+// useId gives each <DocumentIcon> instance a globally-unique gradient id that
+// is also stable across SSR and hydration. Repeating `id="docGrad"` across
+// instances would violate the SVG/HTML spec (browsers use the *first* matching
+// def); a module-level counter (the previous approach) diverges between the
+// server and client render passes and trips React's hydration mismatch.
 function DocumentIcon({ ext, tint }: { ext: string; tint: string }) {
-  const gradId = useMemo(() => `docGrad-${++docIconCounter}`, []);
+  const gradId = `docGrad-${useId()}`;
   return (
     <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
       <defs>

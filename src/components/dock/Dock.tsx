@@ -66,15 +66,24 @@ function DockItem({ name, icon, svgIcon, isRunning, onClick, onContextMenu, scal
   const [showTooltip, setShowTooltip] = useState(false);
   const size = baseSize * scale;
   const tr = scale === 1 ? "width 0.2s ease" : "none";
+  // Icon render size, used for BOTH the next/image props and the inline style.
+  // Keeping them identical (and integer) avoids Next's "width or height
+  // modified, but not the other" warning that fires when the CSS size drifts
+  // fractionally from the attribute size.
+  const iconPx = Math.round(size * 1.2);
 
   return (
     <div
       data-dock-item
+      role="button"
+      tabIndex={0}
+      aria-label={name}
       className="relative flex-shrink-0 cursor-pointer"
       style={{ width: size, height: baseSize + DOT_AREA, transition: tr }}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
       onClick={onClick}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }}
       onContextMenu={e => { e.preventDefault(); onContextMenu?.(e.clientX, e.clientY); }}
     >
       {showTooltip && (
@@ -94,11 +103,15 @@ function DockItem({ name, icon, svgIcon, isRunning, onClick, onContextMenu, scal
           <Image
             src={`/System/Icons/96x96/${icon}`}
             alt={name}
-            width={Math.round(size * 1.2)}
-            height={Math.round(size * 1.2)}
+            width={iconPx}
+            height={iconPx}
             draggable={false}
             className="drop-shadow-lg"
-            style={{ width: size * 1.2, height: size * 1.2, objectFit: "contain" }}
+            // maxWidth: none — Tailwind preflight puts `max-width: 100%` on
+            // every <img>; inside the size-wide wrapper that clamps width to
+            // `size` while height stays at iconPx (= size * 1.2), silently
+            // stretching the icon ~20% taller than wide.
+            style={{ width: iconPx, height: iconPx, maxWidth: "none", objectFit: "contain" }}
           />
         ) : (
           <div style={{ width: size * 0.8, height: size * 0.8 }}>{svgIcon}</div>

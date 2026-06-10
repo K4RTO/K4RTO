@@ -242,7 +242,7 @@ function ClockWidget() {
 
 function WifiIcon() {
   return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="opacity-70">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M1 4c3.9-3.5 10.1-3.5 14 0" strokeLinecap="round"/>
       <path d="M3.5 7c2.5-2.2 6.5-2.2 9 0" strokeLinecap="round"/>
       <path d="M6 10c1.1-1 2.9-1 4 0" strokeLinecap="round"/>
@@ -252,11 +252,53 @@ function WifiIcon() {
 
 function BatteryIcon() {
   return (
-    <svg width="22" height="12" viewBox="0 0 22 12" fill="none" className="opacity-70">
+    <svg width="22" height="12" viewBox="0 0 22 12" fill="none">
       <rect x="0.5" y="0.5" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="1"/>
       <rect x="2" y="2" width="13" height="8" rx="1" fill="currentColor" opacity="0.3"/>
       <path d="M20 4v4a1 1 0 0 0 0-4z" fill="currentColor"/>
     </svg>
+  );
+}
+
+// Status popover for the Wi-Fi / battery menu-bar icons. Real macOS opens a
+// Control Center panel here; we show a compact read-only status card in the
+// same glass style as the dropdown menus. Closes on outside mousedown, same
+// pattern as DropdownMenu.
+function StatusPopover({
+  title,
+  rows,
+  onClose,
+}: {
+  title: string;
+  rows: { label: string; detail?: string }[];
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const timer = setTimeout(() => document.addEventListener("mousedown", handler), 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="glass-surface glass-radius-popover absolute top-full right-0 mt-0.5 min-w-[220px] py-2 px-3 z-[10000]"
+    >
+      <div className="text-[13px] font-semibold text-white/90 pb-1.5">{title}</div>
+      {rows.map((row) => (
+        <div key={row.label} className="flex items-center justify-between py-1">
+          <span className="text-[13px] text-white/85">{row.label}</span>
+          {row.detail && <span className="text-[11px] text-white/50 ml-4">{row.detail}</span>}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -353,6 +395,11 @@ export function MenuBar({
   onShowAll,
   onShowLaunchpad,
   onShowMissionControl,
+  onLockScreen,
+  onLogOut,
+  onSleep,
+  onRestart,
+  onShutDown,
 }: {
   activeAppName?: string;
   activeAppId?: string | null;
@@ -373,9 +420,16 @@ export function MenuBar({
   onShowLaunchpad?: () => void;
   /** Open the system Mission Control overlay (matches the Dock icon + F3). */
   onShowMissionControl?: () => void;
+  onLockScreen?: () => void;
+  onLogOut?: () => void;
+  onSleep?: () => void;
+  onRestart?: () => void;
+  onShutDown?: () => void;
 }) {
   const t = useT();
   const [openMenu, setOpenMenu] = useState<MenuKey | null>(null);
+  // Which status popover (Wi-Fi / battery) is showing, if any.
+  const [statusPanel, setStatusPanel] = useState<null | "wifi" | "battery">(null);
 
   // Resolve localized app name from appId, fall back to prop
   const localizedAppName = activeAppId && APP_NAME_KEYS[activeAppId]
@@ -393,12 +447,12 @@ export function MenuBar({
     { label: "", separator: true },
     { label: t("menu.apple.forceQuit"), shortcut: "⌥⌘⎋", disabled: true },
     { label: "", separator: true },
-    { label: t("menu.apple.sleep"), disabled: true },
-    { label: t("menu.apple.restart"), disabled: true },
-    { label: t("menu.apple.shutdown"), disabled: true },
+    { label: t("menu.apple.sleep"), action: onSleep },
+    { label: t("menu.apple.restart"), action: onRestart },
+    { label: t("menu.apple.shutdown"), action: onShutDown },
     { label: "", separator: true },
-    { label: t("menu.apple.lockScreen"), shortcut: "⌃⌘Q", disabled: true },
-    { label: t("menu.apple.logOut"), shortcut: "⇧⌘Q", disabled: true },
+    { label: t("menu.apple.lockScreen"), shortcut: "⌃⌘Q", action: onLockScreen },
+    { label: t("menu.apple.logOut"), shortcut: "⇧⌘Q", action: onLogOut },
   ];
 
   const isFinder = activeAppId === "finder";
@@ -555,6 +609,10 @@ export function MenuBar({
   ];
 
   const handleMenuClick = useCallback((menuKey: MenuKey) => {
+    // Explicitly close any status popover — menus and popovers are mutually
+    // exclusive. Relying on the popover's outside-mousedown handler alone is
+    // an implicit contract that breaks if trigger events ever change.
+    setStatusPanel(null);
     setOpenMenu((prev) => (prev === menuKey ? null : menuKey));
   }, []);
 
@@ -676,13 +734,50 @@ export function MenuBar({
         {/* Input method toggle */}
         <button
           onClick={onToggleInputMethod}
-          className="text-[13px] text-white/85 px-1.5 py-0.5 rounded hover:bg-white/10 font-medium"
+          className="text-[13px] text-white/85 px-2 py-0.5 rounded hover:bg-white/10 font-medium"
           style={{ minWidth: 28 }}
         >
           {inputMethod === "en" ? "En" : "中"}
         </button>
-        <WifiIcon />
-        <BatteryIcon />
+        {/* Wi-Fi / battery — clicking opens a compact status card, echoing the
+            Control Center panels real macOS shows from these icons. */}
+        <div className="relative">
+          <button
+            onClick={() => { setOpenMenu(null); setStatusPanel(statusPanel === "wifi" ? null : "wifi"); }}
+            className="flex items-center justify-center w-6 h-7 rounded hover:bg-white/10 opacity-70 hover:opacity-100"
+            title={t("menubar.wifi.title")}
+            aria-expanded={statusPanel === "wifi"}
+          >
+            <WifiIcon />
+          </button>
+          {statusPanel === "wifi" && (
+            <StatusPopover
+              title={t("menubar.wifi.title")}
+              rows={[{ label: "K4RTO-Net", detail: t("menubar.wifi.connected") }]}
+              onClose={() => setStatusPanel(null)}
+            />
+          )}
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => { setOpenMenu(null); setStatusPanel(statusPanel === "battery" ? null : "battery"); }}
+            className="flex items-center justify-center w-7 h-7 rounded hover:bg-white/10 opacity-70 hover:opacity-100"
+            title={t("menubar.battery.title")}
+            aria-expanded={statusPanel === "battery"}
+          >
+            <BatteryIcon />
+          </button>
+          {statusPanel === "battery" && (
+            <StatusPopover
+              title={t("menubar.battery.title")}
+              rows={[
+                { label: "100%", detail: t("menubar.battery.charged") },
+                { label: t("menubar.battery.source"), detail: t("menubar.battery.adapter") },
+              ]}
+              onClose={() => setStatusPanel(null)}
+            />
+          )}
+        </div>
         <ClockWidget />
       </div>
     </header>

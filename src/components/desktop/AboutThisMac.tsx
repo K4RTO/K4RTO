@@ -188,8 +188,11 @@ export function AboutThisMac({ onClose }: { onClose: () => void }) {
         <div style={{ height: "0.5px", backgroundColor: "rgba(255,255,255,0.08)", margin: "0 24px" }} />
 
         {/* ── Links ── */}
+        {/* Rows without an href are hidden rather than rendered dead — a row
+            that looks clickable but does nothing reads as a bug. Fill in the
+            Spotify / Steam hrefs above to bring them back. */}
         <div style={{ padding: "12px 16px 16px" }}>
-          {LINKS.map(({ id, label, href, iconBg, iconColor, iconBorder, Icon }) => (
+          {LINKS.filter(({ href }) => href).map(({ id, label, href, iconBg, iconColor, iconBorder, Icon }) => (
             <a
               key={id}
               href={href || undefined}

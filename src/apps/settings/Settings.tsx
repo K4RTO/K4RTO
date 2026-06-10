@@ -17,11 +17,13 @@ const ACCENT_COLOR_KEYS = [
 ];
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  // A real <button> (not a div) so the switch is keyboard-focusable and
+  // announces its state via aria-pressed.
   return (
-    <div onClick={() => onChange(!on)} className="relative cursor-pointer flex-shrink-0"
+    <button onClick={() => onChange(!on)} aria-pressed={on} className="relative cursor-pointer flex-shrink-0"
       style={{ width: 36, height: 20, borderRadius: 10, backgroundColor: on ? "#28c840" : "rgba(255,255,255,0.2)", transition: "background-color 0.2s" }}>
       <div style={{ width: 16, height: 16, borderRadius: "50%", backgroundColor: "white", position: "absolute", top: 2, left: on ? 18 : 2, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
-    </div>
+    </button>
   );
 }
 
@@ -30,7 +32,8 @@ function Row({ label, desc, children }: { label: string; desc?: string; children
   return (
     <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
       <div>
-        <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 14 }}>{label}</div>
+        {/* 13px matches macOS System Settings row labels (HIG body size). */}
+        <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 13 }}>{label}</div>
         {desc && <div style={{ ...dim, fontSize: 12, marginTop: 2 }}>{desc}</div>}
       </div>
       {children}

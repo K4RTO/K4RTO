@@ -134,7 +134,9 @@ export function MissionControl({ onClose }: MissionControlProps) {
       >
         {visibleWindows.length === 0
           ? t("missionControl.empty")
-          : t("missionControl.count", { n: String(visibleWindows.length) })}
+          : visibleWindows.length === 1
+            ? t("missionControl.countOne")
+            : t("missionControl.count", { n: String(visibleWindows.length) })}
       </div>
 
       {/* Tile grid */}

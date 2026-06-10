@@ -249,6 +249,17 @@ export function Window({
     [dispatch, focusWindow, windowState]
   );
 
+  // Race condition we guard against: the user can click the Dock icon to
+  // restore the window during the 420ms minimize animation. The reducer will
+  // set status back to "normal" mid-flight; if we then dispatched
+  // MINIMIZE_WINDOW anyway, the window would re-minimize unexpectedly. We
+  // sample the latest status via a ref at fire-time instead of trusting the
+  // captured closure. These hooks MUST stay above the minimized early-return
+  // below — hooks after a conditional return crash React with "Rendered fewer
+  // hooks than expected" the moment the window actually minimizes.
+  const statusRef = useRef(windowState.status);
+  useEffect(() => { statusRef.current = windowState.status; }, [windowState.status]);
+
   // Already minimized and not in the process of animating → hide
   if (windowState.status === "minimized" && !isMinimizing) return null;
 
@@ -270,15 +281,8 @@ export function Window({
 
   // Intercept minimize: play the genie animation first, then dispatch the
   // MINIMIZE_WINDOW state change so the window collapses to the dock with
-  // the curved skew real macOS uses.
-  //
-  // Race condition we guard against: the user can click the Dock icon to
-  // restore the window during the 420ms animation. The reducer will set
-  // status back to "normal" mid-flight; if we then dispatched MINIMIZE_WINDOW
-  // anyway, the window would re-minimize unexpectedly. We sample the latest
-  // status via a ref at fire-time instead of trusting the captured closure.
-  const statusRef = useRef(windowState.status);
-  useEffect(() => { statusRef.current = windowState.status; }, [windowState.status]);
+  // the curved skew real macOS uses. (statusRef lives above the minimized
+  // early-return — see comment there.)
   const handleMinimize = () => {
     if (isMinimizing) return;
     setIsMinimizing(true);

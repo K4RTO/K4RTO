@@ -267,7 +267,8 @@ const translations: Record<string, TranslationEntry> = {
   // ── Mission Control ─────────────────────────────────────────────────────
   "dock.missionControl":       { en: "Mission Control",           zh: "调度中心" },
   "missionControl.empty":      { en: "No open windows",           zh: "没有打开的窗口" },
-  "missionControl.count":      { en: "{n} window(s) open",        zh: "已打开 {n} 个窗口" },
+  "missionControl.count":      { en: "{n} windows open",          zh: "已打开 {n} 个窗口" },
+  "missionControl.countOne":   { en: "1 window open",             zh: "已打开 1 个窗口" },
   "missionControl.emptyHint":  { en: "Open an app from the Dock or Launchpad to see it here",
                                  zh: "从程序坞或启动台打开应用后，这里会显示对应窗口" },
 
@@ -642,6 +643,14 @@ const translations: Record<string, TranslationEntry> = {
   // ── i18n sweep: LoginScreen + MenuBar ──────────────────────────────────
   "loginscreen.power":         { en: "Power",                     zh: "电源" },
   "menubar.spotlight":         { en: "Spotlight (⌘Space)",        zh: "Spotlight 搜索 (⌘Space)" },
+
+  // ── Menu-bar status popovers (Wi-Fi / battery) ────────────────────────
+  "menubar.wifi.title":        { en: "Wi-Fi",                     zh: "无线局域网" },
+  "menubar.wifi.connected":    { en: "Connected",                 zh: "已连接" },
+  "menubar.battery.title":     { en: "Battery",                   zh: "电池" },
+  "menubar.battery.charged":   { en: "Fully Charged",             zh: "已充满" },
+  "menubar.battery.source":    { en: "Power Source",              zh: "电源来源" },
+  "menubar.battery.adapter":   { en: "Power Adapter",             zh: "电源适配器" },
 
   // ── i18n sweep round 2 ────────────────────────────────────────────────
   "settings.guest":            { en: "Guest",                     zh: "访客" },

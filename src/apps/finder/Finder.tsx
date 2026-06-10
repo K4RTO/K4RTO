@@ -47,10 +47,12 @@ function formatDate(ts: number, lang: "en" | "zh", t: Translator): string {
 
 // Convert a VFS path to breadcrumb segments for display. First segment is the
 // localized "Macintosh HD" label so the breadcrumb root reflects the lang
-// toggle; deeper path parts are literal VFS names (kept as-is).
+// toggle; deeper path parts are literal VFS names — except ".Trash", which
+// real Finder never shows raw: it displays the localized "Trash" label.
 function pathToSegments(path: string, t: Translator): string[] {
   const root = t("desktop.macintoshHd");
-  const parts = path.split("/").filter(Boolean);
+  const parts = path.split("/").filter(Boolean)
+    .map(p => p === ".Trash" ? t("finder.sidebar.trash") : p);
   if (parts.length === 0) return [root];
   return [root, ...parts];
 }

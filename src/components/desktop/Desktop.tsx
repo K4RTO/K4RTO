@@ -65,6 +65,35 @@ function DesktopContent() {
     setLocked(false);
   }, []);
 
+  // Apple-menu power actions. "Sleep" and "Shut Down" drop the display to
+  // black (powerState overlay below); waking from sleep lands on the lock
+  // screen, like a real Mac with "require password after sleep" on. Restart
+  // reloads the page — the boot lands on the lock screen because we clear the
+  // session flag first. Lock Screen / Log Out reuse the same lock flow.
+  const [powerState, setPowerState] = useState<null | "sleep" | "off">(null);
+  const lock = useCallback(() => {
+    try { sessionStorage.removeItem(LOGIN_SESSION_KEY); } catch {}
+    setLocked(true);
+  }, []);
+  const restart = useCallback(() => {
+    try { sessionStorage.removeItem(LOGIN_SESSION_KEY); } catch {}
+    window.location.reload();
+  }, []);
+  const wakeFromSleep = useCallback(() => {
+    setPowerState(null);
+    lock();
+  }, [lock]);
+
+  // While asleep, any keypress wakes the machine (clicks are handled by the
+  // overlay itself). Shut-down ignores keys — you press the "power button"
+  // (click) to boot.
+  useEffect(() => {
+    if (powerState !== "sleep") return;
+    const onKey = (e: KeyboardEvent) => { e.preventDefault(); wakeFromSleep(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [powerState, wakeFromSleep]);
+
   // Focused window = last in windowOrder
   const focusedWindowId =
     state.windowOrder.length > 0
@@ -200,6 +229,11 @@ function DesktopContent() {
           setLaunchpadOpen(false);
           setMissionControlOpen(true);
         }}
+        onLockScreen={lock}
+        onLogOut={lock}
+        onSleep={() => setPowerState("sleep")}
+        onRestart={restart}
+        onShutDown={() => setPowerState("off")}
       />
 
       {/* Desktop icons + right-click */}
@@ -265,6 +299,28 @@ function DesktopContent() {
 
       {/* Lock screen — sits above everything until unlocked */}
       {locked && <LoginScreen onUnlock={unlock} />}
+
+      {/* Power overlay — black screen for Sleep / Shut Down. Sits above even
+          the lock screen (a sleeping display shows nothing). Sleep wakes on
+          click or any key (key listener in the effect above) onto the lock
+          screen; Shut Down boots on click via a full reload. */}
+      {powerState !== null && (
+        <div
+          className="fixed inset-0 bg-black"
+          style={{ zIndex: 100001, animation: "fadeIn 0.6s ease-out" }}
+          onClick={powerState === "sleep" ? wakeFromSleep : restart}
+        >
+          {powerState === "off" && (
+            <span
+              className="absolute inset-0 flex items-center justify-center select-none"
+              style={{ color: "rgba(255,255,255,0.18)", fontSize: 28 }}
+              aria-hidden
+            >
+              ⏻
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
