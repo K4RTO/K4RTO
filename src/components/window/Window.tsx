@@ -330,7 +330,7 @@ export function Window({
 
   return (
     <div
-      className="absolute overflow-hidden"
+      className="absolute overflow-hidden window-glass-frame"
       style={{
         left: windowState.rect.x,
         top: windowState.rect.y,
@@ -338,7 +338,7 @@ export function Window({
         height: windowState.rect.height,
         zIndex: windowState.zIndex,
         borderRadius: windowState.status === "maximized" ? 0 : 10,
-        boxShadow: "0 28px 80px 6px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.08)",
+        boxShadow: "0 28px 80px 6px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.10)",
         animation: animAnimation,
         transform: animTransform,
         opacity: animOpacity,
@@ -352,7 +352,7 @@ export function Window({
       {/* Title bar */}
       <div
         ref={titleBarRef}
-        className="glass-surface glass-thin flex items-center h-[38px] select-none"
+        className="glass-surface glass-thin glass-liquid flex items-center h-[38px] select-none"
         style={{
           paddingLeft: 16,
           paddingRight: 16,
@@ -380,7 +380,9 @@ export function Window({
       <div
         className="flex-1 overflow-auto"
         style={{
-          backgroundColor: "rgba(22, 22, 26, 0.55)",
+          backgroundColor: "rgba(18, 18, 22, 0.42)",
+          backdropFilter: "blur(18px) saturate(150%)",
+          WebkitBackdropFilter: "blur(18px) saturate(150%)",
           height: `calc(100% - 38px)`,
         }}
       >

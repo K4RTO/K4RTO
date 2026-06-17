@@ -15,6 +15,8 @@ interface GlassSurfaceProps extends HTMLAttributes<HTMLDivElement> {
   shadow?: GlassShadow;
   /** Border radius preset. */
   radius?: GlassRadius;
+  /** Stronger liquid highlights for hero panels, Dock, and primary chrome. */
+  liquid?: boolean;
   children?: ReactNode;
 }
 
@@ -59,6 +61,7 @@ export const GlassSurface = forwardRef<HTMLDivElement, GlassSurfaceProps>(
       thickness = "regular",
       shadow = "md",
       radius = "window",
+      liquid = false,
       className = "",
       children,
       ...rest
@@ -70,6 +73,7 @@ export const GlassSurface = forwardRef<HTMLDivElement, GlassSurfaceProps>(
       THICKNESS_CLASS[thickness],
       SHADOW_CLASS[shadow],
       RADIUS_CLASS[radius],
+      liquid ? "glass-liquid" : "",
       className,
     ]
       .filter(Boolean)
