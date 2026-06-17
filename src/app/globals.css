@@ -23,9 +23,9 @@
 
   /* Material thickness — choose by layer hierarchy
      thin    = top-most popovers / tooltips / menubar */
-  --glass-thin-bg:    rgba(14, 12, 24, 0.20);
-  --glass-regular-bg: rgba(14, 12, 24, 0.26);
-  --glass-thick-bg:   rgba(14, 12, 24, 0.34);
+  --glass-thin-bg:    rgba(14, 12, 24, 0.50);
+  --glass-regular-bg: rgba(14, 12, 24, 0.54);
+  --glass-thick-bg:   rgba(14, 12, 24, 0.60);
 
   --glass-thin-blur:    40px;
   --glass-regular-blur: 60px;
@@ -282,7 +282,7 @@
   .window-glass-frame {
     background:
       linear-gradient(145deg, rgba(255, 255, 255, 0.045), transparent 28%, rgba(0, 0, 0, 0.18)),
-      color-mix(in srgb, var(--wallpaper-tint) 5%, rgba(14, 12, 24, 0.30));
+      color-mix(in srgb, var(--wallpaper-tint) 5%, rgba(14, 12, 24, 0.56));
     backdrop-filter: blur(34px) saturate(180%) contrast(1.08) brightness(0.88);
     -webkit-backdrop-filter: blur(34px) saturate(180%) contrast(1.08) brightness(0.88);
     border: 0.5px solid rgba(255, 255, 255, 0.15);
@@ -310,7 +310,7 @@
   .finder-toolbar-glass {
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)),
-      rgba(14, 12, 24, 0.22);
+      rgba(14, 12, 24, 0.52);
     backdrop-filter: blur(24px) saturate(165%) contrast(1.08) brightness(0.90);
     -webkit-backdrop-filter: blur(24px) saturate(165%) contrast(1.08) brightness(0.90);
     box-shadow:
@@ -321,7 +321,7 @@
   .finder-sidebar-glass {
     background:
       linear-gradient(120deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
-      rgba(14, 12, 24, 0.24);
+      rgba(14, 12, 24, 0.54);
     backdrop-filter: blur(28px) saturate(165%) contrast(1.08) brightness(0.90);
     -webkit-backdrop-filter: blur(28px) saturate(165%) contrast(1.08) brightness(0.90);
     box-shadow:
@@ -331,7 +331,7 @@
 
   .finder-bottom-glass,
   .finder-header-glass {
-    background: rgba(14, 12, 24, 0.14);
+    background: rgba(14, 12, 24, 0.46);
     backdrop-filter: blur(18px) saturate(145%) brightness(0.92);
     -webkit-backdrop-filter: blur(18px) saturate(145%) brightness(0.92);
   }
