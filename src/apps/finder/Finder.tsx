@@ -612,10 +612,9 @@ export default function Finder({ windowId }: AppComponentProps) {
   ];
 
   return (
-    <div className="glass-surface flex flex-col h-full" style={{ borderRadius: 0, boxShadow: "inset 0 0.5px 0 var(--glass-highlight-top), inset 0 -0.5px 0 var(--glass-highlight-bottom)", color: "rgba(255,255,255,0.85)", animation: "fadeIn 0.2s ease" }}>
+    <div className="finder-glass-app flex flex-col h-full" style={{ color: "rgba(255,255,255,0.86)", animation: "fadeIn 0.2s ease" }}>
       {/* ── Toolbar ── */}
-      <div className="glass-surface glass-thin flex items-center gap-2 px-5 h-[52px] flex-shrink-0 select-none"
-        style={{ borderRadius: 0, boxShadow: "inset 0 0.5px 0 var(--glass-highlight-top), inset 0 -1px 0 rgba(255,255,255,0.08)" }}>
+      <div className="finder-toolbar-glass flex items-center gap-2 px-5 h-[52px] flex-shrink-0 select-none">
         {/* Back / Forward */}
         <div className="flex items-center gap-0.5 mr-1">
           <button onClick={goBack}
@@ -778,8 +777,8 @@ export default function Finder({ windowId }: AppComponentProps) {
       {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar ── */}
-        <div className="glass-surface glass-thin flex-shrink-0 overflow-y-auto py-2 select-none"
-          style={{ width: 210, borderRadius: 0, boxShadow: "inset 0 0.5px 0 var(--glass-highlight-top), inset -1px 0 0 rgba(255,255,255,0.07)" }}>
+        <div className="finder-sidebar-glass flex-shrink-0 overflow-y-auto py-2 select-none"
+          style={{ width: 210 }}>
           {sidebarData.map((section, si) => (
             <div key={si} className="mb-1">
               {section.header && (
@@ -796,7 +795,7 @@ export default function Finder({ windowId }: AppComponentProps) {
                     style={{
                       padding: "5px 10px 5px 16px",
                       color: isActive ? "white" : "rgba(255,255,255,0.75)",
-                      backgroundColor: isActive ? "#0058d0" : "transparent",
+                      backgroundColor: isActive ? "rgba(0, 96, 220, 0.92)" : "transparent",
                       borderRadius: 6,
                       margin: "1px 6px",
                       width: "calc(100% - 12px)",
@@ -819,8 +818,8 @@ export default function Finder({ windowId }: AppComponentProps) {
           ) : viewMode === "list" ? (
             <>
               {/* Column headers */}
-              <div className="flex items-center h-8 flex-shrink-0 text-[12px] select-none"
-                style={{ padding: "0 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.4)" }}>
+              <div className="finder-header-glass flex items-center h-8 flex-shrink-0 text-[12px] select-none"
+                style={{ padding: "0 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.42)" }}>
                 {cols.map(([col, label, cls, style]) => (
                   <button key={col} className={`${cls} flex items-center gap-1 text-left`}
                     style={style as React.CSSProperties}
@@ -846,7 +845,7 @@ export default function Finder({ windowId }: AppComponentProps) {
                       onContextMenu={e => openCtxMenu(e, file)}
                       className="flex items-center h-[26px] text-[13px] cursor-default select-none"
                       style={{
-                        backgroundColor: isSel ? "#0058d0" : i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+                        backgroundColor: isSel ? "rgba(0, 96, 220, 0.92)" : i % 2 === 0 ? "rgba(255,255,255,0.025)" : "transparent",
                         color: isSel ? "white" : "rgba(255,255,255,0.8)",
                         paddingLeft: 16,
                         paddingRight: 16,
@@ -898,7 +897,7 @@ export default function Finder({ windowId }: AppComponentProps) {
                       onDoubleClick={() => openFile(file)}
                       onContextMenu={e => openCtxMenu(e, file)}
                       className="flex flex-col items-center gap-1.5 p-2 rounded-lg cursor-default"
-                      style={{ backgroundColor: selectedFile === file.name ? "#0058d0" : "transparent" }}>
+                      style={{ backgroundColor: selectedFile === file.name ? "rgba(0, 96, 220, 0.92)" : "transparent" }}>
                       {file.type === "folder" ? <FolderFileIcon size={52} /> : <DocumentFileIcon size={52} />}
                       <span className="text-[11px] text-center truncate w-full"
                         style={{ color: selectedFile === file.name ? "white" : "rgba(255,255,255,0.8)" }}>
@@ -912,8 +911,8 @@ export default function Finder({ windowId }: AppComponentProps) {
           )}
 
           {/* ── Path Bar ── */}
-          <div className="flex items-center gap-1 h-7 flex-shrink-0 text-[11px] select-none overflow-hidden"
-            style={{ padding: "0 20px", borderTop: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.4)" }}>
+          <div className="finder-bottom-glass flex items-center gap-1 h-7 flex-shrink-0 text-[11px] select-none overflow-hidden"
+            style={{ padding: "0 20px", borderTop: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}>
             {pathSegments.map((seg, i, arr) => (
               <span key={`${seg}-${i}`} className="flex items-center gap-1 flex-shrink-0">
                 <span

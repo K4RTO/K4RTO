@@ -338,7 +338,7 @@ export function Window({
         height: windowState.rect.height,
         zIndex: windowState.zIndex,
         borderRadius: windowState.status === "maximized" ? 0 : 10,
-        boxShadow: "0 28px 80px 6px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.10)",
+        boxShadow: "0 28px 80px 6px rgba(0,0,0,0.44), 0 0 0 0.5px rgba(255,255,255,0.16)",
         animation: animAnimation,
         transform: animTransform,
         opacity: animOpacity,
@@ -380,9 +380,7 @@ export function Window({
       <div
         className="flex-1 overflow-auto"
         style={{
-          backgroundColor: "rgba(18, 18, 22, 0.42)",
-          backdropFilter: "blur(18px) saturate(150%)",
-          WebkitBackdropFilter: "blur(18px) saturate(150%)",
+          backgroundColor: "transparent",
           height: `calc(100% - 38px)`,
         }}
       >

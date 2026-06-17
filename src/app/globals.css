@@ -23,9 +23,9 @@
 
   /* Material thickness — choose by layer hierarchy
      thin    = top-most popovers / tooltips / menubar */
-  --glass-thin-bg:    rgba(28, 28, 30, 0.28);
-  --glass-regular-bg: rgba(28, 28, 30, 0.40);
-  --glass-thick-bg:   rgba(28, 28, 30, 0.58);
+  --glass-thin-bg:    rgba(255, 255, 255, 0.055);
+  --glass-regular-bg: rgba(255, 255, 255, 0.075);
+  --glass-thick-bg:   rgba(255, 255, 255, 0.11);
 
   --glass-thin-blur:    40px;
   --glass-regular-blur: 60px;
@@ -36,11 +36,11 @@
   --glass-brightness: 1.03;
 
   /* Inner highlights — top edge catches light, bottom edge has depth */
-  --glass-highlight-top:    rgba(255, 255, 255, 0.24);
-  --glass-highlight-bottom: rgba(0, 0, 0, 0.16);
+  --glass-highlight-top:    rgba(255, 255, 255, 0.34);
+  --glass-highlight-bottom: rgba(0, 0, 0, 0.20);
 
   /* Outer border + drop shadows */
-  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.22);
   --glass-shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.22);
   --glass-shadow-md: 0 18px 48px rgba(0, 0, 0, 0.34);
   --glass-shadow-lg: 0 32px 90px rgba(0, 0, 0, 0.46);
@@ -48,33 +48,33 @@
   /* Gloss gradient — top highlight arc (Liquid Glass signature) */
   --glass-gloss: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.04) 30%,
-    transparent 50%
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.055) 22%,
+      transparent 46%
   );
 
   /* Liquid lensing layer inspired by the Bubbbly glass badge. CSS cannot
      bend pixels like the WebGL shader does, so these highlights fake the
      same optical cues: a bright shoulder, a soft corner caustic, and a
      diagonal refractive streak above the content layer. */
-  --glass-liquid-fill: color-mix(in srgb, var(--wallpaper-tint) 18%, var(--glass-regular-bg));
+  --glass-liquid-fill: color-mix(in srgb, var(--wallpaper-tint) 8%, var(--glass-regular-bg));
   --glass-liquid-specular: radial-gradient(
       120% 95% at 12% -10%,
-      rgba(255, 255, 255, 0.26) 0%,
-      rgba(255, 255, 255, 0.12) 24%,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.08) 24%,
       transparent 52%
     ),
     radial-gradient(
       82% 120% at 104% 0%,
-      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.10) 0%,
       transparent 48%
     ),
     linear-gradient(
       135deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.12) 28%,
+      rgba(255, 255, 255, 0.08) 28%,
       transparent 43%,
-      rgba(255, 255, 255, 0.05) 56%,
+      rgba(255, 255, 255, 0.035) 56%,
       transparent 72%
     );
 
@@ -161,7 +161,7 @@
   .glass-surface {
     position: relative;
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.10), transparent 36%, rgba(0, 0, 0, 0.10)),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.07), transparent 34%, rgba(0, 0, 0, 0.045)),
       var(--glass-liquid-fill);
     backdrop-filter:
       blur(var(--glass-regular-blur))
@@ -177,7 +177,7 @@
     box-shadow:
       inset 0 0.5px 0 var(--glass-highlight-top),
       inset 0 -0.5px 0 var(--glass-highlight-bottom),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.025),
       var(--glass-shadow-md);
     border-radius: var(--radius-window);
     isolation: isolate; /* contain ::before stacking */
@@ -199,7 +199,7 @@
     inset: 0;
     background: var(--glass-liquid-specular);
     border-radius: inherit;
-    opacity: 0.72;
+    opacity: 0.46;
     mix-blend-mode: screen;
     pointer-events: none;
     z-index: 0;
@@ -215,8 +215,8 @@
 
   .glass-surface.glass-thin {
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.11), transparent 38%, rgba(0, 0, 0, 0.08)),
-      color-mix(in srgb, var(--wallpaper-tint) 14%, var(--glass-thin-bg));
+      linear-gradient(145deg, rgba(255, 255, 255, 0.075), transparent 38%, rgba(0, 0, 0, 0.035)),
+      color-mix(in srgb, var(--wallpaper-tint) 6%, var(--glass-thin-bg));
     backdrop-filter:
       blur(var(--glass-thin-blur))
       saturate(var(--glass-saturate))
@@ -231,8 +231,8 @@
 
   .glass-surface.glass-thick {
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 34%, rgba(0, 0, 0, 0.14)),
-      color-mix(in srgb, var(--wallpaper-tint) 16%, var(--glass-thick-bg));
+      linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 34%, rgba(0, 0, 0, 0.08)),
+      color-mix(in srgb, var(--wallpaper-tint) 8%, var(--glass-thick-bg));
     backdrop-filter:
       blur(var(--glass-thick-blur))
       saturate(var(--glass-saturate))
@@ -246,12 +246,12 @@
   }
 
   .glass-surface.glass-liquid::after {
-    opacity: 0.94;
+    opacity: 0.58;
     background:
-      radial-gradient(130% 90% at 16% -12%, rgba(255, 255, 255, 0.34), transparent 54%),
-      radial-gradient(90% 130% at 106% 2%, rgba(255, 255, 255, 0.22), transparent 52%),
-      radial-gradient(70% 95% at 48% 100%, rgba(255, 255, 255, 0.07), transparent 58%),
-      linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.16) 28%, transparent 44%, rgba(255, 255, 255, 0.07) 58%, transparent 74%);
+      radial-gradient(130% 90% at 16% -12%, rgba(255, 255, 255, 0.26), transparent 54%),
+      radial-gradient(90% 130% at 106% 2%, rgba(255, 255, 255, 0.14), transparent 52%),
+      radial-gradient(70% 95% at 48% 100%, rgba(255, 255, 255, 0.035), transparent 58%),
+      linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.10) 28%, transparent 44%, rgba(255, 255, 255, 0.04) 58%, transparent 74%);
   }
 
   /* ── Shadow Variants ────────────────────────────────────────────────── */
@@ -281,11 +281,12 @@
 
   .window-glass-frame {
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 30%, rgba(0, 0, 0, 0.16)),
-      color-mix(in srgb, var(--wallpaper-tint) 18%, rgba(18, 18, 22, 0.50));
-    backdrop-filter: blur(30px) saturate(170%) contrast(1.04);
-    -webkit-backdrop-filter: blur(30px) saturate(170%) contrast(1.04);
-    border: 0.5px solid rgba(255, 255, 255, 0.12);
+      linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 28%, rgba(0, 0, 0, 0.06)),
+      color-mix(in srgb, var(--wallpaper-tint) 7%, rgba(255, 255, 255, 0.045));
+    backdrop-filter: blur(34px) saturate(185%) contrast(1.06) brightness(1.04);
+    -webkit-backdrop-filter: blur(34px) saturate(185%) contrast(1.06) brightness(1.04);
+    border: 0.5px solid rgba(255, 255, 255, 0.20);
+    isolation: isolate;
   }
 
   .window-glass-frame::before {
@@ -294,10 +295,45 @@
     inset: 0;
     border-radius: inherit;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.20),
+      inset 1px 0 0 rgba(255, 255, 255, 0.08),
+      inset -1px 0 0 rgba(255, 255, 255, 0.05);
     pointer-events: none;
-    z-index: 2;
+    z-index: 4;
+  }
+
+  .finder-glass-app {
+    background: transparent;
+  }
+
+  .finder-toolbar-glass {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.045)),
+      rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(24px) saturate(170%) contrast(1.04);
+    -webkit-backdrop-filter: blur(24px) saturate(170%) contrast(1.04);
+    box-shadow:
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.32),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .finder-sidebar-glass {
+    background:
+      linear-gradient(120deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.025)),
+      rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(28px) saturate(170%) contrast(1.04);
+    -webkit-backdrop-filter: blur(28px) saturate(170%) contrast(1.04);
+    box-shadow:
+      inset 1px 0 0 rgba(255, 255, 255, 0.10),
+      inset -1px 0 0 rgba(255, 255, 255, 0.09);
+  }
+
+  .finder-bottom-glass,
+  .finder-header-glass {
+    background: rgba(255, 255, 255, 0.026);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
   }
 }
 
