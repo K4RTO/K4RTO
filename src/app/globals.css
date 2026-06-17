@@ -78,6 +78,14 @@
       transparent 72%
     );
 
+  /* Fine-grain frost layer: gives the glass a sandblasted surface without
+     hiding the wallpaper. Kept CSS-only so the static export has no asset
+     dependency. */
+  --glass-frost-grain: radial-gradient(circle at 17% 29%, rgba(255, 255, 255, 0.105) 0 0.42px, transparent 0.72px),
+    radial-gradient(circle at 73% 61%, rgba(255, 255, 255, 0.065) 0 0.38px, transparent 0.68px),
+    radial-gradient(circle at 39% 83%, rgba(0, 0, 0, 0.12) 0 0.45px, transparent 0.74px);
+  --glass-frost-haze: linear-gradient(135deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012) 42%, rgba(0, 0, 0, 0.035));
+
   /* Wallpaper tint — populated at runtime by Wallpaper.tsx (Sprint D3) */
   --wallpaper-tint: rgb(60, 60, 80);
 
@@ -197,10 +205,17 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--glass-liquid-specular);
+    background:
+      var(--glass-frost-grain),
+      var(--glass-frost-haze),
+      var(--glass-liquid-specular);
+    background-size:
+      3px 3px,
+      auto,
+      auto;
     border-radius: inherit;
-    opacity: 0.30;
-    mix-blend-mode: screen;
+    opacity: 0.42;
+    mix-blend-mode: overlay;
     pointer-events: none;
     z-index: 0;
   }
@@ -246,12 +261,21 @@
   }
 
   .glass-surface.glass-liquid::after {
-    opacity: 0.38;
+    opacity: 0.46;
     background:
+      var(--glass-frost-grain),
+      var(--glass-frost-haze),
       radial-gradient(130% 90% at 16% -12%, rgba(255, 255, 255, 0.16), transparent 54%),
       radial-gradient(90% 130% at 106% 2%, rgba(255, 255, 255, 0.08), transparent 52%),
       radial-gradient(70% 95% at 48% 100%, rgba(255, 255, 255, 0.02), transparent 58%),
       linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.06) 28%, transparent 44%, rgba(255, 255, 255, 0.025) 58%, transparent 74%);
+    background-size:
+      3px 3px,
+      auto,
+      auto,
+      auto,
+      auto,
+      auto;
   }
 
   /* ── Shadow Variants ────────────────────────────────────────────────── */
@@ -281,8 +305,20 @@
 
   .window-glass-frame {
     background:
+      var(--glass-frost-grain),
+      var(--glass-frost-haze),
       linear-gradient(145deg, rgba(255, 255, 255, 0.045), transparent 28%, rgba(0, 0, 0, 0.18)),
       color-mix(in srgb, var(--wallpaper-tint) 5%, rgba(14, 12, 24, 0.56));
+    background-size:
+      3px 3px,
+      auto,
+      auto,
+      auto;
+    background-blend-mode:
+      overlay,
+      soft-light,
+      normal,
+      normal;
     backdrop-filter: blur(34px) saturate(180%) contrast(1.08) brightness(0.88);
     -webkit-backdrop-filter: blur(34px) saturate(180%) contrast(1.08) brightness(0.88);
     border: 0.5px solid rgba(255, 255, 255, 0.15);
@@ -309,8 +345,20 @@
 
   .finder-toolbar-glass {
     background:
+      var(--glass-frost-grain),
+      var(--glass-frost-haze),
       linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)),
       rgba(14, 12, 24, 0.52);
+    background-size:
+      3px 3px,
+      auto,
+      auto,
+      auto;
+    background-blend-mode:
+      overlay,
+      soft-light,
+      normal,
+      normal;
     backdrop-filter: blur(24px) saturate(165%) contrast(1.08) brightness(0.90);
     -webkit-backdrop-filter: blur(24px) saturate(165%) contrast(1.08) brightness(0.90);
     box-shadow:
@@ -320,8 +368,20 @@
 
   .finder-sidebar-glass {
     background:
+      var(--glass-frost-grain),
+      var(--glass-frost-haze),
       linear-gradient(120deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
       rgba(14, 12, 24, 0.54);
+    background-size:
+      3px 3px,
+      auto,
+      auto,
+      auto;
+    background-blend-mode:
+      overlay,
+      soft-light,
+      normal,
+      normal;
     backdrop-filter: blur(28px) saturate(165%) contrast(1.08) brightness(0.90);
     -webkit-backdrop-filter: blur(28px) saturate(165%) contrast(1.08) brightness(0.90);
     box-shadow:
@@ -331,7 +391,18 @@
 
   .finder-bottom-glass,
   .finder-header-glass {
-    background: rgba(14, 12, 24, 0.46);
+    background:
+      var(--glass-frost-grain),
+      var(--glass-frost-haze),
+      rgba(14, 12, 24, 0.46);
+    background-size:
+      3px 3px,
+      auto,
+      auto;
+    background-blend-mode:
+      overlay,
+      soft-light,
+      normal;
     backdrop-filter: blur(18px) saturate(145%) brightness(0.92);
     -webkit-backdrop-filter: blur(18px) saturate(145%) brightness(0.92);
   }
