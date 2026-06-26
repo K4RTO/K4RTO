@@ -474,9 +474,9 @@ export default function Settings(_props: AppComponentProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 px-6 pb-6">
+        <div className="flex items-center gap-4 pl-8 pr-6 pb-6">
           <div className="flex items-center justify-center flex-shrink-0" style={{ width: 52, height: 52, borderRadius: "50%", background: "#f0f0f2", fontSize: 31 }}>
-            SK
+            K4
           </div>
           <div className="min-w-0">
             <div className="truncate" style={{ color: "rgba(255,255,255,0.94)", fontSize: 17, fontWeight: 800 }}>{t("settings.accountName")}</div>
@@ -484,7 +484,7 @@ export default function Settings(_props: AppComponentProps) {
           </div>
         </div>
 
-        <div className="px-4">
+        <div className="pl-8 pr-4">
           {panes.map(p => {
             const active = sel === p.id;
             return (

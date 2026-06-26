@@ -437,7 +437,7 @@ const translations: Record<string, TranslationEntry> = {
   "settings.screenTime":       { en: "Screen Time",               zh: "屏幕使用时间" },
   "settings.lockScreen":       { en: "Lock Screen",               zh: "锁定屏幕" },
   "settings.search":           { en: "Search",                    zh: "搜索" },
-  "settings.accountName":      { en: "sin kritol",                zh: "sin kritol" },
+  "settings.accountName":      { en: "K4RTO",                     zh: "K4RTO" },
   "settings.appleAccount":     { en: "Apple Account",             zh: "Apple 账户" },
   "settings.generalSubtitle":  { en: "Manage your overall setup and preferences for Mac, such as software updates, device language, AirDrop, and more.", zh: "管理 Mac 的整体设置和偏好，例如软件更新、设备语言、隔空投送等。" },
   "settings.about":            { en: "About",                     zh: "关于本机" },
