@@ -1,8 +1,10 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
+import type { AppCategory } from "@/services/app-manager";
 
 export interface AppComponentProps {
   windowId: string;
   processId: string;
+  meta?: Record<string, string>;
 }
 
 export interface AppDefinition {
@@ -14,6 +16,12 @@ export interface AppDefinition {
   minSize: { width: number; height: number };
   resizable?: boolean;
   singleInstance?: boolean;
+  bundleId: string;
+  version: string;
+  category: AppCategory;
+  supportedFileTypes?: string[];
+  defaultOpenFor?: string[];
+  permissions?: string[];
 }
 
 const apps: Record<string, AppDefinition> = {
@@ -25,6 +33,10 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 100, y: 60, width: 1050, height: 648 },
     minSize: { width: 400, height: 300 },
     singleInstance: false,
+    bundleId: "com.k4rto.finder",
+    version: "1.0.0",
+    category: "system",
+    permissions: ["filesystem"],
   },
   terminal: {
     id: "terminal",
@@ -33,6 +45,10 @@ const apps: Record<string, AppDefinition> = {
     component: lazy(() => import("./terminal/Terminal")),
     defaultRect: { x: 150, y: 100, width: 600, height: 400 },
     minSize: { width: 400, height: 250 },
+    bundleId: "com.k4rto.terminal",
+    version: "1.0.0",
+    category: "developer",
+    permissions: ["filesystem", "processes", "settings"],
   },
   safari: {
     id: "safari",
@@ -41,6 +57,10 @@ const apps: Record<string, AppDefinition> = {
     component: lazy(() => import("./browser/Browser")),
     defaultRect: { x: 80, y: 40, width: 900, height: 600 },
     minSize: { width: 500, height: 350 },
+    bundleId: "com.k4rto.safari",
+    version: "1.0.0",
+    category: "system",
+    permissions: ["network"],
   },
   notes: {
     id: "notes",
@@ -49,6 +69,10 @@ const apps: Record<string, AppDefinition> = {
     component: lazy(() => import("./notes/Notes")),
     defaultRect: { x: 200, y: 80, width: 650, height: 500 },
     minSize: { width: 400, height: 300 },
+    bundleId: "com.k4rto.notes",
+    version: "1.0.0",
+    category: "productivity",
+    supportedFileTypes: ["txt", "md"],
   },
   textedit: {
     id: "textedit",
@@ -57,6 +81,11 @@ const apps: Record<string, AppDefinition> = {
     component: lazy(() => import("./textedit/TextEdit")),
     defaultRect: { x: 180, y: 70, width: 600, height: 450 },
     minSize: { width: 300, height: 200 },
+    bundleId: "com.k4rto.textedit",
+    version: "1.0.0",
+    category: "productivity",
+    supportedFileTypes: ["txt", "md"],
+    defaultOpenFor: ["txt"],
   },
   settings: {
     id: "settings",
@@ -66,6 +95,10 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 200, y: 60, width: 700, height: 500 },
     minSize: { width: 600, height: 400 },
     singleInstance: true,
+    bundleId: "com.k4rto.settings",
+    version: "1.0.0",
+    category: "system",
+    permissions: ["settings"],
   },
   calculator: {
     id: "calculator",
@@ -76,6 +109,9 @@ const apps: Record<string, AppDefinition> = {
     minSize: { width: 240, height: 420 },
     resizable: false,
     singleInstance: true,
+    bundleId: "com.k4rto.calculator",
+    version: "1.0.0",
+    category: "utility",
   },
   calendar: {
     id: "calendar",
@@ -85,6 +121,9 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 150, y: 60, width: 750, height: 550 },
     minSize: { width: 500, height: 400 },
     singleInstance: true,
+    bundleId: "com.k4rto.calendar",
+    version: "1.0.0",
+    category: "productivity",
   },
   clock: {
     id: "clock",
@@ -94,6 +133,9 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 160, y: 60, width: 780, height: 520 },
     minSize: { width: 500, height: 380 },
     singleInstance: true,
+    bundleId: "com.k4rto.clock",
+    version: "1.0.0",
+    category: "utility",
   },
   preview: {
     id: "preview",
@@ -102,6 +144,11 @@ const apps: Record<string, AppDefinition> = {
     component: lazy(() => import("./preview/Preview")),
     defaultRect: { x: 120, y: 60, width: 860, height: 620 },
     minSize: { width: 400, height: 300 },
+    bundleId: "com.k4rto.preview",
+    version: "1.0.0",
+    category: "productivity",
+    supportedFileTypes: ["pdf", "png", "jpg", "jpeg", "webp", "gif"],
+    defaultOpenFor: ["pdf", "png", "jpg", "jpeg", "webp", "gif"],
   },
   vscode: {
     id: "vscode",
@@ -110,6 +157,11 @@ const apps: Record<string, AppDefinition> = {
     component: lazy(() => import("./vscode/VSCode")),
     defaultRect: { x: 80, y: 50, width: 900, height: 600 },
     minSize: { width: 500, height: 350 },
+    bundleId: "com.k4rto.code",
+    version: "1.0.0",
+    category: "developer",
+    supportedFileTypes: ["ts", "tsx", "js", "jsx", "json", "css", "html", "md"],
+    defaultOpenFor: ["ts", "tsx", "js", "jsx", "json", "css", "html", "md"],
   },
   word: {
     id: "word",
@@ -118,6 +170,11 @@ const apps: Record<string, AppDefinition> = {
     component: lazy(() => import("./word/Word")),
     defaultRect: { x: 100, y: 60, width: 780, height: 580 },
     minSize: { width: 400, height: 300 },
+    bundleId: "com.k4rto.word",
+    version: "1.0.0",
+    category: "productivity",
+    supportedFileTypes: ["doc", "docx"],
+    defaultOpenFor: ["doc", "docx"],
   },
   music: {
     id: "music",
@@ -127,6 +184,10 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 220, y: 80, width: 380, height: 520 },
     minSize: { width: 300, height: 400 },
     singleInstance: true,
+    bundleId: "com.k4rto.music",
+    version: "1.0.0",
+    category: "media",
+    permissions: ["network", "audio"],
   },
   game2048: {
     id: "game2048",
@@ -136,6 +197,9 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 260, y: 70, width: 420, height: 560 },
     minSize: { width: 360, height: 480 },
     singleInstance: true,
+    bundleId: "com.k4rto.game2048",
+    version: "1.0.0",
+    category: "game",
   },
   minesweeper: {
     id: "minesweeper",
@@ -145,6 +209,9 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 200, y: 50, width: 760, height: 600 },
     minSize: { width: 360, height: 420 },
     singleInstance: true,
+    bundleId: "com.k4rto.minesweeper",
+    version: "1.0.0",
+    category: "game",
   },
   snake: {
     id: "snake",
@@ -154,6 +221,9 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 280, y: 80, width: 480, height: 620 },
     minSize: { width: 380, height: 500 },
     singleInstance: true,
+    bundleId: "com.k4rto.snake",
+    version: "1.0.0",
+    category: "game",
   },
   tetris: {
     id: "tetris",
@@ -163,6 +233,9 @@ const apps: Record<string, AppDefinition> = {
     defaultRect: { x: 200, y: 50, width: 520, height: 720 },
     minSize: { width: 460, height: 620 },
     singleInstance: true,
+    bundleId: "com.k4rto.tetris",
+    version: "1.0.0",
+    category: "game",
   },
 };
 

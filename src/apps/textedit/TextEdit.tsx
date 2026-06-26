@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useT } from "@/contexts/SystemContext";
@@ -10,7 +10,7 @@ const DOCS = "/Users/guest/Documents";
 
 function wordCount(t: string) { return t.trim() ? t.trim().split(/\s+/).length : 0; }
 
-export default function TextEdit(_props: AppComponentProps) {
+export default function TextEdit({ meta }: AppComponentProps) {
   const fs = useFileSystemOptional();
   const t = useT();
   const [content, setContent] = useState("");
@@ -24,6 +24,7 @@ export default function TextEdit(_props: AppComponentProps) {
   const [showOpen, setShowOpen] = useState(false);
   const [openFiles, setOpenFiles] = useState<{ path: string; name: string }[]>([]);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const openedMetaPath = useRef<string | null>(null);
 
   const dim = { color: "rgba(255,255,255,0.4)" } as React.CSSProperties;
   const normal = { color: "rgba(255,255,255,0.85)" } as React.CSSProperties;
@@ -64,6 +65,17 @@ export default function TextEdit(_props: AppComponentProps) {
     if (raw !== null) { setContent(raw); setFilename(f.name); setModified(false); }
     setShowOpen(false);
   }, [fs]);
+
+  useEffect(() => {
+    const path = meta?.filePath;
+    if (!fs || !path || openedMetaPath.current === path) return;
+    const raw = fs.readFile(path);
+    if (raw === null) return;
+    openedMetaPath.current = path;
+    setContent(raw);
+    setFilename(meta?.fileName ?? path.split("/").pop() ?? null);
+    setModified(false);
+  }, [fs, meta?.fileName, meta?.filePath]);
 
   function tbBtn(active: boolean, onClick: () => void, label: React.ReactNode) {
     return (

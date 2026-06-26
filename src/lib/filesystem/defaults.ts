@@ -1,8 +1,10 @@
 import type { FsEntry, FsState } from "@/lib/filesystem/types";
 import apps from "@/apps/registry";
 import { PORTFOLIO_SOURCES, PORTFOLIO_SOURCE_ROOT, renderSource } from "@/apps/vscode/portfolioSources";
+import { appFileContent, appFileName, getDefaultAppForFile } from "@/services/app-manager";
+import { fileKindForName } from "@/services/file-index";
 
-function makeDir(path: string): FsEntry {
+function makeDir(path: string, metadata: FsEntry["metadata"] = {}): FsEntry {
   const now = Date.now();
   const name = path === "/" ? "/" : path.split("/").filter(Boolean).pop() ?? "";
   return {
@@ -13,12 +15,27 @@ function makeDir(path: string): FsEntry {
     size: 0,
     createdAt: now,
     modifiedAt: now,
+    metadata,
   };
 }
 
-function makeFile(path: string, content: string): FsEntry {
+function guessMime(name: string): string | undefined {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "md" || ext === "txt") return "text/plain";
+  if (ext === "json") return "application/json";
+  if (ext === "pdf") return "application/pdf";
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  if (ext === "webp") return "image/webp";
+  if (ext === "gif") return "image/gif";
+  if (["ts", "tsx", "js", "jsx", "css", "html"].includes(ext)) return "text/plain";
+  return undefined;
+}
+
+function makeFile(path: string, content: string, metadata: FsEntry["metadata"] = {}): FsEntry {
   const now = Date.now();
   const name = path.split("/").filter(Boolean).pop() ?? "";
+  const kind = metadata.kind ?? fileKindForName(name);
   return {
     path,
     name,
@@ -27,6 +44,12 @@ function makeFile(path: string, content: string): FsEntry {
     size: content.length,
     createdAt: now,
     modifiedAt: now,
+    metadata: {
+      kind,
+      mime: guessMime(name),
+      defaultAppId: getDefaultAppForFile(name),
+      ...metadata,
+    },
   };
 }
 
@@ -36,6 +59,11 @@ export function buildDefaults(): FsState {
   // Default directories
   const dirs = [
     "/",
+    "/System",
+    "/System/Applications",
+    "/System/Library",
+    "/System/Library/CoreServices",
+    "/System/Volumes",
     "/Users",
     "/Users/guest",
     "/Users/guest/Desktop",
@@ -45,20 +73,26 @@ export function buildDefaults(): FsState {
     "/Users/guest/Music",
     "/Users/guest/.Trash",
     "/Applications",
+    "/Volumes",
+    "/Volumes/Macintosh HD",
     "/Users/guest/Documents/Notes",
     "/Users/guest/K4RTO",
     PORTFOLIO_SOURCE_ROOT,
   ];
 
   for (const dir of dirs) {
-    state[dir] = makeDir(dir);
+    const system = dir === "/System" || dir.startsWith("/System/") || dir === "/Applications" || dir === "/Volumes";
+    state[dir] = makeDir(dir, system ? { system: true, readonly: true } : {});
   }
 
   // Seed K4RTO portfolio source samples — readable from VSCode app.
   // Each sample's annotation becomes a comment header so the prose ships with the file.
   for (const sample of PORTFOLIO_SOURCES) {
     const path = `${PORTFOLIO_SOURCE_ROOT}/${sample.name}`;
-    state[path] = makeFile(path, renderSource(sample));
+    state[path] = makeFile(path, renderSource(sample), {
+      tags: ["source", "portfolio", "code"],
+      readonly: true,
+    });
   }
 
   // Default files
@@ -126,14 +160,25 @@ React + Tailwind + 一套基于 IndexedDB 的迷你文件系统。
   ];
 
   for (const [path, content] of files) {
-    state[path] = makeFile(path, content);
+    state[path] = makeFile(path, content, {
+      tags: path.includes("Welcome") ? ["welcome", "guide", "portfolio"] : undefined,
+      readonly: path.includes("/K4RTO/") || path.includes("/Desktop/Resume.pdf"),
+    });
   }
 
   // Virtual .app entries in /Applications — content marker tells Finder which app to launch
   for (const appId of Object.keys(apps)) {
     const app = apps[appId];
-    const path = `/Applications/${app.name}.app`;
-    state[path] = makeFile(path, `__app:${appId}`);
+    const path = `/Applications/${appFileName(app)}`;
+    state[path] = makeFile(path, appFileContent(appId), {
+      kind: "Application",
+      mime: "application/x-k4rto-app",
+      readonly: true,
+      system: true,
+      bundleId: app.bundleId,
+      defaultAppId: appId,
+      tags: [app.category, app.name.toLowerCase()],
+    });
   }
 
   return state;

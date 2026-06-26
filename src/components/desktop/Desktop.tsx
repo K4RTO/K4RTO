@@ -71,6 +71,10 @@ function DesktopContent() {
   // reloads the page — the boot lands on the lock screen because we clear the
   // session flag first. Lock Screen / Log Out reuse the same lock flow.
   const [powerState, setPowerState] = useState<null | "sleep" | "off">(null);
+  const bootSteps = lang === "zh"
+    ? ["加载前端内核", "挂载虚拟文件系统", "启动系统服务", "恢复桌面会话"]
+    : ["Loading frontend kernel", "Mounting virtual filesystem", "Starting system services", "Restoring desktop session"];
+  const [bootStep, setBootStep] = useState(0);
   const lock = useCallback(() => {
     try { sessionStorage.removeItem(LOGIN_SESSION_KEY); } catch {}
     setLocked(true);
@@ -93,6 +97,12 @@ function DesktopContent() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [powerState, wakeFromSleep]);
+
+  useEffect(() => {
+    if (bootStep >= bootSteps.length) return;
+    const timer = window.setTimeout(() => setBootStep((step) => step + 1), bootStep === 0 ? 420 : 320);
+    return () => window.clearTimeout(timer);
+  }, [bootStep, bootSteps.length]);
 
   // Focused window = last in windowOrder
   const focusedWindowId =
@@ -249,7 +259,7 @@ function DesktopContent() {
           <Window key={ws.id} windowState={ws}>
             <Suspense fallback={<LoadingSpinner />}>
               {AppComponent && process ? (
-                <AppComponent windowId={ws.id} processId={process.id} />
+                <AppComponent windowId={ws.id} processId={process.id} meta={ws.meta} />
               ) : (
                 <div className="flex items-center justify-center h-full text-black/40 text-sm">
                   {ws.title}
@@ -319,6 +329,28 @@ function DesktopContent() {
               ⏻
             </span>
           )}
+        </div>
+      )}
+
+      {bootStep < bootSteps.length && (
+        <div
+          className="fixed inset-0 bg-black flex flex-col items-center justify-center"
+          style={{ zIndex: 100002, color: "rgba(255,255,255,0.82)" }}
+        >
+          <div style={{ fontSize: 34, fontWeight: 500, marginBottom: 18 }}>K4RTO</div>
+          <div style={{ width: 220, height: 4, background: "rgba(255,255,255,0.16)", borderRadius: 999, overflow: "hidden" }}>
+            <div
+              style={{
+                width: `${((bootStep + 1) / bootSteps.length) * 100}%`,
+                height: "100%",
+                background: "rgba(255,255,255,0.72)",
+                transition: "width 0.28s ease",
+              }}
+            />
+          </div>
+          <div style={{ marginTop: 14, fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+            {bootSteps[bootStep]}
+          </div>
         </div>
       )}
     </div>

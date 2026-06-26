@@ -26,7 +26,9 @@ const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 //     the empty Untitled.txt) so the desktop isn't blank on first reveal
 // v7: added Welcome.zh.md (Chinese counterpart to Welcome.md) so the
 //     desktop has bilingual entry points matching the menubar lang toggle
-const LS_KEY = "vfs_state_v7";
+// v8: added system metadata, /System + /Volumes seeds, and application bundle
+//     metadata used by the frontend runtime/app-manager layer.
+const LS_KEY = "vfs_state_v8";
 
 // Where trashed entries live, and a separate LS key for the trashed-path →
 // origin-path map (we can't stash origin info in FsEntry without breaking the
@@ -58,12 +60,15 @@ function migrateFromOlder(): FsState | null {
   // Each new version reads from the previous, preserving user data and only
   // overlaying the freshly-seeded entries (portfolio source samples in v4,
   // desktop welcome files in v6, etc).
-  const legacyKeys = ["vfs_state_v6", "vfs_state_v5", "vfs_state_v4", "vfs_state_v3"];
+  const legacyKeys = ["vfs_state_v7", "vfs_state_v6", "vfs_state_v5", "vfs_state_v4", "vfs_state_v3"];
   // Paths whose freshly-built content should always replace whatever was on
   // disk (so updates to a seeded file reach existing visitors). User-created
   // files outside these prefixes are preserved as-is.
   const SEEDED_PREFIXES = [
     PORTFOLIO_SOURCE_ROOT,
+    "/System",
+    "/Applications",
+    "/Volumes",
     "/Users/guest/Desktop/Resume.pdf",
     "/Users/guest/Desktop/Welcome.md",
     "/Users/guest/Desktop/Welcome.zh.md",
@@ -87,24 +92,41 @@ function migrateFromOlder(): FsState | null {
   return null;
 }
 
+function withSystemSeeds(state: FsState): FsState {
+  const fresh = buildDefaults();
+  const SYSTEM_PREFIXES = [
+    "/System",
+    "/Applications",
+    "/Volumes",
+    PORTFOLIO_SOURCE_ROOT,
+  ];
+  const next = { ...state };
+  for (const [path, entry] of Object.entries(fresh)) {
+    if (SYSTEM_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+      next[path] = entry;
+    }
+  }
+  return next;
+}
+
 function loadOrInit(): FsState {
   if (typeof window === "undefined") return buildDefaults();
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) as FsState;
+    if (raw) return withSystemSeeds(JSON.parse(raw) as FsState);
     const migrated = migrateFromOlder();
     if (migrated) {
       // Persist immediately so the next load skips migration; don't delete the
       // legacy snapshot — keeps a recovery path if the new version is buggy.
       try { localStorage.setItem(LS_KEY, JSON.stringify(migrated)); } catch {}
-      return migrated;
+      return withSystemSeeds(migrated);
     }
   } catch {}
   // Fresh-defaults path also means any leftover trash origins are dead
   // references (their VFS counterparts don't exist any more). Clear them so
   // the map doesn't accumulate stale entries across reset cycles.
   try { localStorage.removeItem(TRASH_ORIGINS_KEY); } catch {}
-  return buildDefaults();
+  return withSystemSeeds(buildDefaults());
 }
 
 function persist(state: FsState) {
@@ -123,6 +145,18 @@ function baseName(p: string): string {
   return p.split("/").filter(Boolean).pop() ?? "";
 }
 
+function inferMetadata(path: string, type: "file" | "dir"): FsEntry["metadata"] {
+  const name = baseName(path);
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (type === "dir") return {};
+  if (ext === "pdf") return { kind: "PDF Document", mime: "application/pdf", defaultAppId: "preview" };
+  if (["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) return { kind: "Image", mime: `image/${ext === "jpg" ? "jpeg" : ext}`, defaultAppId: "preview" };
+  if (["ts", "tsx", "js", "jsx", "json", "css", "html", "md"].includes(ext)) return { kind: ext === "md" ? "Markdown" : "Source Code", mime: "text/plain", defaultAppId: "vscode" };
+  if (ext === "txt") return { kind: "Plain Text", mime: "text/plain", defaultAppId: "textedit" };
+  if (["doc", "docx"].includes(ext)) return { kind: "Word Document", defaultAppId: "word" };
+  return { kind: "Document" };
+}
+
 function makeEntry(path: string, type: "file" | "dir", content = ""): FsEntry {
   const now = Date.now();
   return {
@@ -133,6 +167,7 @@ function makeEntry(path: string, type: "file" | "dir", content = ""): FsEntry {
     size: content.length,
     createdAt: now,
     modifiedAt: now,
+    metadata: inferMetadata(path, type),
   };
 }
 
@@ -188,6 +223,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
           size: content.length,
           createdAt: existing?.createdAt ?? Date.now(),
           modifiedAt: Date.now(),
+          metadata: existing?.metadata ?? inferMetadata(path, "file"),
         };
         return next;
       });

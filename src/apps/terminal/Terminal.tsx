@@ -5,8 +5,8 @@ import type { AppComponentProps } from "@/apps/registry";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useSystem, useT } from "@/contexts/SystemContext";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
-import { useProcesses } from "@/contexts/ProcessContext";
 import { useAppMenuListener } from "@/lib/menubar/appMenu";
+import { useRuntime } from "@/lib/runtime/useRuntime";
 import { findCommand, completeCommandName } from "./commands/registry";
 import type { Line, Seg, CommandContext, TerminalFsCtx, TerminalFsEntry } from "./commands/types";
 import { COLORS, plain } from "./commands/types";
@@ -130,13 +130,14 @@ function commonPrefix(strs: string[]): string {
 
 // ── Main Component ───────────────────────────────────────────────────────
 
-export default function Terminal({ windowId, processId: _pid }: AppComponentProps) {
+export default function Terminal({ windowId, processId: _pid, meta }: AppComponentProps) {
   const vfs = useFileSystemOptional();
   const { lang } = useSystem();
   const t = useT();
   const wm = useWindowManager();
-  const { launch } = useProcesses();
+  const runtime = useRuntime();
   const fsRef = useRef<TerminalFsCtx>(createFallback());
+  const initialCommandRan = useRef(false);
 
   useEffect(() => { if (vfs) fsRef.current = vfs as unknown as TerminalFsCtx; });
 
@@ -188,7 +189,8 @@ export default function Terminal({ windowId, processId: _pid }: AppComponentProp
       println: (text: string, color?: string) => { appendLines([plain(text, color)]); },
       clearScreen: () => { setLines([]); },
       setCwd: (p: string) => { mutableCwd.current = p; setCwd(p); cwdRef.current = p; },
-      launch: (appId: string, meta?: Record<string, string>) => { launch(appId, meta); },
+      launch: (appId: string, meta?: Record<string, string>) => { runtime.process.launchApp(appId, meta); },
+      openFile: runtime.appManager.openFile,
       externalOpen: (url: string) => {
         // Protocol whitelist — defense in depth in case future commands forward
         // arbitrary user input here. mailto: is allowed for `mail` command.
@@ -196,9 +198,21 @@ export default function Terminal({ windowId, processId: _pid }: AppComponentProp
           window.open(url, "_blank", "noopener");
         }
       },
+      listProcesses: runtime.process.listProcesses,
+      killProcess: runtime.process.killProcess,
+      listApps: () => runtime.appManager.listApps().map((app) => ({
+        id: app.id,
+        name: app.name,
+        bundleId: app.bundleId,
+        version: app.version,
+        category: app.category,
+      })),
+      readSetting: runtime.system.readSetting,
+      writeSetting: runtime.system.writeSetting,
+      systemProfile: runtime.system.profile,
       exit: () => { wm.closeWindow(windowId); },
     } as CommandContext;
-  }, [lang, hist, launch, wm, windowId, appendLines]);
+  }, [lang, hist, runtime, wm, windowId, appendLines]);
 
   const runLine = useCallback(async (raw: string) => {
     const trimmed = raw.trim();
@@ -240,6 +254,13 @@ export default function Terminal({ windowId, processId: _pid }: AppComponentProp
     e.preventDefault();
     void runLine(input);
   }, [input, runLine]);
+
+  useEffect(() => {
+    const command = meta?.initialCommand?.trim();
+    if (!command || initialCommandRan.current) return;
+    initialCommandRan.current = true;
+    window.setTimeout(() => { void runLine(command); }, 150);
+  }, [meta?.initialCommand, runLine]);
 
   const handleTabComplete = useCallback(() => {
     const trimmed = input.trimStart();

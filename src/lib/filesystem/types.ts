@@ -6,6 +6,16 @@ export interface FsEntry {
   size: number;       // bytes
   createdAt: number;  // unix ms
   modifiedAt: number;
+  metadata?: {
+    kind?: string;
+    mime?: string;
+    tags?: string[];
+    hidden?: boolean;
+    readonly?: boolean;
+    system?: boolean;
+    defaultAppId?: string;
+    bundleId?: string;
+  };
 }
 
 export type FsState = Record<string, FsEntry>; // keyed by path

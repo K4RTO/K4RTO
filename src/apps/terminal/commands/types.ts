@@ -74,8 +74,19 @@ export interface CommandContext {
   setCwd: (path: string) => void;
   /** Launch another app (e.g. resume → preview) */
   launch: (appId: string, meta?: Record<string, string>) => void;
+  /** Open a VFS path with the default app */
+  openFile: (path: string) => boolean;
   /** Open external URL in new browser tab */
   externalOpen: (url: string) => void;
+  /** Running frontend processes */
+  listProcesses: () => Array<{ id: string; appId: string; appName: string; windowId: string; status: string; launchedAt: number }>;
+  /** Kill a frontend process */
+  killProcess: (id: string) => boolean;
+  /** Installed applications */
+  listApps: () => Array<{ id: string; name: string; bundleId: string; version: string; category: string }>;
+  readSetting: (key: string) => string | null;
+  writeSetting: (key: string, value: string) => boolean;
+  systemProfile: Record<string, string | number>;
   /** Reference to command history (read-only) */
   history: ReadonlyArray<string>;
   /** Close the Terminal window */

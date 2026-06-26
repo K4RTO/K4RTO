@@ -242,20 +242,158 @@ export const systemCommands: Command[] = [
       // External URL
       if (/^https?:\/\//.test(target)) { ctx.externalOpen(target); ctx.println(`Opening ${target} in browser...`, COLORS.info); return; }
       const fp = resolve(ctx.cwd, target);
-      const e = ctx.fs.getEntry(fp);
-      if (!e) { ctx.print(err(`open: ${target}: No such file or directory`)); return; }
-      const ext = e.name.split(".").pop()?.toLowerCase() ?? "";
-      const publicPath = fp.replace("/Users/guest/", "/");
-      const meta = { filePath: fp, publicPath, fileName: e.name };
-      if (["pdf", "png", "jpg", "jpeg", "webp", "gif"].includes(ext)) ctx.launch("preview", meta);
-      else if (["md", "ts", "tsx", "js", "jsx", "json", "txt"].includes(ext)) ctx.launch("vscode", meta);
-      else if (["doc", "docx"].includes(ext)) ctx.launch("word", meta);
-      else if (ext === "app") {
-        const content = ctx.fs.readFile(fp) ?? "";
-        const m = /^__app:(.+)$/.exec(content);
-        if (m) ctx.launch(m[1]);
-      } else { ctx.print(err(`open: no application knows how to open ${target}`)); return; }
+      if (!ctx.openFile(fp)) { ctx.print(err(`open: ${target}: No application can open this path`)); return; }
       ctx.println(`Opened ${target}`, COLORS.success);
+    },
+  },
+  {
+    name: "cp",
+    category: "system",
+    usage: "cp <source> <dest>",
+    description: { en: "Copy a file", zh: "复制文件" },
+    handler: (args, ctx) => {
+      if (args.length < 2) { ctx.print(err("cp: missing file operand")); return; }
+      const src = resolve(ctx.cwd, args[0]);
+      const dstRaw = resolve(ctx.cwd, args[1]);
+      const source = ctx.fs.getEntry(src);
+      if (!source) { ctx.print(err(`cp: ${args[0]}: No such file or directory`)); return; }
+      if (source.type === "dir") { ctx.print(err(`cp: ${args[0]}: is a directory`)); return; }
+      const dstEntry = ctx.fs.getEntry(dstRaw);
+      const dst = dstEntry?.type === "dir" ? `${dstRaw}/${source.name}` : dstRaw;
+      ctx.fs.writeFile(dst, ctx.fs.readFile(src) ?? "");
+    },
+  },
+  {
+    name: "mv",
+    category: "system",
+    usage: "mv <source> <dest>",
+    description: { en: "Move or rename a file", zh: "移动或重命名文件" },
+    handler: (args, ctx) => {
+      if (args.length < 2) { ctx.print(err("mv: missing file operand")); return; }
+      const src = resolve(ctx.cwd, args[0]);
+      const dstRaw = resolve(ctx.cwd, args[1]);
+      const source = ctx.fs.getEntry(src);
+      if (!source) { ctx.print(err(`mv: ${args[0]}: No such file or directory`)); return; }
+      if (source.type === "dir") { ctx.print(err(`mv: ${args[0]}: is a directory`)); return; }
+      const dstEntry = ctx.fs.getEntry(dstRaw);
+      const dst = dstEntry?.type === "dir" ? `${dstRaw}/${source.name}` : dstRaw;
+      const content = ctx.fs.readFile(src) ?? "";
+      ctx.fs.writeFile(dst, content);
+      ctx.fs.remove(src);
+    },
+  },
+  {
+    name: "ps",
+    category: "system",
+    description: { en: "List running frontend processes", zh: "列出正在运行的前端进程" },
+    handler: (_args, ctx) => {
+      const rows = ctx.listProcesses();
+      ctx.println("PID                         APP          STATUS      WINDOW", COLORS.warn);
+      if (rows.length === 0) { ctx.println("(no user processes)", COLORS.dim); return; }
+      for (const p of rows) {
+        ctx.println(`${p.id.padEnd(27)} ${p.appName.padEnd(12)} ${p.status.padEnd(11)} ${p.windowId}`, COLORS.text);
+      }
+    },
+  },
+  {
+    name: "kill",
+    category: "system",
+    usage: "kill <pid>",
+    description: { en: "Terminate a frontend process", zh: "结束前端进程" },
+    handler: (args, ctx) => {
+      if (!args[0]) { ctx.print(err("kill: missing pid")); return; }
+      if (!ctx.killProcess(args[0])) { ctx.print(err(`kill: ${args[0]}: no such process`)); return; }
+      ctx.println(`terminated ${args[0]}`, COLORS.success);
+    },
+  },
+  {
+    name: "apps",
+    category: "system",
+    description: { en: "List installed applications", zh: "列出已安装应用" },
+    handler: (_args, ctx) => {
+      for (const app of ctx.listApps()) {
+        ctx.println(`${app.name.padEnd(16)} ${app.category.padEnd(12)} ${app.bundleId}`, COLORS.text);
+      }
+    },
+  },
+  {
+    name: "sw_vers",
+    category: "system",
+    description: { en: "Print frontend OS version", zh: "显示前端系统版本" },
+    handler: (_args, ctx) => {
+      ctx.println(`ProductName:\t${ctx.systemProfile.productName}`);
+      ctx.println(`ProductVersion:\t${ctx.systemProfile.productVersion}`);
+      ctx.println(`BuildVersion:\t${ctx.systemProfile.buildVersion}`);
+    },
+  },
+  {
+    name: "system_profiler",
+    category: "system",
+    description: { en: "Show portfolio system profile", zh: "显示作品集系统信息" },
+    handler: (_args, ctx) => {
+      for (const [key, value] of Object.entries(ctx.systemProfile)) {
+        ctx.println(`${key}: ${value}`);
+      }
+    },
+  },
+  {
+    name: "defaults",
+    category: "system",
+    usage: "defaults read <key> | defaults write <key> <value>",
+    description: { en: "Read or write simulated system defaults", zh: "读写模拟系统设置" },
+    handler: (args, ctx) => {
+      const [mode, key, value] = args;
+      if (mode === "read" && key) {
+        const out = ctx.readSetting(key);
+        if (out === null) ctx.print(err(`defaults: ${key}: does not exist`));
+        else ctx.println(out);
+        return;
+      }
+      if (mode === "write" && key && value) {
+        if (!ctx.writeSetting(key, value)) ctx.print(err(`defaults: cannot write ${key}=${value}`));
+        return;
+      }
+      ctx.print(err("usage: defaults read <key> | defaults write <key> <value>"));
+    },
+  },
+  {
+    name: "diskutil",
+    category: "system",
+    usage: "diskutil list",
+    description: { en: "List virtual volumes", zh: "列出虚拟卷" },
+    handler: (args, ctx) => {
+      if (args[0] !== "list") { ctx.print(err("usage: diskutil list")); return; }
+      ctx.println("/dev/browser0 (virtual):", COLORS.warn);
+      ctx.println("   #: TYPE NAME              SIZE       IDENTIFIER");
+      ctx.println("   0: APFS Macintosh HD      dynamic    browser0s1");
+      ctx.println("   1: VFS  User Data         local      browser0s2");
+    },
+  },
+  {
+    name: "launchctl",
+    category: "system",
+    usage: "launchctl list",
+    description: { en: "List simulated system services", zh: "列出模拟系统服务" },
+    handler: (args, ctx) => {
+      if (args[0] !== "list") { ctx.print(err("usage: launchctl list")); return; }
+      ["app-manager", "spotlight", "file-index", "settings", "power", "windowserver"].forEach((name, i) => {
+        ctx.println(`${(100 + i).toString().padEnd(6)} 0\tcom.k4rto.${name}`);
+      });
+    },
+  },
+  {
+    name: "say",
+    category: "system",
+    usage: "say <text>",
+    description: { en: "Speak text through the browser", zh: "通过浏览器朗读文本" },
+    handler: (args, ctx) => {
+      const text = args.join(" ");
+      if (!text) { ctx.print(err("say: missing text")); return; }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+      }
+      ctx.println(text, COLORS.dim);
     },
   },
   {

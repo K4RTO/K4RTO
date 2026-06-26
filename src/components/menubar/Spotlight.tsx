@@ -5,6 +5,8 @@ import { getAllApps } from "@/apps/registry";
 import { useT, useSystem } from "@/contexts/SystemContext";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import type { Lang } from "@/contexts/SystemContext";
+import { getDefaultAppForFile, getFileLaunchMeta } from "@/services/app-manager";
+import { fileIconForName, searchFiles } from "@/services/file-index";
 
 // ── App display metadata ─────────────────────────────────────────────────────
 // Emoji glyph + i18n key per dock app. Keep this in sync with src/apps/registry.ts.
@@ -178,7 +180,7 @@ function SpotlightPreview({
     );
   }
 
-  if (result.kind === "app" || result.kind === "command") {
+  if (result.kind === "app" || result.kind === "command" || result.kind === "terminal-command") {
     return (
       <div className={`${ROOT} flex flex-col items-center justify-center px-6`}>
         <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 14 }}>{result.icon}</div>
@@ -246,6 +248,7 @@ function SpotlightPreview({
 
 type SpotlightResult =
   | { kind: "command";    id: string; label: string; subtitle: string; icon: string; action: PortfolioAction }
+  | { kind: "terminal-command"; id: string; label: string; subtitle: string; icon: string; command: string }
   | { kind: "app";        id: string; label: string; subtitle: string; icon: string; appId: string }
   | { kind: "file";       id: string; label: string; subtitle: string; icon: string; filePath: string; fileName: string }
   | { kind: "math";       id: string; label: string; subtitle: string; value: string }
@@ -447,32 +450,14 @@ function formatMathResult(n: number): string {
 }
 
 const APP_ICON_FALLBACK = "📦";
-const FILE_ICONS: Record<string, string> = {
-  md: "📄", txt: "📄", pdf: "📕",
-  png: "🖼️", jpg: "🖼️", jpeg: "🖼️", webp: "🖼️", gif: "🖼️",
-  ts: "🟦", tsx: "🟦", js: "🟨", jsx: "🟨",
-  json: "🟧", css: "🎨", html: "🌐",
-  doc: "📘", docx: "📘",
-};
-
 /** Pick which app should open a given file based on its extension. */
 function appForFile(name: string): string {
-  const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  if (["pdf", "png", "jpg", "jpeg", "webp", "gif"].includes(ext)) return "preview";
-  if (["doc", "docx"].includes(ext)) return "word";
-  if (["ts", "tsx", "js", "jsx", "json", "css", "html", "md"].includes(ext)) return "vscode";
-  return "textedit";
+  return getDefaultAppForFile(name);
 }
 
 /** Render-side meta for a file launch (different apps want slightly different keys). */
 function metaForFile(appId: string, filePath: string, fileName: string): Record<string, string> {
-  // Preview can additionally read publicPath for asset-backed files (images / Resume).
-  // For VFS-only files (Notes, source samples), publicPath is unused and harmless.
-  if (appId === "preview") {
-    const publicPath = filePath.replace("/Users/guest/", "/");
-    return { filePath, publicPath, fileName };
-  }
-  return { filePath, fileName };
+  return getFileLaunchMeta(filePath, fileName, appId);
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -523,6 +508,22 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
       });
     }
 
+    // 0b. Terminal command entry. Prefix with ">" to run a command in the
+    // simulated shell, e.g. "> ps" or "> system_profiler".
+    if (query.trim().startsWith(">")) {
+      const command = query.trim().slice(1).trim();
+      if (command) {
+        out.push({
+          kind: "terminal-command",
+          id: `term:${command}`,
+          label: `Run "${command}"`,
+          subtitle: t("dock.terminal"),
+          icon: "⌨",
+          command,
+        });
+      }
+    }
+
     // 1. Portfolio commands — curated, highest signal.
     for (const cmd of PORTFOLIO_COMMANDS) {
       // Prefix-match keywords (so "res" → "resume" but "e" doesn't match every command).
@@ -558,37 +559,19 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
       }
     }
 
-    // 3. VFS files — search by filename (cap at 8 to keep the list manageable).
+    // 3. VFS files — shared file-index search (cap at 8 to keep the list manageable).
     if (fs) {
-      const FILE_CAP = 8;
-      const seen = new Set<string>();
-      let fileCount = 0;
-      /** Returns true if the cap was hit — caller must propagate so the recursion
-       *  unwinds instead of continuing into sibling directories and overshooting. */
-      const collect = (dir: string): boolean => {
-        if (seen.has(dir)) return false;
-        seen.add(dir);
-        for (const e of fs.readDir(dir)) {
-          if (e.type === "dir") {
-            if (e.name.startsWith(".") || e.name === "Applications") continue;
-            if (collect(e.path)) return true;
-          } else if (e.name.toLowerCase().includes(q)) {
-            const ext = e.name.split(".").pop()?.toLowerCase() ?? "";
-            out.push({
-              kind: "file",
-              id: `file:${e.path}`,
-              label: e.name,
-              subtitle: e.path,
-              icon: FILE_ICONS[ext] ?? "📄",
-              filePath: e.path,
-              fileName: e.name,
-            });
-            if (++fileCount >= FILE_CAP) return true;
-          }
-        }
-        return false;
-      };
-      collect("/Users/guest");
+      for (const file of searchFiles(fs, q, 8)) {
+        out.push({
+          kind: "file",
+          id: `file:${file.path}`,
+          label: file.name,
+          subtitle: file.path,
+          icon: fileIconForName(file.name),
+          filePath: file.path,
+          fileName: file.name,
+        });
+      }
     }
 
     // 4. Web search fallback — always last so curated stuff wins.
@@ -622,6 +605,10 @@ export function Spotlight({ onClose, onLaunchApp }: SpotlightProps) {
         return;
       case "app":
         onLaunchApp(r.appId);
+        onClose();
+        return;
+      case "terminal-command":
+        onLaunchApp("terminal", { initialCommand: r.command });
         onClose();
         return;
       case "file": {

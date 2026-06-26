@@ -7,6 +7,7 @@ import { ContextMenu, type MenuItem } from "@/components/shared/ContextMenu";
 import { useFileSystemOptional } from "@/contexts/FileSystemContext";
 import { useProcesses } from "@/contexts/ProcessContext";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
+import { planOpenFile } from "@/services/app-manager";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -398,28 +399,9 @@ export default function Finder({ windowId }: AppComponentProps) {
       navigateTo(file.fullPath);
       return;
     }
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-
-    // .app virtual files in /Applications launch the corresponding registered app
-    if (ext === "app") {
-      const content = fs?.readFile(file.fullPath) ?? "";
-      const match = /^__app:(.+)$/.exec(content);
-      if (match) {
-        launch(match[1]);
-        return;
-      }
-    }
-
-    const publicPath = file.fullPath.replace("/Users/guest/", "/");
-    const meta = { filePath: file.fullPath, publicPath, fileName: file.name };
-
-    if (["pdf", "png", "jpg", "jpeg", "webp", "gif"].includes(ext)) {
-      launch("preview", meta);
-    } else if (["md", "ts", "tsx", "js", "jsx", "json", "txt"].includes(ext)) {
-      launch("vscode", meta);
-    } else if (["doc", "docx"].includes(ext)) {
-      launch("word", meta);
-    }
+    if (!fs) return;
+    const plan = planOpenFile(fs, file.fullPath);
+    if (plan) launch(plan.appId, plan.meta);
   }, [navigateTo, launch, fs]);
 
   // Listen for menu bar actions dispatched via finderMenuAction custom event
@@ -480,7 +462,7 @@ export default function Finder({ windowId }: AppComponentProps) {
       { label: t("finder.ctx.open"), action: () => openFile(file) },
     ];
     if (file.type === "file") {
-      items.push({ label: t("finder.ctx.openWithTextEdit"), action: () => {} });
+      items.push({ label: t("finder.ctx.openWithTextEdit"), action: () => launch("textedit", { filePath: file.fullPath, fileName: file.name }) });
     }
     items.push(
       { separator: true },
