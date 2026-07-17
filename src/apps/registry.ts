@@ -30,7 +30,7 @@ const apps: Record<string, AppDefinition> = {
     name: "Finder",
     icon: "finder.webp",
     component: lazy(() => import("./finder/Finder")),
-    defaultRect: { x: 100, y: 60, width: 1050, height: 648 },
+    defaultRect: { x: 390, y: 72, width: 820, height: 620 },
     minSize: { width: 400, height: 300 },
     singleInstance: false,
     bundleId: "com.k4rto.finder",

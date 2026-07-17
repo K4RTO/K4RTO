@@ -680,6 +680,15 @@ const translations: Record<string, TranslationEntry> = {
   // ── i18n sweep round 2 ────────────────────────────────────────────────
   "settings.guest":            { en: "Guest",                     zh: "访客" },
   "settings.label":            { en: "Settings",                  zh: "设置" },
+  "desktop.widgets.label":     { en: "Desktop widgets",           zh: "桌面小组件" },
+  "desktop.widgets.agenda.primary": { en: "Portfolio polish",     zh: "作品集打磨" },
+  "desktop.widgets.agenda.secondary": { en: "GitHub Pages check", zh: "GitHub Pages 检查" },
+  "desktop.widgets.now":       { en: "Now",                       zh: "此刻" },
+  "desktop.widgets.status":    { en: "Building a browser-native macOS portfolio", zh: "正在构建浏览器里的 macOS 作品集" },
+  "desktop.widgets.github":    { en: "portfolio live",            zh: "作品集已上线" },
+  "desktop.widgets.projects":  { en: "Projects",                  zh: "项目进度" },
+  "desktop.widgets.live":      { en: "Live",                      zh: "在线" },
+  "desktop.widgets.skills":    { en: "Stack",                     zh: "技术栈" },
   "terminal.commandNotFound":  { en: "zsh: command not found: ",  zh: "zsh: 找不到命令: " },
   "terminal.error":            { en: "error: ",                   zh: "错误: " },
 };

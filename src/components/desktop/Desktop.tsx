@@ -6,6 +6,7 @@ import { Dock } from "@/components/dock/Dock";
 import { Window } from "@/components/window/Window";
 import { Wallpaper } from "@/components/desktop/Wallpaper";
 import { DesktopGrid } from "@/components/desktop/DesktopGrid";
+import { DesktopWidgets } from "@/components/desktop/DesktopWidgets";
 import { Spotlight } from "@/components/menubar/Spotlight";
 import {
   WindowManagerProvider,
@@ -21,6 +22,7 @@ import { Launchpad } from "@/components/desktop/Launchpad";
 import { MissionControl } from "@/components/desktop/MissionControl";
 
 const LOGIN_SESSION_KEY = "k4rto_unlocked";
+const FIRST_SCREEN_SESSION_KEY = "k4rto_first_screen_ready";
 
 function LoadingSpinner() {
   return (
@@ -103,6 +105,20 @@ function DesktopContent() {
     const timer = window.setTimeout(() => setBootStep((step) => step + 1), bootStep === 0 ? 420 : 320);
     return () => window.clearTimeout(timer);
   }, [bootStep, bootSteps.length]);
+
+  useEffect(() => {
+    if (locked || bootStep < bootSteps.length || state.windowOrder.length > 0) return;
+    try {
+      if (sessionStorage.getItem(FIRST_SCREEN_SESSION_KEY) === "1") return;
+      sessionStorage.setItem(FIRST_SCREEN_SESSION_KEY, "1");
+    } catch {
+      // If sessionStorage is unavailable, still show the curated first screen.
+    }
+    const timer = window.setTimeout(() => {
+      launch("finder", { initialPath: "/Users/guest/K4RTO" });
+    }, 260);
+    return () => window.clearTimeout(timer);
+  }, [bootStep, bootSteps.length, launch, locked, state.windowOrder.length]);
 
   // Focused window = last in windowOrder
   const focusedWindowId =
@@ -248,6 +264,7 @@ function DesktopContent() {
 
       {/* Desktop icons + right-click */}
       <DesktopGrid onLaunchApp={launch} />
+      <DesktopWidgets />
 
       {/* Window Layer */}
       {Array.from(state.windows.values()).map((ws) => {
