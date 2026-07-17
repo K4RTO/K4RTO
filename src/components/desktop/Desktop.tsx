@@ -108,6 +108,7 @@ function DesktopContent() {
 
   useEffect(() => {
     if (locked || bootStep < bootSteps.length || state.windowOrder.length > 0) return;
+    if (window.innerWidth < 1280) return;
     try {
       if (sessionStorage.getItem(FIRST_SCREEN_SESSION_KEY) === "1") return;
       sessionStorage.setItem(FIRST_SCREEN_SESSION_KEY, "1");

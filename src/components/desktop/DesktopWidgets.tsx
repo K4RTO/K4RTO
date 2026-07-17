@@ -59,9 +59,11 @@ export function DesktopWidgets() {
   }, []);
 
   const date = now ?? HYDRATION_DATE;
-  const weekday = date.toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { weekday: "long" });
-  const month = date.toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { month: "long" });
-  const day = date.getDate();
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
+  const fallbackDateOptions = now ? undefined : { timeZone: "UTC" };
+  const weekday = date.toLocaleDateString(locale, { weekday: "long", ...fallbackDateOptions });
+  const month = date.toLocaleDateString(locale, { month: "long", ...fallbackDateOptions });
+  const day = now ? date.getDate() : date.getUTCDate();
   const time = now ? `${pad(date.getHours())}:${pad(date.getMinutes())}` : "--:--";
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => i + day - 5), [day]);
 
